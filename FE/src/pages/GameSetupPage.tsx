@@ -10,6 +10,7 @@ import {
   TextField
 } from '@mui/material';
 import { useState } from 'react';
+import { socketService } from '../api/socket';
 
 const MAX_PLAYERS = 500;
 const MIN_PLAYERS = 2;
@@ -23,6 +24,21 @@ export const GameSetupPage = () => {
 
   const handleModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectGameMode(e.target.value);
+  };
+
+  const handleSubmit = async () => {
+    const roomData = {
+      roomName,
+      maxPlayers,
+      gameMode: selectGameMode,
+      isPublic: roomPublic
+    };
+
+    try {
+      socketService.createRoom(roomData);
+    } catch (error) {
+      console.error('Error creating room:', error);
+    }
   };
 
   return (
@@ -63,6 +79,9 @@ export const GameSetupPage = () => {
           defaultChecked
         />
       </FormControl>
+      <Button variant="contained" color="primary" onClick={handleSubmit}>
+        방 만들기
+      </Button>
     </div>
   );
 };
