@@ -11,7 +11,7 @@ jobs:
     defaults:
       run:
         working-directory: ./BE  # BE 디렉토리를 작업 디렉토리로 설정
-        
+
     steps:
       - name: Github Repository 파일 불러오기
         uses: actions/checkout@v4
@@ -35,7 +35,24 @@ jobs:
         run: npm run build
 
       - name: github-action 컴퓨터에서 압축하기
-        run: tar -czvf project.tar.gz dist .env package.json package-lock.json
+        run: |
+          # 현재 위치 확인 (디버깅용)
+          pwd
+
+          # BE와 FE 모든 필요 파일들을 함께 압축
+          tar -czvf project.tar.gz \
+            BE/dist \
+            BE/package.json \
+            BE/package-lock.json \
+            BE/.env \
+            FE/build \
+            FE/package.json \
+            FE/package-lock.json \
+            FE/.env
+
+          # 압축 파일 내용 확인 (디버깅용)
+          echo "Created archive with contents:"
+          tar -tvf project.tar.gz
 
       - name: SCP로 EC2에 빌드된 파일 전송하기
         uses: appleboy/scp-action@v0.1.7
