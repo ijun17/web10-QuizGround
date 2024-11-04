@@ -8,6 +8,7 @@ describe('GameGateway (e2e)', () => {
   let app: INestApplication;
   let client1: Socket;
   let client2: Socket;
+  let client3: Socket;
 
   const TEST_PORT = 3001;
 
@@ -22,57 +23,99 @@ describe('GameGateway (e2e)', () => {
   });
 
   beforeEach((done) => {
-    client1 = io(`http://localhost:${TEST_PORT}`, {
+    let connectedClients = 0;
+    const onConnect = () => {
+      connectedClients++;
+      if (connectedClients === 3) {
+        done();
+      }
+    };
+
+    client1 = io(`http://localhost:${TEST_PORT}/game`, {
+      transports: ['websocket'],
+      forceNew: true,
+    });
+    client2 = io(`http://localhost:${TEST_PORT}/game`, {
+      transports: ['websocket'],
+      forceNew: true,
+    });
+    client3 = io(`http://localhost:${TEST_PORT}/game`, {
       transports: ['websocket'],
       forceNew: true,
     });
 
-    client2 = io(`http://localhost:${TEST_PORT}`, {
-      transports: ['websocket'],
-      forceNew: true,
-    });
-
-    client1.on('connect', () => {
-      client2.on('connect', done);
-    });
+    client1.on('connect', onConnect);
+    client2.on('connect', onConnect);
+    client3.on('connect', onConnect);
   });
 
   afterEach(() => {
     client1.close();
     client2.close();
+    client3.close();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('게임방 생성 테스트', async () => {
-    // emit이 비동기로 작동하기에 Promise로 깜싸줘서 처리
-    const roomId = await new Promise<string>((resolve) => {
-      client1.emit('createGame', (roomId: string) => {
-        resolve(roomId);
+  describe('createGame 이벤트 테스트', () => {
+    it('유효한 설정으로 게임방 생성 성공', async () => {
+      const gameConfig = {
+        title: 'hello world!',
+        gameMode: 'ranking',
+        maxPlayerCount: 2,
+        isPublicGame: true,
+      };
+
+      const response = await new Promise<{roomId: string, status: string}>(resolve => {
+        client1.once('createGame', resolve);
+        client1.emit('createGame', gameConfig);
+      });
+
+      expect(response.status).toBe('success');
+      expect(response.roomId).toBeDefined();
+      expect(typeof response.roomId).toBe('string');
+    });
+
+    const invalidConfigs = [
+      {
+        case: '빈 title',
+        config: { title: '', gameMode: '', maxPlayerCount: 2, isPublicGame: true },
+      },
+      {
+        case: '빈 gameMode',
+        config: { title: 'hello', gameMode: '', maxPlayerCount: 2, isPublicGame: true },
+      },
+      {
+        case: '잘못된 gameMode',
+        config: { title: 'hello', gameMode: 'invalid', maxPlayerCount: 2, isPublicGame: true },
+      },
+      {
+        case: '최소 인원 미달',
+        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 0, isPublicGame: true },
+      },
+      {
+        case: '최대 인원 초과',
+        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 201, isPublicGame: true },
+      },
+      {
+        case: '잘못된 boolean 타입',
+        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 2, isPublicGame: '안녕' },
+      },
+    ]
+
+    invalidConfigs.forEach(({ case: testCase, config }) => {
+      it(testCase, (done) => {
+        client1.once('exception', (error) => {
+          expect(error).toBeDefined();
+          expect(error.status).toBe('error');
+          expect(error.message).toBeDefined();
+          done();
+        });
+
+        client1.emit('createGame', config);
       });
     });
-
-    client1.emit('joinGame', roomId);
-  });
-
-  it('존재하지 않는 방 참여시 에러 메시지 테스트', (done) => {
-    client1.on('error', (message) => {
-      expect(message).toBe('[ERROR] 존재하지 않는 게임 방입니다.');
-      done();
-    });
-
-    client1.emit('joinGame', 'non-existent-room');
-  });
-
-  it('여러 클라이언트 게임방 참여 테스트', async () => {
-    const roomId = await new Promise<string>((resolve) => {
-      client1.emit('createGame', (roomId: string) => {
-        resolve(roomId);
-      });
-    });
-
-    client2.emit('joinGame', roomId);
   });
 });
