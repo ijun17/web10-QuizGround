@@ -8,9 +8,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./BE  # BE 디렉토리를 작업 디렉토리로 설정
+#    defaults:
+#      run:
+#        working-directory: ./BE  # BE 디렉토리를 작업 디렉토리로 설정
 
     steps:
       - name: Github Repository 파일 불러오기
@@ -21,7 +21,12 @@ jobs:
         with:
           node-version: "20"
 
-      - name: 의존성(라이브러리) 설치
+      - name: BE 의존성 설치
+        working-directory: ./BE
+        run: npm ci
+
+      - name: FE 의존성 설치
+        working-directory: ./FE
         run: npm ci
 
       - name: .env 파일 만들기
