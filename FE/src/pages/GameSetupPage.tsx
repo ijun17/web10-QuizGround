@@ -57,7 +57,7 @@ export const GameSetupPage = () => {
         max={MAX_PLAYERS}
         step={1}
         value={maxPlayers}
-        onChange={(_, newValue) => setMaxPlayers(newValue)}
+        onChange={(_, newValue) => setMaxPlayers(newValue as number)}
       ></Slider>
       <FormControl component="fieldset">
         <FormLabel component="legend">게임 모드 선택</FormLabel>

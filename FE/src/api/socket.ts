@@ -1,26 +1,26 @@
 import { io, Socket } from 'socket.io-client';
 import SocketEvents from '../constants/socketEvents';
 
-type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];
+// type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];
 
-interface ChatMessage {
+type ChatMessage = {
   userId: string;
   message: string;
-}
+};
 
-interface CreateRoomPayload {
+type CreateRoomPayload = {
   roomName: string;
   maxPlayers: number;
   gameMode: string;
   isPublic: boolean;
-}
+};
 
 // 이벤트의 데이터 타입을 정의
-interface SocketDataMap {
-  chatMessage: ChatMessage;
-  createRoom: CreateRoomPayload;
-  // 다른 이벤트의 데이터 타입을 추가
-}
+// type SocketDataMap = {
+//   chatMessage: ChatMessage;
+//   createRoom: CreateRoomPayload;
+//   // 다른 이벤트의 데이터 타입을 추가
+// };
 
 class SocketService {
   private socket: Socket;
@@ -44,10 +44,14 @@ class SocketService {
   }
 
   // 이벤트 수신 메서드
-  on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]) => void) {
-    this.socket.on(event, (data: SocketDataMap[T]) => {
-      callback(data);
-    });
+  // on<T extends keyof SocketDataMap>(event: T, callback: (data: SocketDataMap[T]) => void) {
+  //   this.socket.on(event, (data: SocketDataMap[T]) => {
+  //     callback(data);
+  //   });
+  // }
+
+  sendPlayerName(name: string) {
+    this.socket.emit(SocketEvents.SET_PLAYER_NAME, { playerName: name });
   }
 
   // 메시지 전송 메서드
