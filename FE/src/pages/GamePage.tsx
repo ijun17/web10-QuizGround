@@ -14,7 +14,7 @@ export const GamePage = () => {
   const handleNameSubmit = (name: string) => {
     setPlayerName(name);
     // 닉네임 설정 소켓 요청
-    // socketService.sendPlayerName(name);
+    // socketService.joinRoom(name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기
   };
 

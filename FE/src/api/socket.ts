@@ -50,10 +50,6 @@ class SocketService {
   //   });
   // }
 
-  sendPlayerName(name: string) {
-    this.socket.emit(SocketEvents.SET_PLAYER_NAME, { playerName: name });
-  }
-
   // 메시지 전송 메서드
   sendChatMessage(message: ChatMessage) {
     this.socket.emit(SocketEvents.CHAT_MESSAGE, message);
