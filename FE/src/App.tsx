@@ -9,7 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/game/setup" element={<GameSetupPage />} />
-        <Route path="/game" element={<GamePage />} />
+        <Route path="/game/:id" element={<GamePage />} />
         <Route path="*" element={<div>not found</div>} />
       </Routes>
     </Router>

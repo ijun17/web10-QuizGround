@@ -5,16 +5,18 @@ import { Modal } from '../components/Modal';
 import { useState } from 'react';
 import { GameHeader } from '@/components/GameHeader';
 import { HeaderBar } from '@/components/HeaderBar';
-// import { socketService } from '../api/socket';
+import { useParams } from 'react-router-dom';
+import { socketService } from '@/api/socket';
 
 export const GamePage = () => {
-  const [playerName, setPlayerName] = useState('asdf');
+  const [playerName, setPlayerName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(true);
+  const pin = useParams();
 
   const handleNameSubmit = (name: string) => {
     setPlayerName(name);
     // 닉네임 설정 소켓 요청
-    // socketService.joinRoom(name);
+    socketService.joinRoom(String(pin), name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기
   };
 
