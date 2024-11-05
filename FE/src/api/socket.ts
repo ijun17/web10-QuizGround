@@ -9,16 +9,16 @@ type ChatMessage = {
 };
 
 type CreateRoomPayload = {
-  roomName: string;
-  maxPlayers: number;
+  title: string;
+  maxPlayerCount: number;
   gameMode: string;
   isPublic: boolean;
 };
 
 // 이벤트의 데이터 타입을 정의
 // type SocketDataMap = {
-//   chatMessage: ChatMessage;
-//   createRoom: CreateRoomPayload;
+//   [SocketEvents.CHAT_MESSAGE]: ChatMessage;
+//   [SocketEvents.CREATE_ROOM]: CreateRoomPayload;
 //   // 다른 이벤트의 데이터 타입을 추가
 // };
 
@@ -44,7 +44,7 @@ class SocketService {
   }
 
   // 이벤트 수신 메서드
-  // on<T extends keyof SocketDataMap>(event: T, callback: (data: SocketDataMap[T]) => void) {
+  // on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]) => void) {
   //   this.socket.on(event, (data: SocketDataMap[T]) => {
   //     callback(data);
   //   });
@@ -64,6 +64,14 @@ class SocketService {
   // 연결 종료 메서드
   disconnect() {
     this.socket.disconnect();
+  }
+
+  joinRoom(gameId: string, playerName: string) {
+    this.socket.send(SocketEvents.JOIN_ROOM, { gameId, playerName });
+  }
+
+  chatMessage(gameId: string, message: string) {
+    this.socket.send(SocketEvents.CHAT_MESSAGE, { gameId, message });
   }
 }
 
