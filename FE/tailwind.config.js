@@ -27,14 +27,14 @@ export default {
         }
       },
       borderColor: {
-        default: '#879298'
+        default: 'E9E9E9'
       },
       borderRadius: {
         m: '1rem',
         s: '0.5rem'
       },
       dropShadow: {
-        popup: '0 4px 2px rgba(20, 33, 43, 0.02)'
+        default: '0 4px 2px rgba(20, 33, 43, 0.02)'
       }
     },
   },
@@ -43,14 +43,20 @@ export default {
       const newUtilities = {
         '.component-default': {
           borderWidth: '1px',
-          borderColor: '#879298',
+          borderColor: theme('borderColor.default'),
           borderRadius: theme('borderRadius.m'),
-          backgroundColor: theme('backgroundColor.default'),
+          backgroundColor: theme('backgroundColor.surface.default'),
         },
         '.component-popup': {
           borderRadius: theme('borderRadius.m'),
-          dropShadow: theme('dropShadow.popup'),
+          backgroundColor: theme('backgroundColor.surface.default'),
+          dropShadow: theme('dropShadow.default'),
         },
+        '.center': {
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }
       };
       addUtilities(newUtilities, ['responsive', 'hover']);
     }
