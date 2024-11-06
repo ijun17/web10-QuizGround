@@ -11,7 +11,7 @@
 ## 🔗 링크
 
 - [팀 노션](https://s0n9.notion.site/QuizGround-12ac2492516b80ae93ccc80823d234a9?pvs=4)
-- [배포 링크](http://quizground.duckdns.org:3000/)
+- [배포 링크](http://quizground.duckdns.org/)
 - [백로그](https://github.com/orgs/boostcampwm-2024/projects/18)
 
 <br>
