@@ -34,8 +34,8 @@ class SocketService {
   connect() {
     this.socket = io(this.url);
     return new Promise((resolve, reject) => {
-      this.socket.on('connect', () => resolve);
-      this.socket.on('error', () => reject);
+      this.socket.on('connect', () => resolve(null));
+      this.socket.on('error', () => reject());
     });
   }
 
@@ -75,4 +75,4 @@ class SocketService {
   }
 }
 
-export const socketService = new SocketService('');
+export const socketService = new SocketService('http://quizground.duckdns.org:3000/game');
