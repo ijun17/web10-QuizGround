@@ -10,35 +10,29 @@ import {
   TextField
 } from '@mui/material';
 import { useState } from 'react';
-import { socketService } from '../api/socket';
-
-const MAX_PLAYERS = 500;
-const MIN_PLAYERS = 2;
-const DEFAULT_PLAYERS = 50;
+import { socketService } from '@/api/socket';
+import RoomConfig from '@/constants/roomConfig';
 
 export const GameSetupPage = () => {
-  const [roomName, setRoomName] = useState('');
-  const [maxPlayers, setMaxPlayers] = useState(DEFAULT_PLAYERS);
-  const [selectGameMode, setSelectGameMode] = useState('ranking');
+  const [title, setTitle] = useState('');
+  const [maxPlayerCount, setMaxPlayerCount] = useState<number>(RoomConfig.DEFAULT_PLAYERS);
+  const [gameMode, setGameMode] = useState<'SURVIVAL' | 'RANKING'>('RANKING');
   const [roomPublic, setRoomPublic] = useState(true);
 
   const handleModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectGameMode(e.target.value);
+    const value = e.target.value === 'RANKING' ? 'RANKING' : 'SURVIVAL';
+    setGameMode(value);
   };
 
   const handleSubmit = async () => {
     const roomData = {
-      roomName,
-      maxPlayers,
-      gameMode: selectGameMode,
+      title,
+      maxPlayerCount,
+      gameMode,
       isPublic: roomPublic
     };
 
-    try {
-      socketService.createRoom(roomData);
-    } catch (error) {
-      console.error('Error creating room:', error);
-    }
+    socketService.createRoom(roomData);
   };
 
   return (
@@ -47,28 +41,28 @@ export const GameSetupPage = () => {
         {'<'}
       </Button>
       <TextField
-        value={roomName}
+        value={title}
         label="게임방 제목"
         variant="standard"
-        onChange={(e) => setRoomName(e.target.value)}
+        onChange={(e) => setTitle(e.target.value)}
       />
       <Slider
-        min={MIN_PLAYERS}
-        max={MAX_PLAYERS}
+        min={RoomConfig.MIN_PLAYERS}
+        max={RoomConfig.MAX_PLAYERS}
         step={1}
-        value={maxPlayers}
-        onChange={(_, newValue) => setMaxPlayers(newValue)}
+        value={maxPlayerCount}
+        onChange={(_, newValue) => setMaxPlayerCount(newValue as number)}
       ></Slider>
       <FormControl component="fieldset">
         <FormLabel component="legend">게임 모드 선택</FormLabel>
         <RadioGroup
           aria-labelledby="game-mode-radio-group"
-          value={selectGameMode}
+          value={gameMode}
           onChange={handleModeChange}
           name="game-mode-radio-group"
         >
-          <FormControlLabel value="survival" control={<Radio />} label="서바이벌" />
-          <FormControlLabel value="ranking" control={<Radio />} label="랭킹" />
+          <FormControlLabel value="SURVIVAL" control={<Radio />} label="서바이벌" />
+          <FormControlLabel value="RANKING" control={<Radio />} label="랭킹" />
         </RadioGroup>
       </FormControl>
       <FormControl component="fieldset">

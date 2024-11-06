@@ -1,26 +1,26 @@
 import { io, Socket } from 'socket.io-client';
 import SocketEvents from '../constants/socketEvents';
 
-type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];
+// type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];
 
-interface ChatMessage {
+type ChatMessage = {
   userId: string;
   message: string;
-}
+};
 
-interface CreateRoomPayload {
-  roomName: string;
-  maxPlayers: number;
+type CreateRoomPayload = {
+  title: string;
+  maxPlayerCount: number;
   gameMode: string;
   isPublic: boolean;
-}
+};
 
 // 이벤트의 데이터 타입을 정의
-interface SocketDataMap {
-  chatMessage: ChatMessage;
-  createRoom: CreateRoomPayload;
-  // 다른 이벤트의 데이터 타입을 추가
-}
+// type SocketDataMap = {
+//   [SocketEvents.CHAT_MESSAGE]: ChatMessage;
+//   [SocketEvents.CREATE_ROOM]: CreateRoomPayload;
+//   // 다른 이벤트의 데이터 타입을 추가
+// };
 
 class SocketService {
   private socket: Socket;
@@ -44,11 +44,11 @@ class SocketService {
   }
 
   // 이벤트 수신 메서드
-  on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]) => void) {
-    this.socket.on(event, (data: SocketDataMap[T]) => {
-      callback(data);
-    });
-  }
+  // on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]) => void) {
+  //   this.socket.on(event, (data: SocketDataMap[T]) => {
+  //     callback(data);
+  //   });
+  // }
 
   // 메시지 전송 메서드
   sendChatMessage(message: ChatMessage) {
@@ -64,6 +64,14 @@ class SocketService {
   // 연결 종료 메서드
   disconnect() {
     this.socket.disconnect();
+  }
+
+  joinRoom(gameId: string, playerName: string) {
+    this.socket.send(SocketEvents.JOIN_ROOM, { gameId, playerName });
+  }
+
+  chatMessage(gameId: string, message: string) {
+    this.socket.send(SocketEvents.CHAT_MESSAGE, { gameId, message });
   }
 }
 
