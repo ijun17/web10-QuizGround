@@ -1,3 +1,5 @@
+import { usePlayerStore } from '@/store/usePlayerStore';
+import { Player } from './Player';
 type Params = {
   options: string[];
 };
@@ -16,17 +18,25 @@ const optionColors = [
 ];
 
 export const QuizOptionBoard = ({ options }: Params) => {
+  const players = usePlayerStore((state) => state.players);
   return (
-    <div className="component-default grid grid-cols-2 h-[100%] gap-4 p-4">
-      {options.map((option, i) => (
-        <div
-          className="rounded-s flex justify-center items-center"
-          key={i}
-          style={{ background: optionColors[i] }}
-        >
-          {i + 1 + '. ' + option}
-        </div>
-      ))}
+    <div className="relative component-default h-[100%]">
+      <div className="absolute h-[100%] w-[100%]">
+        {players.map((player) => (
+          <Player name={player.playerName} position={player.playerPosition} />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-4 p-4 h-[100%] w-[100%]">
+        {options.map((option, i) => (
+          <div
+            className="rounded-s flex justify-center items-center"
+            key={i}
+            style={{ background: optionColors[i] }}
+          >
+            {i + 1 + '. ' + option}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
