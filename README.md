@@ -1,17 +1,22 @@
-# web10-QuizGround
+<div align="center">
+  <h1>QuizGround</h1>
+</div>
 
-> 참고: 리드미 수시로 업데이트 중입니다!
-
-## 소개
+## ✍🏻 소개
 
 실시간 퀴즈 게임을 즐겨보세요!
 
-## 팀 노션
-https://s0n9.notion.site/QuizGround-12ac2492516b80ae93ccc80823d234a9?pvs=4
+<br>
 
+## 🔗 링크
 
+- [팀 노션](https://s0n9.notion.site/QuizGround-12ac2492516b80ae93ccc80823d234a9?pvs=4)
+- [배포 링크](http://quizground.duckdns.org:3000/)
+- [백로그](https://github.com/orgs/boostcampwm-2024/projects/18)
 
-## 팀원 소개
+<br>
+
+## 🤗 팀원 소개
 
 |김상혁|김준기|송건석|유동훈|박준우|
 |:---:|:---:|:---:|:---:|:---:|
