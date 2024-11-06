@@ -215,4 +215,76 @@ describe('GameGateway (e2e)', () => {
       expect(chatMessageResponse[0].message).toBe(messageToSend);
     });
   });
+
+  describe('updatePosition 이벤트 테스트', () => {
+    it('유효한 설정을주면 위치 업데이트를 성공 해야 한다.', async () => {
+      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'hello world!',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      const joinRoomResponse = await new Promise<any>((resolve) => {
+        client1.once(socketEvents.JOIN_ROOM, resolve);
+        client1.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: '시크릿주주1'
+        });
+      });
+
+      const newPosition = [1, 1];
+      const updatePositionResponse = await new Promise<any>((resolve) => {
+        client1.once(socketEvents.UPDATE_POSITION, resolve);
+        client1.emit(socketEvents.UPDATE_POSITION, {
+          gameId: createRoomResponse.gameId,
+          newPosition: newPosition
+        });
+      });
+
+      expect(updatePositionResponse).toBeDefined();
+      expect(updatePositionResponse.playerId).toBe(client1.id);
+      expect(updatePositionResponse.playerPosition).toEqual(newPosition);
+    });
+
+    it('update DTO에 잘못된값이 있는경우 error를 내야한다.', (done) => {
+      client1.once('exception', (error) => {
+        expect(error).toBeDefined();
+        expect(error.message).toBe('PIN번호는 6자리이어야 합니다.');
+        done();
+      });
+
+      client1.emit(socketEvents.UPDATE_POSITION, {
+        gameId: '',
+        newPosition: []
+      });
+    });
+
+    it('해당방의 플레이어가 아닌경우 error를 내야한다.', async () => {
+      client2.once('error', (error) => {
+        expect(error).toBeDefined();
+        expect(error).toBe('[ERROR] 해당 게임 방의 플레이어가 아닙니다.');
+      });
+
+      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'hello world!',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      const newPosition = [1, 1];
+
+      client2.emit(socketEvents.UPDATE_POSITION, {
+        gameId: createRoomResponse.gameId,
+        newPosition: newPosition
+      });
+    });
+  });
 });
