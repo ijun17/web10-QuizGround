@@ -17,6 +17,7 @@ dotenv.config({ path: '../.env' });
       username: process.env.DB_USER,
       password: process.env.DB_PASSWD,
       database: process.env.DB_NAME,
+      entities: [],
       synchronize: false // 개발 모드에서만 활성화
     })
   ],
