@@ -2,19 +2,21 @@ import { ClipboardCopy } from './ClipboardCopy';
 import Card from '@mui/material/Card';
 import { QuizPreview } from './QuizView';
 import { useParams } from 'react-router-dom';
+import { useRoomStore } from '@/store/useRoomStore';
 
 export const GameHeader = () => {
   const { gameId } = useParams<{ gameId: string }>();
+  const gameTitle = useRoomStore((state) => state.title);
   const pinNum = String(gameId);
   const linkURL = window.location.hostname + `/game/${gameId}`;
   return (
-    <Card className="p-4 border border-blue-600 shadow-xl rounded-md h-[280px] w-[1000px] bg-gradient-to-b from-blue-500 to-blue-700 text-white">
+    <Card className="p-4 border border-blue-600 shadow-xl rounded-md h-[280px] w-[1000px] bg-gradient-to-b from-blue-500 to-blue-700 text-white component-popup">
       <div className="flex justify-center mb-4">
         <ClipboardCopy valueToCopy={pinNum} message={`PIN: ${pinNum} 복사`} />
         <ClipboardCopy valueToCopy={linkURL} message="공유 링크 복사" />
       </div>
       <div className="flex flex-col items-center justify-center text-center space-y-2">
-        <span className="text-xl font-semibold">퀴즈이름</span>
+        <span className="text-xl font-semibold">{gameTitle}</span>
       </div>
       <QuizPreview title="title" description="퀴즈퀴즈퀴ㅣ즈" />
       <div className="flex space-x-4 justify-center">

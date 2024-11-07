@@ -23,6 +23,9 @@ class SocketService {
       this.socket.on('error', () => reject());
     });
     this.handlers.forEach((h) => h());
+    this.socket.onAny((eventName, ...args) => {
+      console.log(`SOCKET[${eventName}]`, ...args);
+    });
     return;
   }
 
@@ -32,6 +35,10 @@ class SocketService {
 
   isActive() {
     return this.socket && this.socket.connected;
+  }
+
+  getSocketId() {
+    return this.socket.id;
   }
 
   on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
