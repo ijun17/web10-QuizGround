@@ -287,4 +287,68 @@ describe('GameGateway (e2e)', () => {
       });
     });
   });
+
+  describe('startGame 이벤트 테스트', () => {
+    it('방장이 게임을 시작할 수 있어야 한다.', async () => {
+      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'Test Room',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      const joinRoomResponse = await new Promise<any>((resolve) => {
+        client1.once(socketEvents.JOIN_ROOM, resolve);
+        client1.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: 'HostPlayer'
+        });
+      });
+
+      const startGameResponse = await new Promise<void>((resolve) => {
+        client1.once(socketEvents.START_GAME, resolve);
+        client1.emit(socketEvents.START_GAME, createRoomResponse.gameId);
+      });
+
+      expect(startGameResponse).toBeUndefined();
+    });
+
+    it('방장이 아닌 플레이어는 게임을 시작할 수 없어야 한다.', async () => {
+      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'Test Room',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      const joinRoomResponse1 = await new Promise<any>((resolve) => {
+        client1.once(socketEvents.JOIN_ROOM, resolve);
+        client1.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: 'HostPlayer'
+        });
+      });
+
+      const joinRoomResponse2 = await new Promise<any>((resolve) => {
+        client2.once(socketEvents.JOIN_ROOM, resolve);
+        client2.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: 'NonHostPlayer'
+        });
+      });
+
+      client2.once('error', (error) => {
+        expect(error).toBeDefined();
+        expect(error).toBe('[ERROR] 방장만 게임을 시작할 수 있습니다.');
+      });
+
+      client2.emit(socketEvents.START_GAME, createRoomResponse.gameId);
+    });
+  });
 });
