@@ -1,78 +1,66 @@
 import { io, Socket } from 'socket.io-client';
 import SocketEvents from '../constants/socketEvents';
+import { SocketDataMap } from './socketEventTypes';
 
-// type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];
-
-type ChatMessage = {
-  userId: string;
-  message: string;
-};
-
-type CreateRoomPayload = {
-  title: string;
-  maxPlayerCount: number;
-  gameMode: string;
-  isPublic: boolean;
-};
-
-// 이벤트의 데이터 타입을 정의
-// type SocketDataMap = {
-//   [SocketEvents.CHAT_MESSAGE]: ChatMessage;
-//   [SocketEvents.CREATE_ROOM]: CreateRoomPayload;
-//   // 다른 이벤트의 데이터 타입을 추가
-// };
+type SocketEvent = keyof SocketDataMap;
 
 class SocketService {
   private socket: Socket;
   private url: string;
+  private handlers: (() => void)[];
 
   constructor(url: string) {
     this.socket = io();
     this.url = url;
+    this.handlers = [];
   }
 
-  connect() {
+  async connect() {
+    if (this.isActive()) return;
     this.socket = io(this.url);
-    return new Promise((resolve, reject) => {
-      this.socket.on('connect', () => resolve(null));
+    await new Promise<void>((resolve, reject) => {
+      this.socket.on('connect', () => resolve());
       this.socket.on('error', () => reject());
     });
+    this.handlers.forEach((h) => h());
+    return;
   }
 
-  isActive() {
-    return this.socket && this.socket.active;
-  }
-
-  // 이벤트 수신 메서드
-  // on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]) => void) {
-  //   this.socket.on(event, (data: SocketDataMap[T]) => {
-  //     callback(data);
-  //   });
-  // }
-
-  // 메시지 전송 메서드
-  sendChatMessage(message: ChatMessage) {
-    this.socket.emit(SocketEvents.CHAT_MESSAGE, message);
-  }
-
-  // 방 생성 메서드
-  async createRoom(payload: CreateRoomPayload) {
-    await this.connect();
-    this.socket.emit(SocketEvents.CREATE_ROOM, payload);
-  }
-
-  // 연결 종료 메서드
   disconnect() {
     this.socket.disconnect();
   }
 
-  joinRoom(gameId: string, playerName: string) {
-    this.socket.send(SocketEvents.JOIN_ROOM, { gameId, playerName });
+  isActive() {
+    return this.socket && this.socket.connected;
+  }
+
+  on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
+    const handler = () => this.socket.on(event as string, callback);
+    this.handlers.push(handler);
+    if (this.isActive()) handler();
+  }
+
+  emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
+    this.socket.emit(event, data);
+  }
+
+  sendChatMessage(message: SocketDataMap[typeof SocketEvents.CHAT_MESSAGE]['request']) {
+    this.emit(SocketEvents.CHAT_MESSAGE, message);
+  }
+
+  async createRoom(payload: SocketDataMap['createRoom']['request']) {
+    await this.connect();
+    this.socket.emit(SocketEvents.CREATE_ROOM, payload);
+  }
+
+  async joinRoom(gameId: string, playerName: string) {
+    if (!this.isActive()) await this.connect();
+    this.socket.emit(SocketEvents.JOIN_ROOM, { gameId, playerName });
   }
 
   chatMessage(gameId: string, message: string) {
-    this.socket.send(SocketEvents.CHAT_MESSAGE, { gameId, message });
+    this.socket.emit(SocketEvents.CHAT_MESSAGE, { gameId, message });
   }
 }
 
-export const socketService = new SocketService('http://quizground.duckdns.org:3000/game');
+export const socketService = new SocketService('http://' + window.location.hostname + ':3000/game');

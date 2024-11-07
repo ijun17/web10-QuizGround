@@ -9,15 +9,22 @@ import {
   Radio,
   TextField
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { socketService } from '@/api/socket';
 import RoomConfig from '@/constants/roomConfig';
-
+import { useNavigate } from 'react-router-dom';
+import { useRoomStore } from '@/store/useRoomStore';
 export const GameSetupPage = () => {
+  const gameId = useRoomStore((state) => state.gameId);
   const [title, setTitle] = useState('');
   const [maxPlayerCount, setMaxPlayerCount] = useState<number>(RoomConfig.DEFAULT_PLAYERS);
   const [gameMode, setGameMode] = useState<'SURVIVAL' | 'RANKING'>('RANKING');
   const [roomPublic, setRoomPublic] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (gameId) navigate(`/game/${gameId}`);
+  }, [gameId, navigate]);
 
   const handleModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value === 'RANKING' ? 'RANKING' : 'SURVIVAL';
@@ -31,7 +38,6 @@ export const GameSetupPage = () => {
       gameMode,
       isPublic: roomPublic
     };
-
     socketService.createRoom(roomData);
   };
 

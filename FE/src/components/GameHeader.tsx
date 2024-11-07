@@ -1,11 +1,12 @@
 import { ClipboardCopy } from './ClipboardCopy';
 import Card from '@mui/material/Card';
 import { QuizPreview } from './QuizView';
+import { useParams } from 'react-router-dom';
 
 export const GameHeader = () => {
-  // 임시값
-  const pinNum = '123456';
-  const linkURL = 'naver.com';
+  const { gameId } = useParams<{ gameId: string }>();
+  const pinNum = String(gameId);
+  const linkURL = window.location.hostname + `/game/${gameId}`;
   return (
     <Card className="p-4 border border-blue-600 shadow-xl rounded-md h-[280px] w-[1000px] bg-gradient-to-b from-blue-500 to-blue-700 text-white">
       <div className="flex justify-center mb-4">
@@ -13,7 +14,7 @@ export const GameHeader = () => {
         <ClipboardCopy valueToCopy={linkURL} message="공유 링크 복사" />
       </div>
       <div className="flex flex-col items-center justify-center text-center space-y-2">
-        <span className="text-xl font-semibold">퀴즈이름22</span>
+        <span className="text-xl font-semibold">퀴즈이름</span>
       </div>
       <QuizPreview title="title" description="퀴즈퀴즈퀴ㅣ즈" />
       <div className="flex space-x-4 justify-center">

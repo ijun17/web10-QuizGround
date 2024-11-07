@@ -2,21 +2,29 @@ import Chat from '@/components/Chat';
 import ParticipantDisplay from '@/components/ParticipantDisplay';
 import { QuizOptionBoard } from '@/components/QuizOptionBoard';
 import { Modal } from '../components/Modal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GameHeader } from '@/components/GameHeader';
 import { HeaderBar } from '@/components/HeaderBar';
-import { useParams } from 'react-router-dom';
 import { socketService } from '@/api/socket';
+import { useParams } from 'react-router-dom';
+import { useRoomStore } from '@/store/useRoomStore';
 
 export const GamePage = () => {
+  const { gameId } = useParams<{ gameId: string }>();
+  const updateRoom = useRoomStore((state) => state.updateRoom);
   const [playerName, setPlayerName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(true);
-  const pin = useParams();
+
+  updateRoom({ gameId });
+
+  useEffect(() => {
+    if (gameId && playerName) {
+      socketService.joinRoom(gameId, playerName);
+    }
+  }, [gameId, playerName]);
 
   const handleNameSubmit = (name: string) => {
     setPlayerName(name);
-    // 닉네임 설정 소켓 요청
-    socketService.joinRoom(String(pin), name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기
   };
 
@@ -29,7 +37,7 @@ export const GamePage = () => {
         </div>
         <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[calc(100%-320px)] p-4">
           <div className="hidden lg:block lg:col-span-1">
-            <Chat></Chat>
+            <Chat />
           </div>
 
           <div className="col-span-4 lg:col-span-2">
@@ -37,7 +45,7 @@ export const GamePage = () => {
           </div>
 
           <div className="hidden lg:block lg:col-span-1">
-            <ParticipantDisplay></ParticipantDisplay>
+            <ParticipantDisplay />
           </div>
 
           <Modal
