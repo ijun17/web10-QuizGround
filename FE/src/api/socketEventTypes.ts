@@ -13,6 +13,7 @@ type ChatMessageResponse = {
 
 // 플레이어 위치 업데이트 타입
 type UpdatePositionRequest = {
+  gameId: string;
   newPosition: [number, number];
 };
 
