@@ -189,6 +189,24 @@ export class GameGateway {
     );
   }
 
+  @SubscribeMessage(socketEvents.START_GAME)
+  handleStartGame(@MessageBody() gameId: string, @ConnectedSocket() client: Socket): void {
+    const room = this.rooms.get(gameId);
+    if (!room) {
+      client.emit('error', '[ERROR] 존재하지 않는 게임 방입니다.');
+      return;
+    }
+
+    if (room.host !== client.id) {
+      client.emit('error', '[ERROR] 방장만 게임을 시작할 수 있습니다.');
+      return;
+    }
+
+    room.status = 'playing';
+    this.server.to(gameId).emit(socketEvents.START_GAME);
+    this.logger.verbose(`게임 시작: ${gameId}`);
+  }
+
   // TODO: 일정 시간 동안 게임 방이 사용되지 않으면 방 정리 (@Cron으로 구현)
 
   afterInit() {
