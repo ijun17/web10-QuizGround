@@ -310,10 +310,13 @@ describe('GameGateway (e2e)', () => {
 
       const startGameResponse = await new Promise<void>((resolve) => {
         client1.once(socketEvents.START_GAME, resolve);
-        client1.emit(socketEvents.START_GAME, createRoomResponse.gameId);
+        client1.emit(socketEvents.START_GAME, {
+          gameId: createRoomResponse.gameId
+        });
       });
 
-      expect(startGameResponse).toBeUndefined();
+      expect(startGameResponse).toBeDefined();
+      expect(startGameResponse).toBe('gameStarted');
     });
 
     it('방장이 아닌 플레이어는 게임을 시작할 수 없어야 한다.', async () => {

@@ -206,7 +206,7 @@ export class GameGateway {
     }
 
     room.status = 'playing';
-    this.server.to(gameId).emit(socketEvents.START_GAME);
+    this.server.to(gameId).emit(socketEvents.START_GAME, 'gameStarted');
     this.logger.verbose(`게임 시작: ${gameId}`);
   }
 
@@ -229,7 +229,7 @@ export class GameGateway {
       return;
     }
 
-    this.server.to(gameId).emit(socketEvents.START_QUIZ_TIME, 'hi');
+    this.server.to(gameId).emit(socketEvents.START_QUIZ_TIME, 'gameStarted');
     this.logger.verbose(`퀴즈 시간 시작: ${gameId}`);
   }
 
