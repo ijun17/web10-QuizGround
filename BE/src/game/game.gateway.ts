@@ -16,6 +16,8 @@ import { ChatMessageDto } from './dto/chat-message.dto';
 import { GameService } from './game.service';
 import { generateUniquePin } from '../common/utils/utils';
 import { UpdatePositionDto } from './dto/update-position.dto';
+import { ValidateRoom } from './decorators/validate-room.decorator';
+import { StartGameDto } from './dto/start-game.dto';
 
 export type GameConfig = {
   title: string;
@@ -190,12 +192,13 @@ export class GameGateway {
   }
 
   @SubscribeMessage(socketEvents.START_GAME)
-  handleStartGame(@MessageBody() gameId: string, @ConnectedSocket() client: Socket): void {
+  @ValidateRoom()
+  handleStartGame(
+    @MessageBody() startGameDto: StartGameDto,
+    @ConnectedSocket() client: Socket
+  ): void {
+    const { gameId } = startGameDto;
     const room = this.rooms.get(gameId);
-    if (!room) {
-      client.emit('error', '[ERROR] 존재하지 않는 게임 방입니다.');
-      return;
-    }
 
     if (room.host !== client.id) {
       client.emit('error', '[ERROR] 방장만 게임을 시작할 수 있습니다.');
@@ -205,6 +208,29 @@ export class GameGateway {
     room.status = 'playing';
     this.server.to(gameId).emit(socketEvents.START_GAME);
     this.logger.verbose(`게임 시작: ${gameId}`);
+  }
+
+  @SubscribeMessage(socketEvents.START_QUIZ_TIME)
+  @ValidateRoom()
+  handleStartQuizTime(
+    @MessageBody() startGameDto: StartGameDto,
+    @ConnectedSocket() client: Socket
+  ): void {
+    const { gameId } = startGameDto;
+    const room = this.rooms.get(gameId);
+
+    if (room.host !== client.id) {
+      client.emit('error', '[ERROR] 방장만 퀴즈를 시작할 수 있습니다.');
+      return;
+    }
+
+    if (room.status !== 'playing') {
+      client.emit('error', '[ERROR] 게임이 시작되지 않았습니다.');
+      return;
+    }
+
+    this.server.to(gameId).emit(socketEvents.START_QUIZ_TIME, 'hi');
+    this.logger.verbose(`퀴즈 시간 시작: ${gameId}`);
   }
 
   // TODO: 일정 시간 동안 게임 방이 사용되지 않으면 방 정리 (@Cron으로 구현)

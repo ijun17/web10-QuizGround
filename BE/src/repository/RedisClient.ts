@@ -1,21 +1,8 @@
 import { createClient } from 'redis';
-import * as config from 'config';
+import * as process from 'node:process';
 
-const getRedisConfig = () => {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  const redisHost = isDevelopment ? config.get('redis-db').host : process.env.REDIS_HOST;
-
-  const redisPort = isDevelopment ? config.get('redis-db').port : process.env.REDIS_PORT;
-
-  return {
-    host: redisHost,
-    port: redisPort
-  };
-};
-
-const { host, port } = getRedisConfig();
-
+const host = process.env.REDIS_HOST || 'localhost';
+const port = process.env.REDIS_PORT || 6379;
 export const RedisClient = createClient({
   url: `redis://${host}:${port}`,
   socket: {
