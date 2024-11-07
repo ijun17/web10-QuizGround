@@ -1,5 +1,5 @@
-import { Catch, ArgumentsHost, Logger } from '@nestjs/common';
-import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
+import { ArgumentsHost, Catch, Logger } from '@nestjs/common';
+import { BaseWsExceptionFilter } from '@nestjs/websockets';
 
 @Catch()
 export class WsExceptionFilter extends BaseWsExceptionFilter {
@@ -15,7 +15,7 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
       // TODO: API 명세서 확인
       client.emit('exception', {
         status: 'error',
-        message: exception.response.message || 'Validation failed',
+        message: exception.response.message || 'Validation failed'
       });
       return;
     }
@@ -26,7 +26,7 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
     // TODO: API 명세서 확인
     client.emit('exception', {
       status: 'error',
-      message: exception.message || 'Internal server error',
+      message: exception.message || 'Internal server error'
     });
   }
 }

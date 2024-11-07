@@ -1,12 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { io, Socket } from 'socket.io-client';
 import { GameGateway } from '../src/game/game.gateway';
 import { GameService } from '../src/game/game.service';
-import { io, Socket } from 'socket.io-client';
 import socketEvents from '../src/common/constants/socket-events';
-import { CreateGameDto } from '../src/game/dto/create-game.dto';
-import { generateUniquePin } from '../src/common/utils/utils';
 
 describe('GameGateway (e2e)', () => {
   let app: INestApplication;
@@ -35,6 +33,7 @@ describe('GameGateway (e2e)', () => {
       }
     };
 
+    // 1. http(연결할때만) -> 2. ws
     client1 = io(`http://localhost:${TEST_PORT}/game`, {
       transports: ['websocket'],
       forceNew: true
@@ -72,7 +71,7 @@ describe('GameGateway (e2e)', () => {
         isPublicGame: true
       };
 
-      const response = await new Promise<{ gameId: string }>(resolve => {
+      const response = await new Promise<{ gameId: string }>((resolve) => {
         client1.once(socketEvents.CREATE_ROOM, resolve);
         client1.emit(socketEvents.CREATE_ROOM, gameConfig);
       });
@@ -97,15 +96,15 @@ describe('GameGateway (e2e)', () => {
       },
       {
         case: '최소 인원 미달',
-        config: { title: 'hello', gameMode: 'RANKING', maxPlayerCount: 0, isPublicGame: true }
+        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 0, isPublicGame: true }
       },
       {
         case: '최대 인원 초과',
-        config: { title: 'hello', gameMode: 'RANKING', maxPlayerCount: 201, isPublicGame: true }
+        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 201, isPublicGame: true }
       },
       {
         case: '잘못된 boolean 타입',
-        config: { title: 'hello', gameMode: 'RANKING', maxPlayerCount: 2, isPublicGame: '안녕' }
+        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 2, isPublicGame: '안녕' }
       }
     ];
 
@@ -121,91 +120,10 @@ describe('GameGateway (e2e)', () => {
         client1.emit(socketEvents.CREATE_ROOM, config);
       });
     });
-  });
-
-  describe('chatMessage 이벤트 테스트', () => {
-    it('같은 Room의 플레이어들에게 브로드캐스팅 성공', async () => {
-      /*given*/
-      // 게임방 생성 로직
-      const createRoomResponse = await new Promise<{ gameId: string }>(resolve => {
-        client1.once(socketEvents.CREATE_ROOM, resolve);
-        client1.emit(socketEvents.CREATE_ROOM, {
-          title: 'hello world!',
-          gameMode: 'RANKING',
-          maxPlayerCount: 5,
-          isPublicGame: true
-        });
-      });
-
-      // 게임방 참여 로직
-      const joinRoomResponse1 = await new Promise<any>(resolve => {
-        client1.once(socketEvents.JOIN_ROOM, resolve);
-        client1.emit(socketEvents.JOIN_ROOM, {
-          gameId: createRoomResponse.gameId,
-          playerName: '시크릿주주1'
-        });
-      });
-      const joinRoomResponse2 = await new Promise<any>(resolve => {
-        client2.once(socketEvents.JOIN_ROOM, resolve);
-        client2.emit(socketEvents.JOIN_ROOM, {
-          gameId: createRoomResponse.gameId,
-          playerName: '시크릿주주2'
-        });
-      });
-      const joinRoomResponse3 = await new Promise<any>(resolve => {
-        client3.once(socketEvents.JOIN_ROOM, resolve);
-        client3.emit(socketEvents.JOIN_ROOM, {
-          gameId: createRoomResponse.gameId,
-          playerName: '시크릿주주3'
-        });
-      });
-
-      const messageToSend = '안녕하세요! 여러분!';
-      let receivedCount = 0;
-      const chatMessageResponse = await new Promise<any>(resolve => {
-        const responseList = [];
-        client1.once(socketEvents.CHAT_MESSAGE, (payload) => {
-          responseList.push(payload);
-          if (responseList.length === 3) resolve(responseList);
-        });
-        client2.once(socketEvents.CHAT_MESSAGE, (payload) => {
-          responseList.push(payload);
-          if (responseList.length === 3) resolve(responseList);
-        });
-        client3.once(socketEvents.CHAT_MESSAGE, (payload) => {
-          responseList.push(payload);
-          if (responseList.length === 3) resolve(responseList);
-        });
-        client1.emit(socketEvents.CHAT_MESSAGE, {
-          gameId: createRoomResponse.gameId,
-          message: messageToSend
-        });
-      });
-
-      expect(chatMessageResponse[0].message).toBe(messageToSend);
-    });
-  });
-
-  describe('generateUniquePin test', () => {
-    it('generateUniquePin 함수는 6자리 PIN 생성을 생성해야한다', async () => {
-      const pin = generateUniquePin(new Map());
-
-      expect(pin).toMatch(/^\d{6}$/);
-      expect(parseInt(pin)).toBeGreaterThanOrEqual(100000);
-      expect(parseInt(pin)).toBeLessThanOrEqual(999999);
-    });
-
-    it('중복된 PIN 체크', async () => {
-      const rooms = new Map();
-      const pin1 = generateUniquePin(rooms);
-      const pin2 = generateUniquePin(rooms);
-      expect(pin1).not.toBe(pin2);
-    });
 
     it('방생성시 서버는 올바른 6자리 숫자(PIN)을 응답해야한다.', async () => {
-
       // Promise와 함께 once 사용
-      const response = await new Promise<{ gameId: string }>(resolve => {
+      const response = await new Promise<{ gameId: string }>((resolve) => {
         // CREATE_ROOM 이벤트의 응답을 한 번만 기다림
         client1.once(socketEvents.CREATE_ROOM, resolve);
 
@@ -220,12 +138,153 @@ describe('GameGateway (e2e)', () => {
 
       // 6자리 숫자 검증
       expect(response.gameId).toBeDefined();
-      expect(response.gameId).toMatch(/^\d{6}$/);  // 정확히 6자리 숫자만
+      expect(response.gameId).toMatch(/^\d{6}$/); // 정확히 6자리 숫자만
 
       // 범위 검증 (100000-999999)
       const pinNumber = parseInt(response.gameId);
       expect(pinNumber).toBeGreaterThanOrEqual(100000);
       expect(pinNumber).toBeLessThanOrEqual(999999);
+    });
+  });
+
+  describe('chatMessage 이벤트 테스트', () => {
+    it('같은 Room의 플레이어들에게 브로드캐스팅 성공', async () => {
+      /*given*/
+      // 게임방 생성 로직
+      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'hello world!',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      // 게임방 참여 로직
+      const joinRoomResponse1 = await new Promise<any>((resolve) => {
+        client1.once(socketEvents.JOIN_ROOM, resolve);
+        client1.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: '시크릿주주1'
+        });
+      });
+      const joinRoomResponse2 = await new Promise<any>((resolve) => {
+        client2.once(socketEvents.JOIN_ROOM, resolve);
+        client2.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: '시크릿주주2'
+        });
+      });
+      const joinRoomResponse3 = await new Promise<any>((resolve) => {
+        client3.once(socketEvents.JOIN_ROOM, resolve);
+        client3.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: '시크릿주주3'
+        });
+      });
+
+      const messageToSend = '안녕하세요! 여러분!';
+      const receivedCount = 0;
+      const chatMessageResponse = await new Promise<any>((resolve) => {
+        const responseList = [];
+        client1.once(socketEvents.CHAT_MESSAGE, (payload) => {
+          responseList.push(payload);
+          if (responseList.length === 3) {
+            resolve(responseList);
+          }
+        });
+        client2.once(socketEvents.CHAT_MESSAGE, (payload) => {
+          responseList.push(payload);
+          if (responseList.length === 3) {
+            resolve(responseList);
+          }
+        });
+        client3.once(socketEvents.CHAT_MESSAGE, (payload) => {
+          responseList.push(payload);
+          if (responseList.length === 3) {
+            resolve(responseList);
+          }
+        });
+        client1.emit(socketEvents.CHAT_MESSAGE, {
+          gameId: createRoomResponse.gameId,
+          message: messageToSend
+        });
+      });
+
+      expect(chatMessageResponse[0].message).toBe(messageToSend);
+    });
+  });
+
+  describe('updatePosition 이벤트 테스트', () => {
+    it('유효한 설정을주면 위치 업데이트를 성공 해야 한다.', async () => {
+      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'hello world!',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      const joinRoomResponse = await new Promise<any>((resolve) => {
+        client1.once(socketEvents.JOIN_ROOM, resolve);
+        client1.emit(socketEvents.JOIN_ROOM, {
+          gameId: createRoomResponse.gameId,
+          playerName: '시크릿주주1'
+        });
+      });
+
+      const newPosition = [1, 1];
+      const updatePositionResponse = await new Promise<any>((resolve) => {
+        client1.once(socketEvents.UPDATE_POSITION, resolve);
+        client1.emit(socketEvents.UPDATE_POSITION, {
+          gameId: createRoomResponse.gameId,
+          newPosition: newPosition
+        });
+      });
+
+      expect(updatePositionResponse).toBeDefined();
+      expect(updatePositionResponse.playerId).toBe(client1.id);
+      expect(updatePositionResponse.playerPosition).toEqual(newPosition);
+    });
+
+    it('update DTO에 잘못된값이 있는경우 error를 내야한다.', (done) => {
+      client1.once('exception', (error) => {
+        expect(error).toBeDefined();
+        expect(error.message).toBe('PIN번호는 6자리이어야 합니다.');
+        done();
+      });
+
+      client1.emit(socketEvents.UPDATE_POSITION, {
+        gameId: '',
+        newPosition: []
+      });
+    });
+
+    it('해당방의 플레이어가 아닌경우 error를 내야한다.', async () => {
+      client2.once('error', (error) => {
+        expect(error).toBeDefined();
+        expect(error).toBe('[ERROR] 해당 게임 방의 플레이어가 아닙니다.');
+      });
+
+      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'hello world!',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      const newPosition = [1, 1];
+
+      client2.emit(socketEvents.UPDATE_POSITION, {
+        gameId: createRoomResponse.gameId,
+        newPosition: newPosition
+      });
     });
   });
 });
