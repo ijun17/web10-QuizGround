@@ -3,7 +3,6 @@
 /node_modules
 /BE/node_modules
 /build
-/config
 
 # Logs
 logs
