@@ -15,10 +15,11 @@ import { JoinRoomDto } from './dto/join-room.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
 import { GameService } from './game.service';
 import { generateUniquePin } from '../common/utils/utils';
+import { UpdatePositionDto } from './dto/update-position.dto';
 
 export type GameConfig = {
   title: string;
-  gameMode: string; // TODO: enum으로 변경
+  gameMode: string;
   maxPlayerCount: number;
   isPublicGame: boolean;
 };
@@ -54,18 +55,17 @@ type player = {
 )
 @WebSocketGateway({
   cors: {
-    origin: '*' // TODO: 실제 서비스에서는 특정 도메인만 허용해야 함
+    origin: '*'
   },
-  namespace: '/game' // TODO: 추후 논의하여 변경 "ws://localhost:8080/game"
+  namespace: '/game'
 })
 export class GameGateway {
   @WebSocketServer()
   server: Server;
   private logger = new Logger('GameGateway');
-  private rooms: Map<string, GameRoom> = new Map(); // 핀번호, 방 정보
+  private rooms: Map<string, GameRoom> = new Map();
 
-  constructor(private readonly gameService: GameService) {
-  }
+  constructor(private readonly gameService: GameService) {}
 
   @SubscribeMessage(socketEvents.CREATE_ROOM)
   handleCreateRoom(
@@ -83,18 +83,14 @@ export class GameGateway {
     };
     this.rooms.set(roomId, newGame);
 
-    this.logger.verbose(`게임 방 생성 완료: ${roomId}`);
-    // TODO: API 명세서 맞는지 확인
-    // client.emit => 특정 클라에게만 msg 보내기
     client.emit(socketEvents.CREATE_ROOM, {
       gameId: roomId
     });
+    this.logger.verbose(`게임 방 생성 완료: ${roomId}`);
   }
 
   @SubscribeMessage(socketEvents.JOIN_ROOM)
-  handleJoinRoom(
-    @MessageBody() dto: JoinRoomDto,
-    @ConnectedSocket() client: Socket): void {
+  handleJoinRoom(@MessageBody() dto: JoinRoomDto, @ConnectedSocket() client: Socket): void {
     const room = this.rooms.get(dto.gameId);
     if (!room) {
       client.emit('error', '[ERROR] 존재하지 않는 게임 방입니다.');
@@ -111,7 +107,7 @@ export class GameGateway {
       score: 0,
       isHost: room.host === client.id,
       joinedAt: new Date(),
-      position: [0.5, 0.5]
+      position: [Math.random(), Math.random()]
     };
 
     client.emit(socketEvents.JOIN_ROOM, {
@@ -122,16 +118,49 @@ export class GameGateway {
       }))
     });
     this.server.to(dto.gameId).emit(socketEvents.JOIN_ROOM, {
-      players: [{ playerId: client.id, playerName: dto.playerName, playerPosition: [0.5, 0.5] }]
+      players: [
+        { playerId: client.id, playerName: newPlayer.nickname, playerPosition: newPlayer.position }
+      ]
     });
 
     room.players.set(client.id, newPlayer);
+    this.logger.verbose(`게임 방 입장 완료: ${dto.gameId} - ${client.id} (${dto.playerName})`);
+  }
+
+  @SubscribeMessage(socketEvents.UPDATE_POSITION)
+  handleUpdatePosition(
+    @MessageBody() updatePosition: UpdatePositionDto,
+    @ConnectedSocket() client: Socket
+  ): void {
+    const { gameId, newPosition } = updatePosition;
+    const room = this.rooms.get(gameId);
+
+    if (!room) {
+      client.emit('error', '[ERROR] 존재하지 않는 게임 방입니다.');
+      return;
+    }
+
+    const player = room.players.get(client.id);
+    if (!player) {
+      client.emit('error', '[ERROR] 해당 게임 방의 플레이어가 아닙니다.');
+      return;
+    }
+
+    player.position = newPosition;
+    this.server.to(gameId).emit(socketEvents.UPDATE_POSITION, {
+      playerId: client.id,
+      playerPosition: newPosition
+    });
+    this.logger.verbose(
+      `플레이어 위치 업데이트: ${gameId} - ${client.id} (${player.nickname}) = ${newPosition}`
+    );
   }
 
   @SubscribeMessage(socketEvents.CHAT_MESSAGE)
   handleChatMessage(
     @MessageBody() chatMessage: ChatMessageDto,
-    @ConnectedSocket() client: Socket): void {
+    @ConnectedSocket() client: Socket
+  ): void {
     const { gameId, message } = chatMessage;
     const room = this.rooms.get(gameId);
 
@@ -154,8 +183,10 @@ export class GameGateway {
       timestamp: new Date()
     };
 
-    // server 인스턴스와 socket.io의 room을 통해 메시지 브로드캐스팅
     this.server.to(gameId).emit(socketEvents.CHAT_MESSAGE, messageToSend);
+    this.logger.verbose(
+      `채팅 전송: ${gameId} - ${client.id} (${player.nickname}) = ${messageToSend}`
+    );
   }
 
   // TODO: 일정 시간 동안 게임 방이 사용되지 않으면 방 정리 (@Cron으로 구현)
