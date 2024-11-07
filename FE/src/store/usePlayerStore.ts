@@ -8,15 +8,17 @@ type Player = {
 };
 
 type PlayerStore = {
+  currentPlayerId: string;
   players: Player[];
   addPlayers: (players: Player[]) => void;
   updatePlayerPosition: (playerId: string, newPosition: [number, number]) => void; // 위치 업데이트
   removePlayer: (playerId: string) => void;
+  setCurrentPlayerId: (currentPlayerId: string) => void;
 };
 
 export const usePlayerStore = create<PlayerStore>((set) => ({
+  currentPlayerId: '',
   players: [],
-
   addPlayers: (players) => {
     set((state) => ({
       players: [...state.players, ...players]
@@ -35,11 +37,20 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     set((state) => ({
       players: state.players.filter((player) => player.playerId !== playerId)
     }));
+  },
+
+  setCurrentPlayerId: (currentPlayerId) => {
+    set(() => ({ currentPlayerId }));
   }
 }));
 
 socketService.on('joinRoom', (data) => {
-  usePlayerStore.getState().addPlayers(data.players);
+  const { addPlayers, setCurrentPlayerId } = usePlayerStore.getState();
+  addPlayers(data.players);
+  const socketId = socketService.getSocketId();
+  if (data.players.length > 0 && data.players[0].playerId === socketId) {
+    setCurrentPlayerId(socketId);
+  }
 });
 
 socketService.on('updatePosition', (data) => {

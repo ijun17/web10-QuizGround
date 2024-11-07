@@ -1,5 +1,8 @@
 import { usePlayerStore } from '@/store/usePlayerStore';
 import { Player } from './Player';
+import { socketService } from '@/api/socket';
+import { useRoomStore } from '@/store/useRoomStore';
+import { useState } from 'react';
 type Params = {
   options: string[];
 };
@@ -18,20 +21,41 @@ const optionColors = [
 ];
 
 export const QuizOptionBoard = ({ options }: Params) => {
+  const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
+  const gameId = useRoomStore((state) => state.gameId);
   const players = usePlayerStore((state) => state.players);
+  const [selectedOption, setSelectedOption] = useState(options.length);
+  const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    const { pageX, pageY } = e;
+    const { width, height, top, left } = e.currentTarget.getBoundingClientRect();
+    const x = (pageX - left) / width;
+    const y = (pageY - top) / height;
+    socketService.emit('updatePosition', { gameId, newPosition: [y, x] });
+    const option = Math.round(x) + Math.floor(y * Math.ceil(options.length / 2)) * 2;
+    setSelectedOption(option);
+    console.log(option);
+  };
   return (
-    <div className="relative component-default h-[100%]">
+    <div className="relative component-default h-[100%]" onClick={handleClick}>
       <div className="absolute h-[100%] w-[100%]">
         {players.map((player) => (
-          <Player name={player.playerName} position={player.playerPosition} />
+          <Player
+            key={player.playerId}
+            name={player.playerName}
+            position={player.playerPosition}
+            isCurrent={player.playerId === currentPlayerId}
+          />
         ))}
       </div>
       <div className="grid grid-cols-2 gap-4 p-4 h-[100%] w-[100%]">
         {options.map((option, i) => (
           <div
-            className="rounded-s flex justify-center items-center"
+            className="rounded-lg flex justify-center items-center w-[100%] h-[100%]"
             key={i}
-            style={{ background: optionColors[i] }}
+            style={{
+              background: optionColors[i],
+              border: 'solid 3px ' + (i === selectedOption ? 'lightgreen' : 'white')
+            }}
           >
             {i + 1 + '. ' + option}
           </div>
