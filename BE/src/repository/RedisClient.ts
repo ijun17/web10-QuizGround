@@ -1,8 +1,10 @@
 import { createClient } from 'redis';
 import * as process from 'node:process';
+import { Logger } from '@nestjs/common';
 
 const host = process.env.REDIS_HOST || 'localhost';
 const port = process.env.REDIS_PORT || 6379;
+const logger = new Logger('RedisClient');
 export const RedisClient = createClient({
   url: `redis://${host}:${port}`,
   socket: {
@@ -16,9 +18,9 @@ export const RedisClient = createClient({
   }
 });
 
-RedisClient.on('error', (err) => console.error('Redis 클라이언트 에러:', err));
-RedisClient.on('connect', () => console.log('Redis에 연결되었습니다.'));
-RedisClient.on('reconnecting', () => console.log('Redis에 재연결 중...'));
+RedisClient.on('error', (err) => logger.verbose('Redis 클라이언트 에러:', err));
+RedisClient.on('connect', () => logger.verbose('Redis에 연결되었습니다.'));
+RedisClient.on('reconnecting', () => logger.verbose('Redis에 재연결 중...'));
 
 (async () => {
   await RedisClient.connect();
