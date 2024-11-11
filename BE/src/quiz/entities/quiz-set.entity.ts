@@ -1,13 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  DeleteDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  UpdateDateColumn
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseModel } from '../../common/entity/base.entity';
 import { UserModel } from '../../user/entities/user.entity';
 import { QuizModel } from './quiz.entity';
@@ -36,13 +27,4 @@ export class QuizSetModel extends BaseModel {
 
   @OneToMany(() => UserQuizArchiveModel, (archive) => archive.quizSet)
   archives: UserQuizArchiveModel[];
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
-
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
 }
