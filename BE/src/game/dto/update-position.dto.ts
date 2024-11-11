@@ -1,4 +1,13 @@
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsNumber, IsString, Length } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsNumber,
+  IsString,
+  Length,
+  Max,
+  Min
+} from 'class-validator';
 
 export class UpdatePositionDto {
   @IsString()
@@ -9,5 +18,7 @@ export class UpdatePositionDto {
   @ArrayMinSize(2)
   @ArrayMaxSize(2)
   @IsNumber({}, { each: true })
+  @Min(0, { each: true })
+  @Max(1, { each: true })
   newPosition: [number, number];
 }
