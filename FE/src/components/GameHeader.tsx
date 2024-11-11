@@ -3,10 +3,13 @@ import Card from '@mui/material/Card';
 import { QuizPreview } from './QuizView';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
+import { useState } from 'react';
+import { QuizSettingModal } from './QuizSettingModal';
 
 export const GameHeader = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const gameTitle = useRoomStore((state) => state.title);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const pinNum = String(gameId);
   const linkURL = window.location.hostname + `/game/${gameId}`;
   return (
@@ -20,13 +23,18 @@ export const GameHeader = () => {
       </div>
       <QuizPreview title="title" description="퀴즈퀴즈퀴ㅣ즈" />
       <div className="flex space-x-4 justify-center">
-        <button className="bg-yellow-400 text-black font-bold py-2 px-4 rounded-md shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl active:translate-y-1 active:shadow-sm transition">
+        <button
+          className="bg-yellow-400 text-black font-bold py-2 px-4 rounded-md shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl active:translate-y-1 active:shadow-sm transition"
+          onClick={() => setIsQuizModalOpen(true)}
+        >
           퀴즈 설정
         </button>
         <button className="bg-blue-500 text-white font-bold py-2 px-4 rounded-md shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl active:translate-y-1 active:shadow-sm transition">
           게임 시작
         </button>
       </div>
+
+      <QuizSettingModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} />
     </Card>
   );
 };
