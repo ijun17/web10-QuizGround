@@ -246,12 +246,13 @@ export class GameGateway {
   handleDisconnect(client: Socket) {
     this.logger.verbose(`클라이언트가 연결 해제되었어요!: ${client.id}`);
     this.rooms.forEach((room, roomId) => {
-      room.players.delete(client.id);
+      if (room.players.has(client.id)) {
+        room.players.delete(client.id);
+        this.server.to(room.id).emit(socketEvents.EXIT_ROOM, { playerId: client.id });
+      }
       if (room.players.size === 0) {
         this.rooms.delete(roomId); // TODO: delete는 성능이 좋지 않음. 우선 임시로 사용하고 향후 Redis로 개선
       }
     });
-
-    // TODO: 세션만 삭제하는 게 아니라 소켓도 삭제하기
   }
 }
