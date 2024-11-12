@@ -18,6 +18,10 @@ import { generateUniquePin } from '../common/utils/utils';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { ValidateRoom } from './decorators/validate-room.decorator';
 import { StartGameDto } from './dto/start-game.dto';
+import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
+import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
 
 export type GameConfig = {
   title: string;
@@ -67,7 +71,10 @@ export class GameGateway {
   private logger = new Logger('GameGateway');
   private rooms: Map<string, GameRoom> = new Map();
 
-  constructor(private readonly gameService: GameService) {}
+  constructor(
+    @InjectRedis() private readonly redis: Redis,
+    private readonly gameService: GameService
+  ) {}
 
   @SubscribeMessage(socketEvents.CREATE_ROOM)
   handleCreateRoom(
@@ -233,10 +240,79 @@ export class GameGateway {
     this.logger.verbose(`퀴즈 시간 시작: ${gameId}`);
   }
 
+  @SubscribeMessage(socketEvents.UPDATE_ROOM_OPTION)
+  @ValidateRoom()
+  async handleUpdateRoomOption(
+    @MessageBody() updateRoomOptionDto: UpdateRoomOptionDto,
+    @ConnectedSocket() _: Socket
+  ) {
+    const { gameId, gameMode, title, maxPlayerCount, isPublicGame } = updateRoomOptionDto;
+    const roomKey = `Room:${gameId}`;
+    await this.redis.set(`${roomKey}:Changes`, 'Option');
+    await this.redis.hmset(roomKey, {
+      title: title,
+      gameMode: gameMode,
+      maxPlayerCount: maxPlayerCount,
+      isPublic: isPublicGame
+    });
+  }
+
+  @SubscribeMessage(socketEvents.UPDATE_ROOM_QUIZSET)
+  @ValidateRoom()
+  async handleUpdateRoomQuizset(
+    @MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto,
+    @ConnectedSocket() _: Socket
+  ) {
+    const { gameId, quizSetId, quizCount } = updateRoomQuizsetDto;
+    const roomKey = `Room:${gameId}`;
+    await this.redis.set(`${roomKey}:Changes`, 'Quizset');
+    await this.redis.hmset(roomKey, {
+      quizSetId: quizSetId,
+      quizCount: quizCount
+    });
+  }
+
   // TODO: 일정 시간 동안 게임 방이 사용되지 않으면 방 정리 (@Cron으로 구현)
 
   afterInit() {
     this.logger.verbose('WebSocket 서버 초기화 완료했어요!');
+
+    this.subscribeRedisEvent().then(() => {
+      this.logger.verbose('Redis 이벤트 등록 완료했어요!');
+    });
+  }
+
+  async subscribeRedisEvent() {
+    const subscriber = this.redis.duplicate();
+    await subscriber.subscribe('__keyspace@0__:Room:*');
+
+    subscriber.on('message', async (channel, message) => {
+      const key = channel.replace('__keyspace@0__:', '');
+      const splitKey = key.split(':');
+      if (splitKey.length !== 2) {
+        return;
+      }
+      const gameId = splitKey[1];
+
+      if (message === 'hset') {
+        const changes = await this.redis.get(`${key}:Changes`);
+        const roomData = await this.redis.hgetall(key);
+
+        if (changes === 'Option') {
+          this.server.to(gameId).emit(socketEvents.UPDATE_ROOM_OPTION, {
+            title: roomData.title,
+            gameMode: roomData.gameMode,
+            maxPlayerCount: roomData.maxPlayerCount,
+            isPublic: roomData.isPublic
+          });
+        } else if (changes === 'Quizset') {
+          this.server.to(gameId).emit(socketEvents.UPDATE_ROOM_QUIZSET, {
+            quizSetId: roomData.quizSetId,
+            quizCount: roomData.quizCount
+          });
+        }
+      }
+    });
   }
 
   handleConnection(client: Socket) {
