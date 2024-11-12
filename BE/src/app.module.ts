@@ -11,6 +11,7 @@ import { QuizModel } from './quiz/entities/quiz.entity';
 import { QuizChoiceModel } from './quiz/entities/quiz-choice.entity';
 import { UserModel } from './user/entities/user.entity';
 import { UserQuizArchiveModel } from './user/entities/user-quiz-archive.entity';
+import { InitDbModule } from './InitDB/initDb.module';
 
 dotenv.config({ path: '../.env' });
 
@@ -25,12 +26,13 @@ dotenv.config({ path: '../.env' });
       password: process.env.DB_PASSWD,
       database: process.env.DB_NAME,
       entities: [QuizSetModel, QuizModel, QuizChoiceModel, UserModel, UserQuizArchiveModel],
-      synchronize: true, // 개발 모드에서만 활성화
+      synchronize: process.env.DEV === 'true', // 개발 모드에서만 활성화
       logging: true, // 모든 쿼리 로깅
       logger: 'advanced-console'
     }),
     QuizModule,
-    UserModule
+    UserModule,
+    InitDbModule
   ],
   controllers: [AppController],
   providers: [AppService]

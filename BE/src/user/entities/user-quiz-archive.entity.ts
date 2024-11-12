@@ -3,7 +3,7 @@ import { BaseModel } from '../../common/entity/base.entity';
 import { QuizSetModel } from '../../quiz/entities/quiz-set.entity';
 import { UserModel } from './user.entity';
 
-enum GameMode {
+export enum GameMode {
   SURVIVAL = 'SURVIVAL',
   RANKING = 'RANKING'
 }
