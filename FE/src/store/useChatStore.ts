@@ -5,7 +5,7 @@ type Message = {
   playerName: string;
   message: string;
   playerId: string;
-  timestamp: Date;
+  timestamp: number;
 };
 
 type ChatStore = {

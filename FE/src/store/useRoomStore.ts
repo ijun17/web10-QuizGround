@@ -27,7 +27,7 @@ export const useRoomStore = create<RoomStore>((set) => ({
   maxPlayerCount: 50,
   isPublic: true,
   gameId: '',
-  gameState: 'WAIT',
+  gameState: GameState.WAIT,
   updateRoom: (roomOption: RoomOption) => {
     set(() => roomOption);
   },
