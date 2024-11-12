@@ -10,6 +10,7 @@ type Player = {
 };
 
 type PlayerStore = {
+  isHost: boolean;
   currentPlayerId: string;
   players: Player[];
   addPlayers: (players: Player[]) => void;
@@ -18,9 +19,11 @@ type PlayerStore = {
   updatePlayerAnswer: (playerId: string, newIsAnswer: boolean) => void;
   removePlayer: (playerId: string) => void;
   setCurrentPlayerId: (currentPlayerId: string) => void;
+  setIsHost: (isHost: boolean) => void;
 };
 
 export const usePlayerStore = create<PlayerStore>((set) => ({
+  isHost: false,
   currentPlayerId: '',
   players: [],
   addPlayers: (players) => {
@@ -61,6 +64,10 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 
   setCurrentPlayerId: (currentPlayerId) => {
     set(() => ({ currentPlayerId }));
+  },
+
+  setIsHost: (isHost) => {
+    set(() => ({ isHost }));
   }
 }));
 

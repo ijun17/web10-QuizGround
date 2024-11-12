@@ -14,8 +14,10 @@ import { socketService } from '@/api/socket';
 import RoomConfig from '@/constants/roomConfig';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
+import { usePlayerStore } from '@/store/usePlayerStore';
 export const GameSetupPage = () => {
   const { gameId, updateRoom } = useRoomStore((state) => state);
+  const setIsHost = usePlayerStore((state) => state.setIsHost);
   const [title, setTitle] = useState('');
   const [maxPlayerCount, setMaxPlayerCount] = useState<number>(RoomConfig.DEFAULT_PLAYERS);
   const [gameMode, setGameMode] = useState<'SURVIVAL' | 'RANKING'>('RANKING');
@@ -38,6 +40,7 @@ export const GameSetupPage = () => {
       gameMode,
       isPublic: roomPublic
     };
+    setIsHost(true);
     updateRoom(roomData);
     socketService.createRoom(roomData);
   };
