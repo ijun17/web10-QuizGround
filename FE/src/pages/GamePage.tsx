@@ -34,7 +34,7 @@ export const GamePage = () => {
   return (
     <>
       <HeaderBar />
-      <div className="bg-surface-alt h-[calc(100vh-100px)]">
+      <div className="bg-surface-alt h-[calc(100vh-100px)] overflow-hidden">
         <div className="center p-4">
           {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
         </div>
