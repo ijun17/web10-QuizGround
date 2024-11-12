@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { QuizPreview } from './QuizView';
+import { QuizPreview } from './QuizPreview';
 
 type Quiz = {
   title: string;
