@@ -1,3 +1,5 @@
+import Lottie from 'lottie-react';
+import Effect from '../assets/lottie/answer_effect.json';
 type Props = {
   name: string;
   position: [number, number];
@@ -14,8 +16,18 @@ export const Player = ({ name, position, isCurrent }: Props) => {
       style={{ top, left, zIndex: isCurrent ? 3 : 1 }}
       onClick={(e) => e.preventDefault()}
     >
-      <div>😀</div>
-      <div style={{ color: isCurrent ? 'lightgreen' : 'inherit' }}>{name}</div>
+      <div className="flex flex-col items-center justify-center">
+        <Lottie
+          animationData={Effect}
+          loop={true}
+          autoplay={true}
+          style={{ width: '50px', height: '50px' }}
+        />
+        <div className="mt-2">😀</div>
+        <div className="mt-2" style={{ color: isCurrent ? 'lightgreen' : 'inherit' }}>
+          {name}
+        </div>
+      </div>
     </div>
   );
 };
