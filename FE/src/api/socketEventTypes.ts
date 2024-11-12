@@ -8,7 +8,7 @@ type ChatMessageResponse = {
   playerId: string; // socketId
   playerName: string;
   message: string;
-  timestamp: Date;
+  timestamp: number;
 };
 
 // 플레이어 위치 업데이트 타입
