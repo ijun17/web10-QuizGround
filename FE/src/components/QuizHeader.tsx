@@ -18,14 +18,21 @@ export const QuizHeader = () => {
 
   if (!currentQuiz)
     return (
-      <div className="component-popup flex justify-center items-center w-[100%] h-[100%] text-gray-400">
+      <div className="component-popup flex justify-center items-center h-[280px] w-[1000px] text-gray-400">
         로딩 중
       </div>
     );
   return (
-    <div className="component-popup w-[100%] h-[100%]">
-      <div>{seconds <= 0 ? '시간 종료' : seconds.toFixed(2)}</div>
-      <div className="font-bold text-2xl">{'Q. ' + currentQuiz.quiz}</div>
+    <div className="component-popup h-[280px] w-[1000px] p-8 flex flex-col">
+      <div className="flex flex-row-reverse ">
+        <div className="flex justify-center items-center text-red-500 bg-gray-700 rounded-lg w-24 h-8 font-bold text-lg">
+          {' '}
+          {seconds <= 0 ? '종료' : seconds.toFixed(2)}
+        </div>
+      </div>
+      <div className="flex justify-center items-center font-bold text-2xl flex-grow">
+        {'Q. ' + currentQuiz.quiz}
+      </div>
     </div>
   );
 };
