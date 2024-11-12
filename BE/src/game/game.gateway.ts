@@ -242,12 +242,10 @@ export class GameGateway {
 
   @SubscribeMessage(socketEvents.UPDATE_ROOM_OPTION)
   @ValidateRoom()
-  async handleUpdateRoomOption(
-    @MessageBody() updateRoomOptionDto: UpdateRoomOptionDto,
-    @ConnectedSocket() _: Socket
-  ) {
+  async handleUpdateRoomOption(@MessageBody() updateRoomOptionDto: UpdateRoomOptionDto) {
     const { gameId, gameMode, title, maxPlayerCount, isPublicGame } = updateRoomOptionDto;
     const roomKey = `Room:${gameId}`;
+    // TODO: 호스트인지 확인
     await this.redis.set(`${roomKey}:Changes`, 'Option');
     await this.redis.hmset(roomKey, {
       title: title,
@@ -259,12 +257,10 @@ export class GameGateway {
 
   @SubscribeMessage(socketEvents.UPDATE_ROOM_QUIZSET)
   @ValidateRoom()
-  async handleUpdateRoomQuizset(
-    @MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto,
-    @ConnectedSocket() _: Socket
-  ) {
+  async handleUpdateRoomQuizset(@MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto) {
     const { gameId, quizSetId, quizCount } = updateRoomQuizsetDto;
     const roomKey = `Room:${gameId}`;
+    // TODO: 호스트인지 확인
     await this.redis.set(`${roomKey}:Changes`, 'Quizset');
     await this.redis.hmset(roomKey, {
       quizSetId: quizSetId,
