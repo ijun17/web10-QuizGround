@@ -1,6 +1,6 @@
 import { ClipboardCopy } from './ClipboardCopy';
 import Card from '@mui/material/Card';
-import { QuizPreview } from './QuizView';
+import { QuizPreview } from './QuizPreview';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { useState } from 'react';
