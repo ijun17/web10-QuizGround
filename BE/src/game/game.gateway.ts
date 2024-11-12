@@ -44,17 +44,6 @@ type player = {
 };
 
 @UseFilters(new WsExceptionFilter())
-@UsePipes(
-  new ValidationPipe({
-    transform: true,
-    exceptionFactory: (errors) => {
-      return new WsException({
-        status: 'error',
-        message: Object.values(errors[0].constraints)[0]
-      });
-    }
-  })
-)
 @WebSocketGateway({
   cors: {
     origin: '*'
@@ -71,6 +60,7 @@ export class GameGateway {
 
   @SubscribeMessage(socketEvents.CREATE_ROOM)
   handleCreateRoom(
+  @UsePipes(new GameValidationPipe(socketEvents.CREATE_ROOM))
     @MessageBody() gameConfig: CreateGameDto,
     @ConnectedSocket() client: Socket
   ): void {
@@ -102,6 +92,7 @@ export class GameGateway {
       client.emit('error', '[ERROR] 게임 방 최대 인원이 모두 찼습니다.');
       return;
     }
+  @UsePipes(new GameValidationPipe(socketEvents.JOIN_ROOM))
 
     client.join(dto.gameId);
     const newPlayer: player = {
@@ -131,6 +122,7 @@ export class GameGateway {
 
   @SubscribeMessage(socketEvents.UPDATE_POSITION)
   handleUpdatePosition(
+  @UsePipes(new GameValidationPipe(socketEvents.UPDATE_POSITION))
     @MessageBody() updatePosition: UpdatePositionDto,
     @ConnectedSocket() client: Socket
   ): void {
@@ -160,6 +152,7 @@ export class GameGateway {
 
   @SubscribeMessage(socketEvents.CHAT_MESSAGE)
   handleChatMessage(
+  @UsePipes(new GameValidationPipe(socketEvents.CHAT_MESSAGE))
     @MessageBody() chatMessage: ChatMessageDto,
     @ConnectedSocket() client: Socket
   ): void {
