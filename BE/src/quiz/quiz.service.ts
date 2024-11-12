@@ -76,15 +76,48 @@ export class QuizService {
   }
 
   async findOne(id: number) {
+    // 1. QuizSet 조회
     const quizSet = await this.quizSetRepository.findOne({
-      where: {
-        id
-      }
+      where: { id }
     });
+
     if (!quizSet) {
-      throw new NotFoundException('Not Found quizSet');
+      throw new NotFoundException(`QuizSet with id ${id} not found`);
     }
-    return quizSet;
+
+    // 2. Quiz 조회
+    const quizzes = await this.quizRepository
+      .createQueryBuilder('quiz')
+      .where('quiz.quizSetId = :quizSetId', { quizSetId: id })
+      .getMany();
+
+    // 3. Choice 조회
+    const quizIds = quizzes.map((q) => q.id);
+    const choices = await this.quizChoiceRepository
+      .createQueryBuilder('choice')
+      .where('choice.quizId IN (:...quizIds)', { quizIds })
+      .getMany();
+
+    // 4. 메모리에서 관계 매핑
+    const choicesByQuizId = groupBy(choices, 'quizId');
+
+    // 5. DTO 변환
+    const dto = {
+      id: quizSet.id.toString(),
+      title: quizSet.title,
+      category: quizSet.category,
+      quizList: quizzes.map((quiz) => ({
+        id: quiz.id.toString(),
+        quiz: quiz.quiz,
+        limitTime: quiz.limitTime,
+        choiceList: (choicesByQuizId[quiz.id] || []).map((choice) => ({
+          content: choice.choiceContent,
+          order: choice.choiceOrder
+        }))
+      }))
+    };
+
+    return dto;
   }
 
   update(id: number, updateQuizDto: UpdateQuizDto) {
