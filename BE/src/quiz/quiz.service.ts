@@ -6,6 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { QuizSetModel } from './entities/quiz-set.entity';
 import { QuizChoiceModel } from './entities/quiz-choice.entity';
+import { Result } from './dto/Response.dto';
+import { groupBy } from 'lodash';
 
 @Injectable()
 export class QuizService {
@@ -22,9 +24,55 @@ export class QuizService {
     return 'This action adds a new quiz';
   }
 
-  findAll() {
-    const quizSets = this.quizSetRepository.find();
-    return quizSets;
+  async findAllWithQuizzesAndChoices(category: string, offset: number, limit: number) {
+    // 1. QuizSet 페이징 조회
+    const quizSets = await this.quizSetRepository.find({
+      where: { category },
+      skip: offset,
+      take: limit,
+      order: {
+        createdAt: 'DESC'
+      }
+    });
+
+    if (quizSets.length === 0) {
+      return new Result([]);
+    }
+
+    // 2. Quiz 한 번에 조회
+    const quizSetIds = quizSets.map((qs) => qs.id);
+    const quizzes = await this.quizRepository
+      .createQueryBuilder('quiz')
+      .where('quiz.quizSetId IN (:...quizSetIds)', { quizSetIds })
+      .getMany();
+
+    // 3. Choice 한 번에 조회
+    const quizIds = quizzes.map((q) => q.id);
+    const choices = await this.quizChoiceRepository
+      .createQueryBuilder('choice')
+      .where('choice.quizId IN (:...quizIds)', { quizIds })
+      .getMany();
+
+    // 4. 메모리에서 관계 매핑
+    const choicesByQuizId = groupBy(choices, 'quizId');
+    const quizzesByQuizSetId = groupBy(quizzes, 'quizSetId');
+
+    const dtos = quizSets.map((quizSet) => ({
+      id: quizSet.id.toString(),
+      title: quizSet.title,
+      category: quizSet.category,
+      quizList: (quizzesByQuizSetId[quizSet.id] || []).map((quiz) => ({
+        id: quiz.id.toString(),
+        quiz: quiz.quiz,
+        limitTime: quiz.limitTime,
+        choiceList: (choicesByQuizId[quiz.id] || []).map((choice) => ({
+          content: choice.choiceContent,
+          order: choice.choiceOrder
+        }))
+      }))
+    }));
+
+    return new Result(dtos);
   }
 
   async findOne(id: number) {

@@ -17,7 +17,8 @@ export class QuizChoiceModel extends BaseModel {
   choiceOrder: number;
 
   @ManyToOne(() => QuizModel, (quiz) => quiz.choiceList, {
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
+    lazy: true
   })
   @JoinColumn({ name: 'quiz_id' })
   quiz: QuizModel;

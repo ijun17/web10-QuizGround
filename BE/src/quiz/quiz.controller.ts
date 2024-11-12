@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query
+} from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
@@ -13,8 +24,12 @@ export class QuizController {
   }
 
   @Get()
-  findAll() {
-    return this.quizService.findAll();
+  findAll(
+    @Query('category') category: string,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('size', new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ) {
+    return this.quizService.findAllWithQuizzesAndChoices(category, offset, limit);
   }
 
   @Get(':id')

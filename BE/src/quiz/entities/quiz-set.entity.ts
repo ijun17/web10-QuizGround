@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseModel } from '../../common/entity/base.entity';
 import { UserModel } from '../../user/entities/user.entity';
 import { QuizModel } from './quiz.entity';
@@ -26,4 +26,8 @@ export class QuizSetModel extends BaseModel {
 
   @OneToMany(() => UserQuizArchiveModel, (archive) => archive.quizSet)
   archiveList: UserQuizArchiveModel[];
+
+  @CreateDateColumn()
+  @Index()
+  createdAt: Date;
 }
