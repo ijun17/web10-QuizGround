@@ -27,7 +27,9 @@ export class QuizModel extends BaseModel {
   @Column({ name: 'limit_time' })
   limitTime: number;
 
-  @ManyToOne(() => QuizSetModel, (quizSet) => quizSet.quizzes)
+  @ManyToOne(() => QuizSetModel, (quizSet) => quizSet.quizzes, {
+    lazy: true
+  })
   @JoinColumn({ name: 'quiz_set_id' })
   quizSet: QuizSetModel;
 

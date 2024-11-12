@@ -35,11 +35,15 @@ export class UserQuizArchiveModel extends BaseModel {
   @Column({ name: 'played_at', type: 'timestamp' })
   playedAt: Date;
 
-  @ManyToOne(() => UserModel, (user) => user.quizArchives)
+  @ManyToOne(() => UserModel, (user) => user.quizArchives, {
+    lazy: true
+  })
   @JoinColumn({ name: 'user_id' })
   user: UserModel;
 
-  @ManyToOne(() => QuizSetModel)
+  @ManyToOne(() => QuizSetModel, {
+    lazy: true
+  })
   @JoinColumn({ name: 'quiz_set_id' })
   quizSet: QuizSetModel;
 }

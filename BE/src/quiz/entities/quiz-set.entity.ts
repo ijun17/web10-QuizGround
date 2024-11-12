@@ -18,7 +18,9 @@ export class QuizSetModel extends BaseModel {
   @Column({ name: 'quiz_category_id' })
   quizCategoryId: number;
 
-  @ManyToOne(() => UserModel, (user) => user.quizSets)
+  @ManyToOne(() => UserModel, (user) => user.quizSets, {
+    lazy: true
+  })
   @JoinColumn({ name: 'user_id' })
   user: UserModel;
 
