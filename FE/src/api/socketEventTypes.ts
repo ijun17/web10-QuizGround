@@ -72,6 +72,7 @@ type JoinRoomResponse = {
     playerId: string; // socketId
     playerName: string;
     playerPosition: [number, number];
+    playerScore: number;
   }>;
 };
 
@@ -99,8 +100,8 @@ type EndQuizTimeEvent = {
 // 퀴즈 시작 타입
 type StartQuizTimeEvent = {
   quiz: string;
-  options: string[];
-  quizEndTime: Date;
+  choiceList: { content: string; order: number }[];
+  endTime: number; //timestamp
 };
 
 // 게임 점수 업데이트 타입
