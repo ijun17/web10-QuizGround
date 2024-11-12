@@ -27,14 +27,14 @@ export class QuizModel extends BaseModel {
   @Column({ name: 'limit_time' })
   limitTime: number;
 
-  @ManyToOne(() => QuizSetModel, (quizSet) => quizSet.quizzes, {
+  @ManyToOne(() => QuizSetModel, (quizSet) => quizSet.quizList, {
     lazy: true
   })
   @JoinColumn({ name: 'quiz_set_id' })
   quizSet: QuizSetModel;
 
   @OneToMany(() => QuizChoiceModel, (choice) => choice.quiz)
-  choices: QuizChoiceModel[];
+  choiceList: QuizChoiceModel[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -23,7 +23,8 @@ export class QuizService {
   }
 
   findAll() {
-    return 'This action returns all quiz';
+    const quizSets = this.quizSetRepository.find();
+    return quizSets;
   }
 
   async findOne(id: number) {

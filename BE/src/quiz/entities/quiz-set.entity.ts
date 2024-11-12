@@ -18,15 +18,15 @@ export class QuizSetModel extends BaseModel {
   @Column({ name: 'quiz_category_id' })
   quizCategoryId: number;
 
-  @ManyToOne(() => UserModel, (user) => user.quizSets, {
+  @ManyToOne(() => UserModel, (user) => user.quizSetList, {
     lazy: true
   })
   @JoinColumn({ name: 'user_id' })
   user: UserModel;
 
   @OneToMany(() => QuizModel, (quiz) => quiz.quizSet)
-  quizzes: QuizModel[];
+  quizList: QuizModel[];
 
   @OneToMany(() => UserQuizArchiveModel, (archive) => archive.quizSet)
-  archives: UserQuizArchiveModel[];
+  archiveList: UserQuizArchiveModel[];
 }

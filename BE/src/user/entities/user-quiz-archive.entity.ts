@@ -17,9 +17,9 @@ export class UserQuizArchiveModel extends BaseModel {
   quizSetId: number;
 
   @Column({
-    name: 'game_mode',
-    type: 'varchar',
-    enum: GameMode
+    type: 'enum', // varchar가 아닌 enum 사용
+    enum: GameMode, //  ['SURVIVAL', 'RANKING']
+    default: GameMode.RANKING // 기본값 설정
   })
   gameMode: GameMode;
 
@@ -35,7 +35,7 @@ export class UserQuizArchiveModel extends BaseModel {
   @Column({ name: 'played_at', type: 'timestamp' })
   playedAt: Date;
 
-  @ManyToOne(() => UserModel, (user) => user.quizArchives, {
+  @ManyToOne(() => UserModel, (user) => user.quizArchiveList, {
     lazy: true
   })
   @JoinColumn({ name: 'user_id' })

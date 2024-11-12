@@ -29,8 +29,8 @@ export class UserModel extends BaseModel {
   lastLoginAt: Date;
 
   @OneToMany(() => QuizSetModel, (quizSet) => quizSet.user)
-  quizSets: QuizSetModel[];
+  quizSetList: QuizSetModel[];
 
   @OneToMany(() => UserQuizArchiveModel, (archive) => archive.user)
-  quizArchives: UserQuizArchiveModel[];
+  quizArchiveList: UserQuizArchiveModel[];
 }
