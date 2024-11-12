@@ -8,10 +8,13 @@ import { HeaderBar } from '@/components/HeaderBar';
 import { socketService } from '@/api/socket';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
+import { QuizHeader } from '@/components/QuizHeader';
+import GameState from '@/constants/gameState';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const updateRoom = useRoomStore((state) => state.updateRoom);
+  const gameState = useRoomStore((state) => state.gameState);
   const [playerName, setPlayerName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(true);
 
@@ -33,7 +36,7 @@ export const GamePage = () => {
       <HeaderBar />
       <div className="bg-surface-alt h-[calc(100vh-100px)]">
         <div className="center p-4">
-          <GameHeader />
+          {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
         </div>
         <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[calc(100%-320px)] p-4">
           <div className="hidden lg:block lg:col-span-1">
@@ -41,11 +44,11 @@ export const GamePage = () => {
           </div>
 
           <div className="col-span-4 lg:col-span-2">
-            <QuizOptionBoard options={['a', 'b', 'c']}></QuizOptionBoard>
+            <QuizOptionBoard />
           </div>
 
           <div className="hidden lg:block lg:col-span-1">
-            <ParticipantDisplay />
+            <ParticipantDisplay gameState={gameState} />
           </div>
 
           <Modal
