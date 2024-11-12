@@ -32,7 +32,7 @@ export interface ChoiceData {
  * Seed Service Implementation
  */
 @Injectable()
-export class InitDbService {
+export class InitDBService {
   constructor(
     @InjectRepository(QuizSetModel)
     private readonly quizSetRepository: Repository<QuizSetModel>,

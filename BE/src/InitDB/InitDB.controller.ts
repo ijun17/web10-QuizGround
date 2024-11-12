@@ -1,9 +1,9 @@
 import { Controller, Post } from '@nestjs/common';
-import { InitDbService } from './InitDb.Service';
+import { InitDBService } from './InitDB.Service';
 
 @Controller('/api/initDB')
-export class InitDbController {
-  constructor(private readonly initDBService: InitDbService) {}
+export class InitDBController {
+  constructor(private readonly initDBService: InitDBService) {}
 
   @Post()
   create() {
