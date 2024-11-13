@@ -3,7 +3,7 @@ import {
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer,
+  WebSocketServer
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, UseFilters, UsePipes } from '@nestjs/common';
@@ -16,6 +16,10 @@ import { GameService } from './game.service';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { GameValidationPipe } from './validations/game-validation.pipe';
 import { StartGameDto } from './dto/start-game.dto';
+import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
+import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
 
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
@@ -30,6 +34,7 @@ export class GameGateway {
   private logger = new Logger('GameGateway');
 
   constructor(
+    @InjectRedis() private readonly redis: Redis,
     private readonly gameService: GameService
   ) {}
 
@@ -139,8 +144,71 @@ export class GameGateway {
   //   // TODO: 세션만 삭제하는 게 아니라 소켓도 삭제하기
   // }
 
+  @SubscribeMessage(socketEvents.UPDATE_ROOM_OPTION)
+  async handleUpdateRoomOption(@MessageBody() updateRoomOptionDto: UpdateRoomOptionDto) {
+    const { gameId, gameMode, title, maxPlayerCount, isPublicGame } = updateRoomOptionDto;
+    const roomKey = `Room:${gameId}`;
+    // TODO: 호스트인지 확인
+    await this.redis.set(`${roomKey}:Changes`, 'Option');
+    await this.redis.hmset(roomKey, {
+      title: title,
+      gameMode: gameMode,
+      maxPlayerCount: maxPlayerCount,
+      isPublic: isPublicGame
+    });
+  }
+
+  @SubscribeMessage(socketEvents.UPDATE_ROOM_QUIZSET)
+  async handleUpdateRoomQuizset(@MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto) {
+    const { gameId, quizSetId, quizCount } = updateRoomQuizsetDto;
+    const roomKey = `Room:${gameId}`;
+    // TODO: 호스트인지 확인
+    await this.redis.set(`${roomKey}:Changes`, 'Quizset');
+    await this.redis.hmset(roomKey, {
+      quizSetId: quizSetId,
+      quizCount: quizCount
+    });
+  }
+
   afterInit() {
     this.logger.verbose('WebSocket 서버 초기화 완료했어요!');
+
+    this.subscribeRedisEvent().then(() => {
+      this.logger.verbose('Redis 이벤트 등록 완료했어요!');
+    });
+  }
+
+  async subscribeRedisEvent() {
+    const subscriber = this.redis.duplicate();
+    await subscriber.subscribe('__keyspace@0__:Room:*');
+
+    subscriber.on('message', async (channel, message) => {
+      const key = channel.replace('__keyspace@0__:', '');
+      const splitKey = key.split(':');
+      if (splitKey.length !== 2) {
+        return;
+      }
+      const gameId = splitKey[1];
+
+      if (message === 'hset') {
+        const changes = await this.redis.get(`${key}:Changes`);
+        const roomData = await this.redis.hgetall(key);
+
+        if (changes === 'Option') {
+          this.server.to(gameId).emit(socketEvents.UPDATE_ROOM_OPTION, {
+            title: roomData.title,
+            gameMode: roomData.gameMode,
+            maxPlayerCount: roomData.maxPlayerCount,
+            isPublic: roomData.isPublic
+          });
+        } else if (changes === 'Quizset') {
+          this.server.to(gameId).emit(socketEvents.UPDATE_ROOM_QUIZSET, {
+            quizSetId: roomData.quizSetId,
+            quizCount: roomData.quizCount
+          });
+        }
+      }
+    });
   }
 
   handleConnection(client: Socket) {
