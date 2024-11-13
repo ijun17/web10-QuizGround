@@ -1,13 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateQuizDto } from './dto/create-quiz.dto';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException
+} from '@nestjs/common';
+import { CreateQuizDto, CreateQuizSetDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { QuizModel } from './entities/quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { QuizSetModel } from './entities/quiz-set.entity';
 import { QuizChoiceModel } from './entities/quiz-choice.entity';
 import { Result } from './dto/Response.dto';
 import { groupBy } from 'lodash';
+import { UserModel } from '../user/entities/user.entity';
 
 @Injectable()
 export class QuizService {
@@ -17,7 +23,8 @@ export class QuizService {
     @InjectRepository(QuizSetModel)
     private readonly quizSetRepository: Repository<QuizSetModel>,
     @InjectRepository(QuizChoiceModel)
-    private readonly quizChoiceRepository: Repository<QuizChoiceModel>
+    private readonly quizChoiceRepository: Repository<QuizChoiceModel>,
+    private dataSource: DataSource
   ) {}
 
   create(createQuizDto: CreateQuizDto) {
@@ -126,5 +133,104 @@ export class QuizService {
 
   remove(id: number) {
     return `This action removes a #${id} quiz`;
+  }
+
+  /**
+   * 퀴즈셋, 퀴즈, 선택지를 생성합니다.
+   * @param createQuizSetDto 생성할 퀴즈셋 데이터
+   * @returns 생성된 퀴즈셋
+   */
+  async createQuizSet(createQuizSetDto: CreateQuizSetDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      this.validateQuizSet(createQuizSetDto);
+
+      // 1. 유저 존재 확인
+      // TODO : 토큰으로 로그인한 사용자 정보 가져오기
+      // 1. 유저 찾기 또는 생성
+      let user = await queryRunner.manager.findOne(UserModel, {
+        where: { email: 'honux@codesquad.co.kr' }
+      });
+
+      // 유저가 없다면 생성
+      if (!user) {
+        user = queryRunner.manager.create(UserModel, {
+          email: 'honux@codesquad.co.kr',
+          password: '123456',
+          nickname: 'honux',
+          point: 100,
+          status: 'ACTIVE'
+        });
+        await queryRunner.manager.save(user);
+      }
+
+      // 2. 퀴즈셋 생성
+      const quizSet = queryRunner.manager.create(QuizSetModel, {
+        title: createQuizSetDto.title,
+        category: createQuizSetDto.category,
+        user,
+        userId: user.id
+      });
+      await queryRunner.manager.save(quizSet);
+
+      // 2. 퀴즈 생성
+      for (const quizData of createQuizSetDto.quizList) {
+        // 2.1 퀴즈 엔티티 생성 및 저장
+        const quiz = queryRunner.manager.create(QuizModel, {
+          quizSet,
+          quiz: quizData.quiz,
+          limitTime: quizData.limitTime
+        });
+        await queryRunner.manager.save(quiz);
+
+        // 2.2 선택지 생성
+        const choices = quizData.choiceList.map((choiceData) =>
+          queryRunner.manager.create(QuizChoiceModel, {
+            quiz,
+            choiceContent: choiceData.choiceContent,
+            choiceOrder: choiceData.choiceOrder,
+            isAnswer: choiceData.isAnswer
+          })
+        );
+        await queryRunner.manager.save(choices);
+      }
+
+      // 3. 생성된 퀴즈셋 조회 (관계 데이터 포함)
+      const savedQuizSet = await queryRunner.manager.findOne(QuizSetModel, {
+        where: { id: quizSet.id }
+      });
+
+      await queryRunner.commitTransaction();
+      return savedQuizSet;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+
+      if (error instanceof QueryFailedError) {
+        throw new BadRequestException(`데이터베이스 오류: ${error.message}`);
+      }
+      throw new InternalServerErrorException(`퀴즈셋 생성 실패: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private validateQuizSet(quizSet: CreateQuizSetDto): void {
+    for (const quiz of quizSet.quizList) {
+      // 정답이 하나 이상 존재하는지 확인
+      const answerCount = quiz.choiceList.filter((choice) => choice.isAnswer).length;
+      if (answerCount === 0) {
+        throw new BadRequestException(`퀴즈 "${quiz.quiz}"에 정답이 없습니다.`);
+      }
+
+      // 선택지 번호가 중복되지 않는지 확인
+      const orders = new Set(quiz.choiceList.map((choice) => choice.choiceOrder));
+      if (orders.size !== quiz.choiceList.length) {
+        throw new BadRequestException(`퀴즈 "${quiz.quiz}"의 선택지 번호가 중복됩니다.`);
+      }
+    }
   }
 }
