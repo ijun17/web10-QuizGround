@@ -172,5 +172,17 @@ export class GameService {
 
   async startGame(startGameDto: StartGameDto, clientId: string) {
     const { gameId } = startGameDto;
+    const roomKey = `Room:${gameId}`;
+
+    const room = await this.redis.hgetall(roomKey);
+    this.gameValidator.validateRoomExists(SocketEvents.START_GAME, room);
+
+    this.gameValidator.validatePlayerIsHost(SocketEvents.START_GAME, room, clientId);
+
+    await this.redis.set(`${roomKey}:Changes`, 'Start');
+    await this.redis.hmset(roomKey, {
+      status: 'playing'
+    });
+    this.logger.verbose(`게임 시작: ${gameId}`);
   }
 }

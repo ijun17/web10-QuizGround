@@ -111,22 +111,6 @@ export class GameGateway {
   }
 
   // TODO: Redis에 맞게 구현해야 함. (아직 초안이라 해서, redis로 바로 수정하지 않았음)
-  // @SubscribeMessage(socketEvents.START_GAME)
-  // handleStartGame(
-  //   @MessageBody() startGameDto: StartGameDto,
-  //   @ConnectedSocket() client: Socket
-  // ): void {
-  //   const { gameId } = startGameDto;
-  //   const room = this.rooms.get(gameId);
-  //   if (room.host !== client.id) {
-  //     client.emit('error', '[ERROR] 방장만 게임을 시작할 수 있습니다.');
-  //     return;
-  //   }
-  //   room.status = 'playing';
-  //   this.server.to(gameId).emit(socketEvents.START_GAME, 'gameStarted');
-  //   this.logger.verbose(`게임 시작: ${gameId}`);
-  // }
-  //
   // @SubscribeMessage(socketEvents.START_QUIZ_TIME)
   // handleStartQuizTime(
   //   @MessageBody() startGameDto: StartGameDto,
@@ -207,6 +191,8 @@ export class GameGateway {
             quizSetId: roomData.quizSetId,
             quizCount: roomData.quizCount
           });
+        } else if (changes === 'Start') {
+          this.server.to(gameId).emit(SocketEvents.START_GAME, '');
         }
       }
     });
