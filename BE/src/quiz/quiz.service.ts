@@ -82,6 +82,12 @@ export class QuizService {
     return new Result(dtos);
   }
 
+  /**
+   * 현재 api 명세에 따라 user 정보는 안주는것으로 구현되어있음.
+   * 이에따라 test code에서도 user 정보를 test 하지 않음.
+   * 향후 필요시 구현가능(relation 옵션 활용)
+   * @param id
+   */
   async findOne(id: number) {
     // 1. QuizSet 조회
     const quizSet = await this.quizSetRepository.findOne({
@@ -205,13 +211,28 @@ export class QuizService {
       });
 
       await queryRunner.commitTransaction();
-      return savedQuizSet;
+
+      const ret = {
+        data: {
+          id: savedQuizSet.id
+        }
+      };
+
+      return ret;
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
+      // BadRequestException은 그대로 전파
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      // DB 관련 에러 처리
       if (error instanceof QueryFailedError) {
         throw new BadRequestException(`데이터베이스 오류: ${error.message}`);
       }
+
+      // 그 외 에러는 InternalServerError로 변환
       throw new InternalServerErrorException(`퀴즈셋 생성 실패: ${error.message}`);
     } finally {
       await queryRunner.release();
