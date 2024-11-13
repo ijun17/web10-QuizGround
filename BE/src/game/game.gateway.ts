@@ -12,12 +12,14 @@ import SocketEvents from '../common/constants/socket-events';
 import { CreateGameDto } from './dto/create-game.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
-import { GameService } from './game.service';
+import { GameService } from './service/game.service';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { GameValidationPipe } from './validations/game-validation.pipe';
 import { StartGameDto } from './dto/start-game.dto';
 import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
+import { GameChatService } from './service/game.chat.service';
+import { GameRoomService } from './service/game.room.service';
 
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
@@ -31,7 +33,11 @@ export class GameGateway {
   server: Server;
   private logger = new Logger('GameGateway');
 
-  constructor(private readonly gameService: GameService) {}
+  constructor(
+    private readonly gameService: GameService,
+    private readonly gameChatService: GameChatService,
+    private readonly gameRoomService: GameRoomService
+  ) {}
 
   @SubscribeMessage(SocketEvents.CREATE_ROOM)
   @UsePipes(new GameValidationPipe(SocketEvents.CREATE_ROOM))
@@ -39,7 +45,7 @@ export class GameGateway {
     @MessageBody() gameConfig: CreateGameDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    const roomId = await this.gameService.createRoom(gameConfig, client.id);
+    const roomId = await this.gameRoomService.createRoom(gameConfig, client.id);
     client.emit(SocketEvents.CREATE_ROOM, { gameId: roomId });
   }
 
@@ -49,8 +55,7 @@ export class GameGateway {
     @MessageBody() dto: JoinRoomDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    const players = await this.gameService.joinRoom(dto, client.id);
-
+    const players = await this.gameRoomService.joinRoom(dto, client.id);
     client.join(dto.gameId);
     client.emit(SocketEvents.JOIN_ROOM, { players });
   }
@@ -70,7 +75,7 @@ export class GameGateway {
     @MessageBody() chatMessage: ChatMessageDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    await this.gameService.handleChatMessage(chatMessage, client.id);
+    await this.gameChatService.chatMessage(chatMessage, client.id);
   }
 
   @SubscribeMessage(SocketEvents.UPDATE_ROOM_OPTION)
@@ -79,7 +84,7 @@ export class GameGateway {
     @MessageBody() updateRoomOptionDto: UpdateRoomOptionDto,
     @ConnectedSocket() client: Socket
   ) {
-    await this.gameService.updateRoomOption(updateRoomOptionDto, client.id);
+    await this.gameRoomService.updateRoomOption(updateRoomOptionDto, client.id);
   }
 
   @SubscribeMessage(SocketEvents.UPDATE_ROOM_QUIZSET)
@@ -88,7 +93,7 @@ export class GameGateway {
     @MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto,
     @ConnectedSocket() client: Socket
   ) {
-    await this.gameService.updateRoomQuizset(updateRoomQuizsetDto, client.id);
+    await this.gameRoomService.updateRoomQuizset(updateRoomQuizsetDto, client.id);
   }
 
   @SubscribeMessage(SocketEvents.START_GAME)
@@ -105,6 +110,9 @@ export class GameGateway {
 
     this.gameService.subscribeRedisEvent(this.server).then(() => {
       this.logger.verbose('Redis 이벤트 등록 완료했어요!');
+    });
+    this.gameChatService.subscribeChatEvent(this.server).then(() => {
+      this.logger.verbose('Redis Chat 이벤트 등록 완료했어요!');
     });
   }
 

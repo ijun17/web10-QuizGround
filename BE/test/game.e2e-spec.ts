@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { io, Socket } from 'socket.io-client';
 import { GameGateway } from '../src/game/game.gateway';
-import { GameService } from '../src/game/game.service';
+import { GameService } from '../src/game/service/game.service';
 import socketEvents from '../src/common/constants/socket-events';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
@@ -27,8 +27,8 @@ describe('GameGateway (e2e)', () => {
       imports: [
         RedisModule.forRoot({
           type: 'single',
-          url: 'redis://localhost:6379',
-        }),
+          url: 'redis://localhost:6379'
+        })
       ],
       providers: [
         GameGateway,
@@ -78,14 +78,22 @@ describe('GameGateway (e2e)', () => {
   });
 
   afterEach(async () => {
-    if (client1 && client1.connected) client1.disconnect();
-    if (client2 && client2.connected) client2.disconnect();
-    if (client3 && client3.connected) client3.disconnect();
+    if (client1 && client1.connected) {
+      client1.disconnect();
+    }
+    if (client2 && client2.connected) {
+      client2.disconnect();
+    }
+    if (client3 && client3.connected) {
+      client3.disconnect();
+    }
     await redisMock.flushall();
   });
 
   afterAll(async () => {
-    if (app) await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('createRoom 이벤트 테스트', () => {
@@ -170,7 +178,9 @@ describe('GameGateway (e2e)', () => {
       expect(joinResponse.players).toBeDefined();
 
       // Redis에서 플레이어 정보 확인
-      const playerData = await redisMock.hgetall(`Room:${createResponse.gameId}:Player:${client2.id}`);
+      const playerData = await redisMock.hgetall(
+        `Room:${createResponse.gameId}:Player:${client2.id}`
+      );
       expect(playerData).toBeDefined();
       expect(playerData.playerName).toBe('TestPlayer');
     });
@@ -233,7 +243,7 @@ describe('GameGateway (e2e)', () => {
       });
 
       const receivedMessages = await Promise.all(messagePromises);
-      receivedMessages.forEach(msg => {
+      receivedMessages.forEach((msg) => {
         expect(msg.message).toBe(testMessage);
         expect(msg.playerName).toBe('Player1');
       });
