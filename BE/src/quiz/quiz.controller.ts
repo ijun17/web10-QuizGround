@@ -31,7 +31,7 @@ export class QuizController {
   findAll(
     @Query('category') category: string,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
-    @Query('size', new DefaultValuePipe(10), ParseIntPipe) limit: number
+    @Query('size', new DefaultValuePipe(100), ParseIntPipe) limit: number
   ) {
     return this.quizService.findAllWithQuizzesAndChoices(category, offset, limit);
   }

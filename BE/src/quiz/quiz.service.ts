@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException
 } from '@nestjs/common';
-import { CreateQuizDto, CreateQuizSetDto } from './dto/create-quiz.dto';
+import { CreateQuizSetDto } from './dto/create-quiz.dto';
 import { UpdateQuizSetDto } from './dto/update-quiz.dto';
 import { QuizModel } from './entities/quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -27,14 +27,13 @@ export class QuizService {
     private dataSource: DataSource
   ) {}
 
-  create(createQuizDto: CreateQuizDto) {
-    return 'This action adds a new quiz';
-  }
-
   async findAllWithQuizzesAndChoices(category: string, offset: number, limit: number) {
     // 1. QuizSet 페이징 조회
     const quizSets = await this.quizSetRepository.find({
-      where: { category },
+      where: {
+        category,
+        deletedAt: IsNull() // soft delete 고려
+      },
       skip: offset,
       take: limit,
       order: {
@@ -51,6 +50,7 @@ export class QuizService {
     const quizzes = await this.quizRepository
       .createQueryBuilder('quiz')
       .where('quiz.quizSetId IN (:...quizSetIds)', { quizSetIds })
+      .andWhere('quiz.deletedAt IS NULL')
       .getMany();
 
     // 3. Choice 한 번에 조회
@@ -58,6 +58,7 @@ export class QuizService {
     const choices = await this.quizChoiceRepository
       .createQueryBuilder('choice')
       .where('choice.quizId IN (:...quizIds)', { quizIds })
+      .andWhere('choice.deletedAt IS NULL')
       .getMany();
 
     // 4. 메모리에서 관계 매핑
@@ -91,7 +92,7 @@ export class QuizService {
   async findOne(id: number) {
     // 1. QuizSet 조회
     const quizSet = await this.quizSetRepository.findOne({
-      where: { id }
+      where: { id, deletedAt: IsNull() }
     });
 
     if (!quizSet) {
@@ -102,6 +103,7 @@ export class QuizService {
     const quizzes = await this.quizRepository
       .createQueryBuilder('quiz')
       .where('quiz.quizSetId = :quizSetId', { quizSetId: id })
+      .andWhere('quiz.deletedAt IS NULL')
       .getMany();
 
     // 3. Choice 조회
@@ -109,6 +111,7 @@ export class QuizService {
     const choices = await this.quizChoiceRepository
       .createQueryBuilder('choice')
       .where('choice.quizId IN (:...quizIds)', { quizIds })
+      .andWhere('choice.deletedAt IS NULL')
       .getMany();
 
     // 4. 메모리에서 관계 매핑
