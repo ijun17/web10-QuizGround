@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { QuizService } from './quiz.service';
-import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { UpdateQuizSetDto } from './dto/update-quiz.dto';
 import { CreateQuizSetDto } from './dto/create-quiz.dto';
 
 @Controller('/api/quizset')
@@ -42,8 +42,8 @@ export class QuizController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQuizDto: UpdateQuizDto) {
-    return this.quizService.update(+id, updateQuizDto);
+  update(@Param('id') id: string, @Body() updateQuizSetDto: UpdateQuizSetDto) {
+    return this.quizService.update(+id, updateQuizSetDto);
   }
 
   @Delete(':id')

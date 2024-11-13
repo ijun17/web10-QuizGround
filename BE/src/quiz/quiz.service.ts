@@ -5,7 +5,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 import { CreateQuizDto, CreateQuizSetDto } from './dto/create-quiz.dto';
-import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { UpdateQuizSetDto } from './dto/update-quiz.dto';
 import { QuizModel } from './entities/quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
@@ -133,10 +133,6 @@ export class QuizService {
     return dto;
   }
 
-  update(id: number, updateQuizDto: UpdateQuizDto) {
-    return `This action updates a #${id} quiz`;
-  }
-
   remove(id: number) {
     return `This action removes a #${id} quiz`;
   }
@@ -253,5 +249,83 @@ export class QuizService {
         throw new BadRequestException(`퀴즈 "${quiz.quiz}"의 선택지 번호가 중복됩니다.`);
       }
     }
+  }
+
+  async update(id: number, updateDto: UpdateQuizSetDto) {
+    // 트랜잭션 시작
+    return this.dataSource.transaction(async (manager) => {
+      // 퀴즈셋 조회
+      const quizSet = await manager.findOne(QuizSetModel, {
+        where: { id },
+        relations: {
+          user: true,
+          quizList: {
+            choiceList: true
+          }
+        }
+      });
+
+      if (!quizSet) {
+        throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
+      }
+
+      // 1. 기본 필드 업데이트 (변경감지 사용)
+      if (updateDto.title) {
+        quizSet.title = updateDto.title;
+      }
+      if (updateDto.category) {
+        quizSet.category = updateDto.category;
+      }
+
+      // 2. 퀴즈 업데이트
+      if (updateDto.quizList) {
+        updateDto.quizList.forEach((quizDto, index) => {
+          const quiz = quizSet.quizList[index] || new QuizModel();
+
+          // 2.1 퀴즈 필드 업데이트 (변경감지 사용)
+          if (quizDto.quiz) {
+            quiz.quiz = quizDto.quiz;
+          }
+          if (quizDto.limitTime) {
+            quiz.limitTime = quizDto.limitTime;
+          }
+
+          // 2.2 선택지 업데이트
+          if (quizDto.choiceList) {
+            quiz.choiceList = quizDto.choiceList.map((choiceDto, choiceIndex) => {
+              const choice = quiz.choiceList?.[choiceIndex] || new QuizChoiceModel();
+
+              // 선택지 필드 업데이트 (변경감지 사용)
+              if (choiceDto.choiceContent) {
+                choice.choiceContent = choiceDto.choiceContent;
+              }
+              if (choiceDto.choiceOrder) {
+                choice.choiceOrder = choiceDto.choiceOrder;
+              }
+              if (choiceDto.isAnswer !== undefined) {
+                choice.isAnswer = choiceDto.isAnswer;
+              }
+
+              return choice;
+            });
+          }
+
+          if (!quiz.id) {
+            quiz.quizSet = quizSet;
+          }
+        });
+      }
+
+      // 3. 변경사항 저장
+      await manager.save(quizSet);
+
+      const ret = {
+        data: {
+          id: quizSet.id
+        }
+      };
+
+      return ret;
+    });
   }
 }

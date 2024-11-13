@@ -1,12 +1,3 @@
-// export class CreateQuizSetDto extends PickType(QuizSetModel, ['title', 'category', 'quizList']) {}
-//
-// export class CreateQuizDto extends PickType(QuizModel, ['quiz', 'limitTime', 'choiceList']) {}
-//
-// export class CreateChoiceDto extends PickType(QuizChoiceModel, [
-//   'choiceContent',
-//   'choiceOrder',
-//   'isAnswer'
-// ]) {}
 import {
   ArrayMinSize,
   IsArray,
@@ -24,8 +15,6 @@ export class CreateChoiceDto {
   choiceContent: string;
 
   @IsNumber()
-  @Min(1)
-  @Max(10)
   choiceOrder: number;
 
   @IsBoolean()
@@ -37,7 +26,7 @@ export class CreateQuizDto {
   quiz: string;
 
   @IsNumber()
-  @Min(10)
+  @Min(1)
   @Max(3600)
   limitTime: number;
 
