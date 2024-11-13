@@ -1,17 +1,22 @@
 import { ClipboardCopy } from './ClipboardCopy';
 import Card from '@mui/material/Card';
-import { QuizPreview } from './QuizView';
+import { QuizPreview } from './QuizPreview';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { useState } from 'react';
 import { QuizSettingModal } from './QuizSettingModal';
+import { Button } from '@mui/material';
+import AnswerModal from './AnswerModal';
 
 export const GameHeader = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const gameTitle = useRoomStore((state) => state.title);
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [isAnswerVisible, setIsAnswerVisible] = useState(false);
   const pinNum = String(gameId);
   const linkURL = window.location.hostname + `/game/${gameId}`;
+  // 예시
+  const answer = 'A번!';
   return (
     <Card className="p-4 border border-blue-600 shadow-xl rounded-md h-[280px] w-[1000px] bg-gradient-to-b from-blue-500 to-blue-700 text-white component-popup">
       <div className="flex justify-center mb-4">
@@ -22,6 +27,10 @@ export const GameHeader = () => {
         <span className="text-xl font-semibold">{gameTitle}</span>
       </div>
       <QuizPreview title="title" description="퀴즈퀴즈퀴ㅣ즈" />
+      <div className="mt-4 text-xl font-bold text-blue-500">
+        정답: {answer}
+        <Button onClick={() => setIsAnswerVisible(true)}>정답보기</Button>
+      </div>
       <div className="flex space-x-4 justify-center">
         <button
           className="bg-yellow-400 text-black font-bold py-2 px-4 rounded-md shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl active:translate-y-1 active:shadow-sm transition"
@@ -33,7 +42,11 @@ export const GameHeader = () => {
           게임 시작
         </button>
       </div>
-
+      <AnswerModal
+        isOpen={isAnswerVisible}
+        onClose={() => setIsAnswerVisible(false)}
+        answer={answer}
+      />
       <QuizSettingModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} />
     </Card>
   );
