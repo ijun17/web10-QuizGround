@@ -16,8 +16,8 @@ export class GameValidator {
     }
   }
 
-  validatePlayerInRoom(eventName: string, player: any) {
-    if (!player.playerName) {
+  validatePlayerInRoom(eventName: string, gameId: string, player: any) {
+    if (gameId !== player?.gameId) {
       throw new GameWsException(eventName, ExceptionMessage.NOT_A_PLAYER);
     }
   }
