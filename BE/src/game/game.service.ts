@@ -9,6 +9,9 @@ import { ChatMessageDto } from './dto/chat-message.dto';
 import { generateUniquePin } from '../common/utils/utils';
 import { GameValidator } from './validations/game.validator';
 import SocketEvents from '../common/constants/socket-events';
+import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
+import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
+import { StartGameDto } from './dto/start-game.dto';
 
 @Injectable()
 export class GameService {
@@ -18,6 +21,7 @@ export class GameService {
     @InjectRedis() private readonly redis: Redis,
     private readonly gameValidator: GameValidator
   ) {}
+
   async createRoom(gameConfig: CreateGameDto, clientId: string): Promise<string> {
     const currentRoomPins = await this.redis.smembers(REDIS_KEY.ACTIVE_ROOMS);
     const roomId = generateUniquePin(currentRoomPins);
@@ -45,7 +49,11 @@ export class GameService {
     this.gameValidator.validateRoomExists(SocketEvents.JOIN_ROOM, room);
 
     const currentPlayers = await this.redis.keys(`Room:${dto.gameId}:Player:*`);
-    this.gameValidator.validateRoomCapacity(SocketEvents.JOIN_ROOM, currentPlayers.length, parseInt(room.maxPlayerCount));
+    this.gameValidator.validateRoomCapacity(
+      SocketEvents.JOIN_ROOM,
+      currentPlayers.length,
+      parseInt(room.maxPlayerCount)
+    );
 
     const playerKey = REDIS_KEY.ROOM_PLAYER(dto.gameId, clientId);
     const positionX = Math.random();
@@ -116,9 +124,7 @@ export class GameService {
 
     this.gameValidator.validatePlayerInRoom(SocketEvents.CHAT_MESSAGE, player);
 
-    this.logger.verbose(
-      `채팅 전송: ${gameId} - ${clientId} (${player.playerName}) = ${message}`
-    );
+    this.logger.verbose(`채팅 전송: ${gameId} - ${clientId} (${player.playerName}) = ${message}`);
 
     return {
       playerId: clientId,
@@ -126,5 +132,45 @@ export class GameService {
       message,
       timestamp: new Date()
     };
+  }
+
+  async updateRoomOption(updateRoomOptionDto: UpdateRoomOptionDto, clientId: string) {
+    const { gameId, gameMode, title, maxPlayerCount, isPublicGame } = updateRoomOptionDto;
+    const roomKey = `Room:${gameId}`;
+
+    const room = await this.redis.hgetall(roomKey);
+    this.gameValidator.validateRoomExists(SocketEvents.UPDATE_ROOM_OPTION, room);
+
+    this.gameValidator.validatePlayerIsHost(SocketEvents.UPDATE_ROOM_OPTION, room, clientId);
+
+    await this.redis.set(`${roomKey}:Changes`, 'Option');
+    await this.redis.hmset(roomKey, {
+      title: title,
+      gameMode: gameMode,
+      maxPlayerCount: maxPlayerCount.toString(),
+      isPublicGame: isPublicGame ? '1' : '0'
+    });
+    this.logger.verbose(`게임방 옵션 변경: ${gameId}`);
+  }
+
+  async updateRoomQuizset(updateRoomQuizsetDto: UpdateRoomQuizsetDto, clientId: string) {
+    const { gameId, quizSetId, quizCount } = updateRoomQuizsetDto;
+    const roomKey = `Room:${gameId}`;
+
+    const room = await this.redis.hgetall(roomKey);
+    this.gameValidator.validateRoomExists(SocketEvents.UPDATE_ROOM_QUIZSET, room);
+
+    this.gameValidator.validatePlayerIsHost(SocketEvents.UPDATE_ROOM_QUIZSET, room, clientId);
+
+    await this.redis.set(`${roomKey}:Changes`, 'Quizset');
+    await this.redis.hmset(roomKey, {
+      quizSetId: quizSetId.toString(),
+      quizCount: quizCount.toString()
+    });
+    this.logger.verbose(`게임방 퀴즈셋 변경: ${gameId}`);
+  }
+
+  async startGame(startGameDto: StartGameDto, clientId: string) {
+    const { gameId } = startGameDto;
   }
 }

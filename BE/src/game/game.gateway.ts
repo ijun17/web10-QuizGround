@@ -8,7 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger, UseFilters, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
-import socketEvents from '../common/constants/socket-events';
+import SocketEvents from '../common/constants/socket-events';
 import { CreateGameDto } from './dto/create-game.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
@@ -38,18 +38,18 @@ export class GameGateway {
     private readonly gameService: GameService
   ) {}
 
-  @SubscribeMessage(socketEvents.CREATE_ROOM)
-  @UsePipes(new GameValidationPipe(socketEvents.CREATE_ROOM))
+  @SubscribeMessage(SocketEvents.CREATE_ROOM)
+  @UsePipes(new GameValidationPipe(SocketEvents.CREATE_ROOM))
   async handleCreateRoom(
     @MessageBody() gameConfig: CreateGameDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
     const roomId = await this.gameService.createRoom(gameConfig, client.id);
-    client.emit(socketEvents.CREATE_ROOM, { gameId: roomId });
+    client.emit(SocketEvents.CREATE_ROOM, { gameId: roomId });
   }
 
-  @SubscribeMessage(socketEvents.JOIN_ROOM)
-  @UsePipes(new GameValidationPipe(socketEvents.JOIN_ROOM))
+  @SubscribeMessage(SocketEvents.JOIN_ROOM)
+  @UsePipes(new GameValidationPipe(SocketEvents.JOIN_ROOM))
   async handleJoinRoom(
     @MessageBody() dto: JoinRoomDto,
     @ConnectedSocket() client: Socket
@@ -57,30 +57,57 @@ export class GameGateway {
     const { players, newPlayer } = await this.gameService.joinRoom(dto, client.id);
 
     client.join(dto.gameId);
-    client.emit(socketEvents.JOIN_ROOM, { players });
-    this.server.to(dto.gameId).emit(socketEvents.JOIN_ROOM, {
+    client.emit(SocketEvents.JOIN_ROOM, { players });
+    this.server.to(dto.gameId).emit(SocketEvents.JOIN_ROOM, {
       players: [newPlayer]
     });
   }
 
-  @SubscribeMessage(socketEvents.UPDATE_POSITION)
-  @UsePipes(new GameValidationPipe(socketEvents.UPDATE_POSITION))
+  @SubscribeMessage(SocketEvents.UPDATE_POSITION)
+  @UsePipes(new GameValidationPipe(SocketEvents.UPDATE_POSITION))
   async handleUpdatePosition(
     @MessageBody() updatePosition: UpdatePositionDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
     const result = await this.gameService.updatePosition(updatePosition, client.id);
-    this.server.to(updatePosition.gameId).emit(socketEvents.UPDATE_POSITION, result);
+    this.server.to(updatePosition.gameId).emit(SocketEvents.UPDATE_POSITION, result);
   }
 
-  @SubscribeMessage(socketEvents.CHAT_MESSAGE)
-  @UsePipes(new GameValidationPipe(socketEvents.CHAT_MESSAGE))
+  @SubscribeMessage(SocketEvents.CHAT_MESSAGE)
+  @UsePipes(new GameValidationPipe(SocketEvents.CHAT_MESSAGE))
   async handleChatMessage(
     @MessageBody() chatMessage: ChatMessageDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
     const result = await this.gameService.handleChatMessage(chatMessage, client.id);
-    this.server.to(chatMessage.gameId).emit(socketEvents.CHAT_MESSAGE, result);
+    this.server.to(chatMessage.gameId).emit(SocketEvents.CHAT_MESSAGE, result);
+  }
+
+  @SubscribeMessage(SocketEvents.UPDATE_ROOM_OPTION)
+  @UsePipes(new GameValidationPipe(SocketEvents.UPDATE_ROOM_OPTION))
+  async handleUpdateRoomOption(
+    @MessageBody() updateRoomOptionDto: UpdateRoomOptionDto,
+    @ConnectedSocket() client: Socket
+  ) {
+    await this.gameService.updateRoomOption(updateRoomOptionDto, client.id);
+  }
+
+  @SubscribeMessage(SocketEvents.UPDATE_ROOM_QUIZSET)
+  @UsePipes(new GameValidationPipe(SocketEvents.UPDATE_ROOM_QUIZSET))
+  async handleUpdateRoomQuizset(
+    @MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto,
+    @ConnectedSocket() client: Socket
+  ) {
+    await this.gameService.updateRoomQuizset(updateRoomQuizsetDto, client.id);
+  }
+
+  @SubscribeMessage(SocketEvents.START_GAME)
+  @UsePipes(new GameValidationPipe(SocketEvents.START_GAME))
+  async handleStartGame(
+    @MessageBody() startGameDto: StartGameDto,
+    @ConnectedSocket() client: Socket
+  ) {
+    await this.gameService.startGame(startGameDto, client.id);
   }
 
   // TODO: Redis에 맞게 구현해야 함. (아직 초안이라 해서, redis로 바로 수정하지 않았음)
@@ -144,32 +171,6 @@ export class GameGateway {
   //   // TODO: 세션만 삭제하는 게 아니라 소켓도 삭제하기
   // }
 
-  @SubscribeMessage(socketEvents.UPDATE_ROOM_OPTION)
-  async handleUpdateRoomOption(@MessageBody() updateRoomOptionDto: UpdateRoomOptionDto) {
-    const { gameId, gameMode, title, maxPlayerCount, isPublicGame } = updateRoomOptionDto;
-    const roomKey = `Room:${gameId}`;
-    // TODO: 호스트인지 확인
-    await this.redis.set(`${roomKey}:Changes`, 'Option');
-    await this.redis.hmset(roomKey, {
-      title: title,
-      gameMode: gameMode,
-      maxPlayerCount: maxPlayerCount,
-      isPublic: isPublicGame
-    });
-  }
-
-  @SubscribeMessage(socketEvents.UPDATE_ROOM_QUIZSET)
-  async handleUpdateRoomQuizset(@MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto) {
-    const { gameId, quizSetId, quizCount } = updateRoomQuizsetDto;
-    const roomKey = `Room:${gameId}`;
-    // TODO: 호스트인지 확인
-    await this.redis.set(`${roomKey}:Changes`, 'Quizset');
-    await this.redis.hmset(roomKey, {
-      quizSetId: quizSetId,
-      quizCount: quizCount
-    });
-  }
-
   afterInit() {
     this.logger.verbose('WebSocket 서버 초기화 완료했어요!');
 
@@ -195,14 +196,14 @@ export class GameGateway {
         const roomData = await this.redis.hgetall(key);
 
         if (changes === 'Option') {
-          this.server.to(gameId).emit(socketEvents.UPDATE_ROOM_OPTION, {
+          this.server.to(gameId).emit(SocketEvents.UPDATE_ROOM_OPTION, {
             title: roomData.title,
             gameMode: roomData.gameMode,
             maxPlayerCount: roomData.maxPlayerCount,
             isPublic: roomData.isPublic
           });
         } else if (changes === 'Quizset') {
-          this.server.to(gameId).emit(socketEvents.UPDATE_ROOM_QUIZSET, {
+          this.server.to(gameId).emit(SocketEvents.UPDATE_ROOM_QUIZSET, {
             quizSetId: roomData.quizSetId,
             quizCount: roomData.quizCount
           });
