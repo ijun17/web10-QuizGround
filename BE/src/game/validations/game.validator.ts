@@ -27,4 +27,10 @@ export class GameValidator {
       throw new GameWsException(eventName, ExceptionMessage.ONLY_HOST);
     }
   }
+
+  validateQuizsetCount(eventName: string, selectedQuizsetCount: number, quizsetCount: number) {
+    if (selectedQuizsetCount > quizsetCount) {
+      throw new GameWsException(eventName, ExceptionMessage.EXCEEDS_QUIZ_SET_LIMIT);
+    }
+  }
 }

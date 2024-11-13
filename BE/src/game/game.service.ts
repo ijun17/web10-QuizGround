@@ -13,6 +13,7 @@ import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
 import { StartGameDto } from './dto/start-game.dto';
 import { Server } from 'socket.io';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class GameService {
@@ -20,6 +21,7 @@ export class GameService {
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
+    private readonly httpService: HttpService,
     private readonly gameValidator: GameValidator
   ) {}
 
@@ -173,6 +175,42 @@ export class GameService {
 
     this.gameValidator.validatePlayerIsHost(SocketEvents.START_GAME, room, clientId);
 
+    const getQuizsetURL = `http://localhost:3000/api/quizset/${room.quizSetId}`;
+    const quizset = await this.httpService.axiosRef({
+      url: getQuizsetURL,
+      method: 'GET'
+    });
+    this.gameValidator.validateQuizsetCount(
+      SocketEvents.START_GAME,
+      parseInt(room.quizSetCount),
+      quizset.data.quizList.length
+    );
+
+    const shuffledQuizList = quizset.data.quizList.sort(() => 0.5 - Math.random());
+    const selectedQuizList = shuffledQuizList.slice(0, room.quizSetCount);
+    await this.redis.sadd(
+      REDIS_KEY.ROOM_QUIZ_SET(gameId),
+      ...selectedQuizList.map((quiz) => quiz.id)
+    );
+    for (const quiz of selectedQuizList) {
+      await this.redis.hmset(REDIS_KEY.ROOM_QUIZ(gameId, quiz.id), {
+        quiz: quiz.quiz,
+        // answer: quiz.answer, TODO: API에서도 정답을 보내줘야 하나?
+        limitTime: quiz.limitTime.toString(),
+        choiceCount: quiz.choiceList.length.toString()
+      });
+      await this.redis.hmset(
+        REDIS_KEY.ROOM_QUIZ_CHOICES(gameId, quiz.id),
+        quiz.choiceList.reduce(
+          (acc, choice) => {
+            acc[choice.order] = choice.content;
+            return acc;
+          },
+          {} as Record<number, string>
+        )
+      );
+    }
+
     await this.redis.set(`${roomKey}:Changes`, 'Start');
     await this.redis.hmset(roomKey, {
       status: 'playing'
@@ -182,6 +220,8 @@ export class GameService {
   }
 
   async subscribeRedisEvent(server: Server) {
+    this.redis.config('SET', 'notify-keyspace-events', 'KEx');
+
     const roomSubscriber = this.redis.duplicate();
     await roomSubscriber.subscribe('__keyspace@0__:Room:*');
 
