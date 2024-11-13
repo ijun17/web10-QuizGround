@@ -65,6 +65,12 @@ export class QuizService {
     const choicesByQuizId = groupBy(choices, 'quizId');
     const quizzesByQuizSetId = groupBy(quizzes, 'quizSetId');
 
+    const dtos = this.quizSetToDto(quizSets, quizzesByQuizSetId, choicesByQuizId);
+
+    return new Result(dtos);
+  }
+
+  private quizSetToDto(quizSets: QuizSetModel[], quizzesByQuizSetId, choicesByQuizId) {
     const dtos = quizSets.map((quizSet) => ({
       id: quizSet.id.toString(),
       title: quizSet.title,
@@ -79,8 +85,7 @@ export class QuizService {
         }))
       }))
     }));
-
-    return new Result(dtos);
+    return dtos;
   }
 
   /**
