@@ -1,0 +1,33 @@
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { BaseModel } from '../../common/entity/base.entity';
+import { UserModel } from '../../user/entities/user.entity';
+import { QuizModel } from './quiz.entity';
+import { UserQuizArchiveModel } from '../../user/entities/user-quiz-archive.entity';
+
+@Entity('quiz_set')
+export class QuizSetModel extends BaseModel {
+  @Column()
+  title: string;
+
+  @Column({ name: 'user_id' })
+  userId: number;
+
+  @Column()
+  category: string;
+
+  @ManyToOne(() => UserModel, (user) => user.quizSetList, {
+    lazy: true
+  })
+  @JoinColumn({ name: 'user_id' })
+  user: UserModel;
+
+  @OneToMany(() => QuizModel, (quiz) => quiz.quizSet)
+  quizList: QuizModel[];
+
+  @OneToMany(() => UserQuizArchiveModel, (archive) => archive.quizSet)
+  archiveList: UserQuizArchiveModel[];
+
+  @CreateDateColumn()
+  @Index()
+  createdAt: Date;
+}
