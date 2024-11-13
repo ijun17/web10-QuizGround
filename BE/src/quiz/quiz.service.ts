@@ -8,7 +8,7 @@ import { CreateQuizDto, CreateQuizSetDto } from './dto/create-quiz.dto';
 import { UpdateQuizSetDto } from './dto/update-quiz.dto';
 import { QuizModel } from './entities/quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, IsNull, QueryFailedError, Repository } from 'typeorm';
 import { QuizSetModel } from './entities/quiz-set.entity';
 import { QuizChoiceModel } from './entities/quiz-choice.entity';
 import { Result } from './dto/Response.dto';
@@ -133,8 +133,34 @@ export class QuizService {
     return dto;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} quiz`;
+  async remove(id: number) {
+    return this.dataSource.transaction(async (manager) => {
+      // 1. 퀴즈셋 조회 (삭제되지 않은 것만)
+      const quizSet = await manager.findOne(QuizSetModel, {
+        where: {
+          id,
+          deletedAt: IsNull() // soft delete 되지 않은 것만 조회
+        },
+        relations: ['user']
+      });
+
+      if (!quizSet) {
+        throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
+      }
+
+      //todo : 토큰으로 로그인한 사용자 정보 가져오기 && 권한 확인
+      // if (quizSet.userId !== userId) {
+      //   throw new ForbiddenException('해당 퀴즈셋을 삭제할 권한이 없습니다.');
+      // }
+
+      // 2. Soft Delete 실행
+      await manager.softRemove(quizSet);
+
+      return {
+        success: true,
+        message: '퀴즈셋이 성공적으로 삭제되었습니다.'
+      };
+    });
   }
 
   /**
