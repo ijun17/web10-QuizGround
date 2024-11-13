@@ -313,41 +313,48 @@ export class QuizService {
 
       // 2. 퀴즈 업데이트
       if (updateDto.quizList) {
-        updateDto.quizList.forEach((quizDto, index) => {
-          const quiz = quizSet.quizList[index] || new QuizModel();
+        await Promise.all(
+          updateDto.quizList.map(async (quizDto, index) => {
+            const quiz = quizSet.quizList[index] || new QuizModel();
 
-          // 2.1 퀴즈 필드 업데이트 (변경감지 사용)
-          if (quizDto.quiz) {
-            quiz.quiz = quizDto.quiz;
-          }
-          if (quizDto.limitTime) {
-            quiz.limitTime = quizDto.limitTime;
-          }
+            // 2.1 퀴즈 필드 업데이트 (변경감지 사용)
+            if (quizDto.quiz) {
+              quiz.quiz = quizDto.quiz;
+            }
+            if (quizDto.limitTime) {
+              quiz.limitTime = quizDto.limitTime;
+            }
 
-          // 2.2 선택지 업데이트
-          if (quizDto.choiceList) {
-            quiz.choiceList = quizDto.choiceList.map((choiceDto, choiceIndex) => {
-              const choice = quiz.choiceList?.[choiceIndex] || new QuizChoiceModel();
+            // 2.2 선택지 업데이트
+            if (quizDto.choiceList) {
+              quiz.choiceList = await Promise.all(
+                quizDto.choiceList.map(async (choiceDto, choiceIndex) => {
+                  const choice = quiz.choiceList?.[choiceIndex] || new QuizChoiceModel();
 
-              // 선택지 필드 업데이트 (변경감지 사용)
-              if (choiceDto.choiceContent) {
-                choice.choiceContent = choiceDto.choiceContent;
-              }
-              if (choiceDto.choiceOrder) {
-                choice.choiceOrder = choiceDto.choiceOrder;
-              }
-              if (choiceDto.isAnswer !== undefined) {
-                choice.isAnswer = choiceDto.isAnswer;
-              }
+                  // 선택지 필드 업데이트 (변경감지 사용)
+                  if (choiceDto.choiceContent) {
+                    choice.choiceContent = choiceDto.choiceContent;
+                  }
+                  if (choiceDto.choiceOrder) {
+                    choice.choiceOrder = choiceDto.choiceOrder;
+                  }
+                  if (choiceDto.isAnswer !== undefined) {
+                    choice.isAnswer = choiceDto.isAnswer;
+                  }
 
-              return choice;
-            });
-          }
+                  await manager.save(choice);
+                  return choice;
+                })
+              );
+            }
 
-          if (!quiz.id) {
-            quiz.quizSet = quizSet;
-          }
-        });
+            if (!quiz.id) {
+              quiz.quizSet = quizSet;
+            }
+
+            await manager.save(quiz);
+          })
+        );
       }
 
       // 3. 변경사항 저장
