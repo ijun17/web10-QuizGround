@@ -1,4 +1,4 @@
-export function generateUniquePin(rooms) {
+export function generateUniquePin(currentRoomPins) {
   let pin: string;
   let isUnique = false;
   let attempts = 0;
@@ -9,7 +9,7 @@ export function generateUniquePin(rooms) {
     pin = Math.floor(100000 + Math.random() * 900000).toString();
 
     // 중복 체크
-    const existingRoom = rooms.has(pin);
+    const existingRoom = currentRoomPins.includes(pin);
 
     if (!existingRoom) {
       isUnique = true;

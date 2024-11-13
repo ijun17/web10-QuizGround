@@ -1,9 +1,8 @@
 import { IsIn, IsInt, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { GameConfig } from '../game.gateway';
 import { WsException } from '@nestjs/websockets';
 
-export class CreateGameDto implements GameConfig {
+export class CreateGameDto {
   @IsString()
   @MinLength(1, { message: '제목은 최소 1자 이상이어야 합니다' })
   @MaxLength(20, { message: '제목은 최대 20자까지 가능합니다' })

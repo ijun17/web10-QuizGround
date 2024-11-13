@@ -3,20 +3,15 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GameModule } from './game/game.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QuizModule } from './quiz/quiz.module';
-import { UserModule } from './user/user.module';
-import * as dotenv from 'dotenv';
-import { QuizSetModel } from './quiz/entities/quiz-set.entity';
-import { QuizModel } from './quiz/entities/quiz.entity';
-import { QuizChoiceModel } from './quiz/entities/quiz-choice.entity';
-import { UserModel } from './user/entities/user.entity';
-import { UserQuizArchiveModel } from './user/entities/user-quiz-archive.entity';
-import { InitDBModule } from './InitDB/InitDB.module';
-
-dotenv.config({ path: '../.env' });
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: '../.env',
+      isGlobal: true
+    }),
     GameModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
@@ -34,9 +29,10 @@ dotenv.config({ path: '../.env' });
       //   maxBatchSize: 100
       // }
     }),
-    QuizModule,
-    UserModule,
-    InitDBModule
+    RedisModule.forRoot({
+      type: 'single',
+      url: process.env.REDIS_URL || 'redis://localhost:6379'
+    })
   ],
   controllers: [AppController],
   providers: [AppService]
