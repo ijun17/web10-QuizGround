@@ -21,7 +21,7 @@ import { ConfigModule } from '@nestjs/config';
       password: process.env.DB_PASSWD || '',
       database: process.env.DB_NAME || 'test',
       entities: [],
-      synchronize: false
+      synchronize: process.env.DEV ? true : false, // 개발 모드에서만 활성화
     }),
     RedisModule.forRoot({
       type: 'single',
