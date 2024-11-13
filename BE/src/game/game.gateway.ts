@@ -70,8 +70,7 @@ export class GameGateway {
     @MessageBody() chatMessage: ChatMessageDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    const result = await this.gameService.handleChatMessage(chatMessage, client.id);
-    this.server.to(chatMessage.gameId).emit(SocketEvents.CHAT_MESSAGE, result);
+    await this.gameService.handleChatMessage(chatMessage, client.id);
   }
 
   @SubscribeMessage(SocketEvents.UPDATE_ROOM_OPTION)

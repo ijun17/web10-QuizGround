@@ -120,14 +120,16 @@ export class GameService {
 
     this.gameValidator.validatePlayerInRoom(SocketEvents.CHAT_MESSAGE, gameId, player);
 
+    await this.redis.publish(
+      `chat:${gameId}`,
+      JSON.stringify({
+        playerId: clientId,
+        playerName: player.playerName,
+        message,
+        timestamp: new Date()
+      })
+    );
     this.logger.verbose(`채팅 전송: ${gameId} - ${clientId} (${player.playerName}) = ${message}`);
-
-    return {
-      playerId: clientId,
-      playerName: player.playerName,
-      message,
-      timestamp: new Date()
-    };
   }
 
   async updateRoomOption(updateRoomOptionDto: UpdateRoomOptionDto, clientId: string) {
@@ -223,9 +225,8 @@ export class GameService {
     this.redis.config('SET', 'notify-keyspace-events', 'KEx');
 
     const roomSubscriber = this.redis.duplicate();
-    await roomSubscriber.subscribe('__keyspace@0__:Room:*');
-
-    roomSubscriber.on('message', async (channel, message) => {
+    await roomSubscriber.psubscribe('__keyspace@0__:Room:*');
+    roomSubscriber.on('pmessage', async (channel, message) => {
       const key = channel.replace('__keyspace@0__:', '');
       const splitKey = key.split(':');
       if (splitKey.length !== 2) {
@@ -256,8 +257,8 @@ export class GameService {
     });
 
     const playerSubscriber = this.redis.duplicate();
-    playerSubscriber.subscribe('__keyspace@0__:Player:*');
-    playerSubscriber.on('message', async (channel, message) => {
+    playerSubscriber.psubscribe('__keyspace@0__:Player:*');
+    playerSubscriber.on('pmessage', async (channel, message) => {
       const key = channel.replace('__keyspace@0__:', '');
       const splitKey = key.split(':');
       if (splitKey.length !== 2) {
@@ -288,6 +289,16 @@ export class GameService {
           });
         }
       }
+    });
+
+    const chatSubscriber = this.redis.duplicate();
+    chatSubscriber.psubscribe('chat:*');
+    chatSubscriber.on('pmessage', async (channel, message) => {
+      const key = channel.replace('chat:', '');
+      const splitKey = key.split(':');
+      const gameId = splitKey[1];
+      const chatMessage = JSON.parse(message);
+      server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
     });
   }
 
