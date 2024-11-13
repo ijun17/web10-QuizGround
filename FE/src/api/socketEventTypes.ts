@@ -72,7 +72,6 @@ type JoinRoomResponse = {
     playerId: string; // socketId
     playerName: string;
     playerPosition: [number, number];
-    playerScore: number;
   }>;
 };
 
@@ -94,7 +93,8 @@ type StopGameResponse = {
 
 // 퀴즈 시간 종료 타입
 type EndQuizTimeEvent = {
-  gameId: string;
+  answer: number; // 정답
+  players: { playerId: string; score: number; isAnswer: boolean }[];
 };
 
 // 퀴즈 시작 타입
