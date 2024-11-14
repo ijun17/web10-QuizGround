@@ -5,6 +5,14 @@ import { GameModule } from './game/game.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { ConfigModule } from '@nestjs/config';
+import { QuizSetModel } from './quiz/entities/quiz-set.entity';
+import { QuizModel } from './quiz/entities/quiz.entity';
+import { QuizChoiceModel } from './quiz/entities/quiz-choice.entity';
+import { UserModel } from './user/entities/user.entity';
+import { UserQuizArchiveModel } from './user/entities/user-quiz-archive.entity';
+import { InitDBModule } from './InitDB/InitDB.module';
+import { UserModule } from './user/user.module';
+import { QuizModule } from './quiz/quiz.module';
 
 @Module({
   imports: [
@@ -32,7 +40,10 @@ import { ConfigModule } from '@nestjs/config';
     RedisModule.forRoot({
       type: 'single',
       url: process.env.REDIS_URL || 'redis://localhost:6379'
-    })
+    }),
+    QuizModule,
+    UserModule,
+    InitDBModule
   ],
   controllers: [AppController],
   providers: [AppService]
