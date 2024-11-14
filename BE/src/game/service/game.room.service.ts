@@ -31,7 +31,9 @@ export class GameRoomService {
       maxPlayerCount: gameConfig.maxPlayerCount.toString(),
       isPublicGame: gameConfig.isPublicGame ? '1' : '0',
       isWaiting: '1',
-      lastActivityAt: new Date().getTime().toString()
+      lastActivityAt: new Date().getTime().toString(),
+      quizSetId: '0',
+      quizCount: '2'
     });
 
     await this.redis.sadd(REDIS_KEY.ACTIVE_ROOMS, roomId);

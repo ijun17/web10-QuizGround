@@ -8,6 +8,7 @@ import SocketEvents from '../../common/constants/socket-events';
 import { StartGameDto } from '../dto/start-game.dto';
 import { Server } from 'socket.io';
 import { HttpService } from '@nestjs/axios';
+import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 
 @Injectable()
 export class GameService {
@@ -48,17 +49,18 @@ export class GameService {
 
     this.gameValidator.validatePlayerIsHost(SocketEvents.START_GAME, room, clientId);
 
-    const getQuizsetURL = `http://localhost:3000/api/quizset/${room.quizSetId}`;
-
-    // REFACTOR: get 대신 Promise를 반환하는 axiosRef를 사용했으나 더 나은 방식이 있는지 확인
-    const quizset = await this.httpService.axiosRef({
-      url: getQuizsetURL,
-      method: 'GET'
-    });
+    // const getQuizsetURL = `http://localhost:3000/api/quizset/${room.quizSetId}`;
+    //
+    // // REFACTOR: get 대신 Promise를 반환하는 axiosRef를 사용했으나 더 나은 방식이 있는지 확인
+    // const quizset = await this.httpService.axiosRef({
+    //   url: getQuizsetURL,
+    //   method: 'GET'
+    // });
+    const quizset = mockQuizData;
     this.gameValidator.validateQuizsetCount(
       SocketEvents.START_GAME,
-      parseInt(room.quizSetCount),
-      quizset.data.quizList.length
+      parseInt(room.quizCount),
+      quizset.quizList.length
     );
 
     // Room Quiz 초기화
@@ -69,8 +71,11 @@ export class GameService {
     }
     await this.redis.del(REDIS_KEY.ROOM_QUIZ_SET(gameId));
 
-    const shuffledQuizList = quizset.data.quizList.sort(() => 0.5 - Math.random());
-    const selectedQuizList = shuffledQuizList.slice(0, room.quizSetCount);
+    // 퀴즈셋 랜덤 선택
+    const shuffledQuizList = quizset.quizList.sort(() => 0.5 - Math.random());
+    const selectedQuizList = shuffledQuizList.slice(0, parseInt(room.quizCount));
+
+    // 퀴즈들 id 레디스에 등록
     await this.redis.sadd(
       REDIS_KEY.ROOM_QUIZ_SET(gameId),
       ...selectedQuizList.map((quiz) => quiz.id)
@@ -100,12 +105,16 @@ export class GameService {
       await this.redis.zadd(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, playerId);
     }
 
+    // 게임이 시작되었음을 알림
     await this.redis.set(`${roomKey}:Changes`, 'Start');
     await this.redis.hmset(roomKey, {
       status: 'playing'
     });
+
+    // 첫 퀴즈 걸어주기
     await this.redis.set(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId), '-1:end'); // 0:start, 0:end, 1:start, 1:end
     await this.redis.set(REDIS_KEY.ROOM_TIMER(gameId), 'timer', 'EX', 3);
+
     this.logger.verbose(`게임 시작: ${gameId}`);
   }
 
@@ -120,10 +129,13 @@ export class GameService {
       const gameId = channel.split(':')[1];
 
       const completeClientsCount = parseInt(message);
+      if (!this.scoringMap.has(gameId)) {
+        this.scoringMap[gameId] = 0;
+      }
       this.scoringMap[gameId] += completeClientsCount;
 
       const playersCount = await this.redis.scard(REDIS_KEY.ROOM_PLAYERS(gameId));
-      if (this.scoringMap[gameId] === playersCount) {
+      if (this.scoringMap[gameId] >= playersCount) {
         // 채점 완료!
         const currentQuiz = await this.redis.get(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId));
         const splitCurrentQuiz = currentQuiz.split(':');
@@ -154,6 +166,7 @@ export class GameService {
 
         await this.redis.set(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId), `${quizNum}:end`); // 현재 퀴즈 상태를 종료 상태로 변경
         await this.redis.set(REDIS_KEY.ROOM_TIMER(gameId), 'timer', 'EX', '10', 'NX'); // 타이머 설정
+        this.logger.verbose(`endQuizTime: ${gameId} - ${quizNum}`);
       }
     });
 
@@ -175,7 +188,9 @@ export class GameService {
           // 채점
           const quizList = await this.redis.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
           const quiz = await this.redis.hgetall(REDIS_KEY.ROOM_QUIZ(gameId, quizList[quizNum]));
-          const clients = server.sockets.adapter.rooms.get(gameId);
+          // gameId를 통해 해당 room에 있는 client id들을 받기
+          const sockets = await server.in(gameId).fetchSockets();
+          const clients = sockets.map((socket) => socket.id);
           const correctPlayers = [];
           for (const clientId of clients) {
             const player = await this.redis.hgetall(REDIS_KEY.PLAYER(clientId));
@@ -194,6 +209,7 @@ export class GameService {
                 selectAnswer = 4;
               }
             }
+            await this.redis.set(`${REDIS_KEY.PLAYER(clientId)}:Changes`, 'AnswerCorrect');
             if (selectAnswer.toString() === quiz.answer) {
               correctPlayers.push(clientId);
               await this.redis.hmset(REDIS_KEY.PLAYER(clientId), { isAnswerCorrect: '1' });
@@ -208,7 +224,8 @@ export class GameService {
               clientId
             );
           }
-          await this.redis.publish(`scoring:${gameId}`, clients.size.toString());
+          await this.redis.publish(`scoring:${gameId}`, clients.length.toString());
+          this.logger.verbose(`채점: ${gameId} - ${clients.length}`);
         } else {
           // startQuizTime 하는 부분
           const newQuizNum = quizNum + 1;
@@ -232,6 +249,7 @@ export class GameService {
             server.to(gameId).emit(SocketEvents.END_GAME, {
               host: leaderboard[0] // 아마 첫 번째가 1등..?
             });
+            this.logger.verbose(`endGame: ${leaderboard[0]}`);
             return;
           }
           const quiz = await this.redis.hgetall(REDIS_KEY.ROOM_QUIZ(gameId, quizList[newQuizNum]));
@@ -255,6 +273,7 @@ export class GameService {
             (parseInt(quiz.limitTime) + 3).toString(),
             'NX'
           ); // 타이머 설정
+          this.logger.verbose(`startQuizTime: ${gameId} - ${newQuizNum}`);
         }
       }
     });

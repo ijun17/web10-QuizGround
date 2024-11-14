@@ -13,6 +13,7 @@ import { GameRoomService } from '../src/game/service/game.room.service';
 import { HttpService } from '@nestjs/axios';
 import { mockQuizData } from './mocks/quiz-data.mock';
 import RedisMock from 'ioredis-mock';
+import { REDIS_KEY } from '../src/common/constants/redis-key.constant';
 
 const mockHttpService = {
   axiosRef: jest.fn().mockImplementation(() => {
@@ -324,6 +325,55 @@ describe('GameGateway (e2e)', () => {
       const playerData = await redisMock.hgetall(`Player:${client1.id}`);
       expect(parseFloat(playerData.positionX)).toBe(newPosition[0]);
       expect(parseFloat(playerData.positionY)).toBe(newPosition[1]);
+    });
+  });
+
+  describe('startGame 이벤트 테스트', () => {
+    it('게임 시작할 때 초기 설정 성공', async () => {
+      // 방 생성 및 참여 설정
+      const createResponse = await new Promise<{ gameId: string }>((resolve) => {
+        client1.once(socketEvents.CREATE_ROOM, resolve);
+        client1.emit(socketEvents.CREATE_ROOM, {
+          title: 'Chat Test Room',
+          gameMode: 'RANKING',
+          maxPlayerCount: 5,
+          isPublicGame: true
+        });
+      });
+
+      // 플레이어들 입장
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          client1.once(socketEvents.JOIN_ROOM, () => resolve());
+          client1.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player1'
+          });
+        }),
+        new Promise<void>((resolve) => {
+          client2.once(socketEvents.JOIN_ROOM, () => resolve());
+          client2.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player2'
+          });
+        })
+      ]);
+      const gameId = createResponse.gameId;
+
+      client1.emit(socketEvents.START_GAME, {
+        gameId
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5초 대기
+
+      const quizSetIds = await redisMock.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
+
+      // 내림차순 조회 (높은 점수부터)
+      const leaderboard = await redisMock.zrevrange(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, -1);
+
+      expect(gameId).toBe(createResponse.gameId);
+      expect(quizSetIds.length).toBeGreaterThan(0); // FIX: 추후 더 fit하게 바꾸기
+      expect(leaderboard).toBeDefined();
     });
   });
 });
