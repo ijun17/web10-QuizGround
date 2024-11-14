@@ -26,10 +26,10 @@ export const GameHeader = () => {
       <div className="flex flex-col items-center justify-center text-center space-y-2">
         <span className="text-xl font-semibold">{gameTitle}</span>
       </div>
-      <QuizPreview title="title" description="퀴즈퀴즈퀴ㅣ즈" />
+      <QuizPreview title="" description="" />
       <div className="mt-4 text-xl font-bold text-blue-500">
         정답: {answer}
-        <Button onClick={() => setIsAnswerVisible(true)}>정답보기</Button>
+        <Button onClick={() => setIsAnswerVisible(true)}>정답보기(개발용)</Button>
       </div>
       <div className="flex space-x-4 justify-center">
         <button
