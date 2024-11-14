@@ -3,7 +3,7 @@ import { SocketMock } from '../SocketMock';
 export default class SocketMockLoadTestWithQuiz extends SocketMock {
   constructor() {
     super('');
-    this.players = Array(30)
+    this.players = Array(100)
       .fill(null)
       .map((_, i) => ({
         playerId: String(i + 1),
@@ -11,7 +11,7 @@ export default class SocketMockLoadTestWithQuiz extends SocketMock {
         playerPosition: [this.random(), this.random()]
       }));
     this.testQuiz();
-    // this.testChat();
+    this.testChat();
     this.testMove();
   }
 
