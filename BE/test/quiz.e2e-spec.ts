@@ -25,13 +25,13 @@ describe('QuizService', () => {
         }),
         TypeOrmModule.forRoot({
           type: 'mysql',
-          host: process.env.DB_HOST || 'localhost',
-          port: +process.env.DB_PORT || 3306,
-          username: process.env.DB_USER,
-          password: process.env.DB_PASSWD,
-          database: process.env.DB_NAME,
+          host: process.env.DB_HOST_TEST || process.env.DB_HOST || '127.0.0.1',
+          port: +process.env.DB_PORT_TEST || +process.env.DB_PORT || 3306,
+          username: process.env.DB_USER_TEST || process.env.DB_USER || 'root',
+          password: process.env.DB_PASSWD_TEST || process.env.DB_PASSWD || 'test',
+          database: process.env.DB_NAME_TEST || process.env.DB_NAME || 'test_db',
           entities: [QuizSetModel, QuizModel, QuizChoiceModel, UserModel, UserQuizArchiveModel],
-          synchronize: process.env.DEV ? true : false // 개발 모드에서만 활성화
+          synchronize: true // test모드에서는 항상 활성화
           // logging: true, // 모든 쿼리 로깅
           // logger: 'advanced-console'
           // extra: {
@@ -61,6 +61,11 @@ describe('QuizService', () => {
 
   afterAll(async () => {
     await dataSource.destroy();
+  });
+
+  it('should be defined', () => {
+    expect(quizService).toBeDefined();
+    expect(dataSource).toBeDefined();
   });
 
   describe('createQuizSet', () => {
