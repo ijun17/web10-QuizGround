@@ -1,13 +1,30 @@
 import { useQuizeStore } from '@/store/useQuizStore';
 import { useEffect, useState } from 'react';
+import AnswerModal from './AnswerModal';
+import QuizState from '@/constants/quizState';
 
 export const QuizHeader = () => {
   const currentQuiz = useQuizeStore((state) => state.currentQuiz);
+  const quizState = useQuizeStore((state) => state.quizState);
   const [seconds, setSeconds] = useState(0);
-
+  const [isAnswerVisible, setIsAnswerVisible] = useState(false);
+  const answer = '1';
   useEffect(() => {
     if (currentQuiz) setSeconds(currentQuiz.endTime);
   }, [currentQuiz]);
+  useEffect(() => {
+    if (quizState === QuizState.END) {
+      setIsAnswerVisible(true);
+
+      // 5초 후에 자동으로 false로 설정
+      const timer = setTimeout(() => {
+        setIsAnswerVisible(false);
+      }, 5000);
+
+      // 컴포넌트가 언마운트될 때 타이머 정리
+      return () => clearTimeout(timer);
+    }
+  }, [quizState]);
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -33,6 +50,11 @@ export const QuizHeader = () => {
       <div className="flex justify-center items-center font-bold text-2xl flex-grow">
         {'Q. ' + currentQuiz.quiz}
       </div>
+      <AnswerModal
+        isOpen={isAnswerVisible}
+        onClose={() => setIsAnswerVisible(false)}
+        answer={answer}
+      />
     </div>
   );
 };

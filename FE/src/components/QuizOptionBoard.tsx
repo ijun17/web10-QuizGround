@@ -18,23 +18,11 @@ const optionColors = [
   '#C3B3E0' // pastel purple
 ];
 
-const mockQuiz = {
-  quiz: '이것은 목데이터 퀴즈입니다.',
-  choiceList: [
-    { content: '옵션 1', order: 1 },
-    { content: '옵션 2', order: 2 },
-    { content: '옵션 3', order: 3 },
-    { content: '옵션 4', order: 4 }
-  ],
-  endTime: Date.now() + 10000 // 10초 후 종료
-};
-
 export const QuizOptionBoard = () => {
   const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
   const gameId = useRoomStore((state) => state.gameId);
   const players = usePlayerStore((state) => state.players);
-  // const options = useQuizeStore((state) => state.currentQuiz?.choiceList) || [];
-  const options = useQuizeStore((state) => state.currentQuiz?.choiceList) || mockQuiz.choiceList;
+  const options = useQuizeStore((state) => state.currentQuiz?.choiceList) || [];
   const [selectedOption, setSelectedOption] = useState(options.length);
 
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
@@ -57,6 +45,7 @@ export const QuizOptionBoard = () => {
             name={player.playerName}
             position={player.playerPosition}
             isCurrent={player.playerId === currentPlayerId}
+            isAnswer={player.isAnswer ?? false}
           />
         ))}
       </div>

@@ -12,6 +12,7 @@ type Player = {
 type PlayerStore = {
   isHost: boolean;
   currentPlayerId: string;
+  currentPlayerName: string;
   players: Player[];
   addPlayers: (players: Player[]) => void;
   updatePlayerPosition: (playerId: string, newPosition: [number, number]) => void; // 위치 업데이트
@@ -19,12 +20,15 @@ type PlayerStore = {
   updatePlayerAnswer: (playerId: string, newIsAnswer: boolean) => void;
   removePlayer: (playerId: string) => void;
   setCurrentPlayerId: (currentPlayerId: string) => void;
+  setCurrentPlayerName: (currentPlayerName: string) => void;
   setIsHost: (isHost: boolean) => void;
+  setPlayers: (players: Player[]) => void;
 };
 
 export const usePlayerStore = create<PlayerStore>((set) => ({
   isHost: false,
   currentPlayerId: '',
+  currentPlayerName: '',
   players: [],
   addPlayers: (players) => {
     set((state) => ({
@@ -56,6 +60,10 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     }));
   },
 
+  setPlayers: (players: Player[]) => {
+    set(() => ({ players }));
+  },
+
   removePlayer: (playerId) => {
     set((state) => ({
       players: state.players.filter((player) => player.playerId !== playerId)
@@ -65,6 +73,9 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   setCurrentPlayerId: (currentPlayerId) => {
     set(() => ({ currentPlayerId }));
   },
+  setCurrentPlayerName: (currentPlayerName) => {
+    set(() => ({ currentPlayerName }));
+  },
 
   setIsHost: (isHost) => {
     set(() => ({ isHost }));
@@ -73,14 +84,9 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 
 socketService.on('joinRoom', (data) => {
   const { addPlayers, setCurrentPlayerId } = usePlayerStore.getState();
-  // addPlayers(data.players);
-  // const socketId = socketService.getSocketId();
-  // if (data.players.length > 0 && data.players[0].playerId === socketId) {
-  //   setCurrentPlayerId(socketId);
-  // }
   const playersWithScore = data.players.map((player) => ({
     ...player,
-    playerScore: player.playerScore ?? 0 // 점수 없으면 0으로 설정
+    playerScore: 0 // 점수 없으면 0으로 설정
   }));
   addPlayers(playersWithScore);
   const socketId = socketService.getSocketId();
@@ -93,16 +99,19 @@ socketService.on('updatePosition', (data) => {
   usePlayerStore.getState().updatePlayerPosition(data.playerId, data.playerPosition);
 });
 
+socketService.on('endQuizTime', (data) => {
+  const { players, setPlayers } = usePlayerStore.getState();
+  setPlayers(
+    data.players.map((p) => ({
+      playerId: String(p.playerId),
+      playerName: players.find((e) => e.playerId === p.playerId)?.playerName || '',
+      playerPosition: players.find((e) => e.playerId === p.playerId)?.playerPosition || [0, 0],
+      playerScore: p.score,
+      isAnswer: p.isAnswer
+    }))
+  );
+});
+
 socketService.on('exitRoom', (data) => {
   usePlayerStore.getState().removePlayer(data.playerId);
 });
-
-// 점수 업데이트 관련 소켓 이벤트 추가
-// socketService.on('updateScore', (data) => {
-//   usePlayerStore.getState().updatePlayerScore(data.playerId, data.playerScore);
-// });
-
-// 정답여부 업데이트 관련 소켓 이벤트 추가
-// socketService.on('updateIsAnswer', (data) => {
-//   usePlayerStore.getState().updateIsAnswer(data.playerId, data.isAnswer);
-// });

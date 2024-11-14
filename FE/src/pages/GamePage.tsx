@@ -10,24 +10,28 @@ import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { QuizHeader } from '@/components/QuizHeader';
 import GameState from '@/constants/gameState';
+import { usePlayerStore } from '@/store/usePlayerStore';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const updateRoom = useRoomStore((state) => state.updateRoom);
   const gameState = useRoomStore((state) => state.gameState);
-  const [playerName, setPlayerName] = useState('');
+  const currentPlayerName = usePlayerStore((state) => state.currentPlayerName);
+  const setCurrentPlayerName = usePlayerStore((state) => state.setCurrentPlayerName);
   const [isModalOpen, setIsModalOpen] = useState(true);
 
-  updateRoom({ gameId });
+  useEffect(() => {
+    updateRoom({ gameId });
+  }, [gameId, updateRoom]);
 
   useEffect(() => {
-    if (gameId && playerName) {
-      socketService.joinRoom(gameId, playerName);
+    if (gameId && currentPlayerName) {
+      socketService.joinRoom(gameId, currentPlayerName);
     }
-  }, [gameId, playerName]);
-
+  }, [gameId, currentPlayerName]);
+  setCurrentPlayerName('test123');
   const handleNameSubmit = (name: string) => {
-    setPlayerName(name);
+    setCurrentPlayerName(name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기
   };
 
@@ -52,7 +56,7 @@ export const GamePage = () => {
           </div>
 
           <Modal
-            isOpen={isModalOpen && !playerName} // playerName이 없을 때만 모달을 열도록 설정
+            isOpen={isModalOpen && !currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
             title="플레이어 이름 설정"
             placeholder="이름을 입력하세요"
             onClose={() => setIsModalOpen(false)}
