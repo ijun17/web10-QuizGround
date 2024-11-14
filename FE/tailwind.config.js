@@ -55,7 +55,11 @@ export default {
         '.center': {
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center'
+
+          alignItems: 'center',
+        },
+        '.text-shadow': {
+          'text-shadow': '0 -3px 0 #333, 0 6px 8px rgba(0,0,0,.4), 0 9px 10px rgba(0,0,0,.15), 0 30px 10px rgba(0,0,0,.18), 0 15px 10px rgba(0,0,0,.21)',
         }
       };
       addUtilities(newUtilities, ['responsive', 'hover']);

@@ -1,5 +1,6 @@
 import { socketService } from '@/api/socket';
 import { create } from 'zustand';
+import GameState from '@/constants/gameState';
 
 type RoomOption = {
   title?: string;
@@ -12,10 +13,12 @@ type RoomOption = {
 type RoomStore = {
   title: string;
   gameMode: 'RANKING' | 'SURVIVAL';
+  gameState: (typeof GameState)[keyof typeof GameState];
   maxPlayerCount: number;
   isPublic: boolean;
   gameId: string;
   updateRoom: (roomOption: RoomOption) => void;
+  setGameState: (state: (typeof GameState)[keyof typeof GameState]) => void;
 };
 
 export const useRoomStore = create<RoomStore>((set) => ({
@@ -24,8 +27,12 @@ export const useRoomStore = create<RoomStore>((set) => ({
   maxPlayerCount: 50,
   isPublic: true,
   gameId: '',
+  gameState: GameState.WAIT,
   updateRoom: (roomOption: RoomOption) => {
     set(() => roomOption);
+  },
+  setGameState: (gameState) => {
+    set(() => ({ gameState }));
   }
 }));
 
@@ -35,4 +42,8 @@ socketService.on('createRoom', (data) => {
 
 socketService.on('updateRoomOption', (data) => {
   useRoomStore.getState().updateRoom(data);
+});
+
+socketService.on('startGame', () => {
+  useRoomStore.getState().setGameState('PROGRESS');
 });
