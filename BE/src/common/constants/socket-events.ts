@@ -6,7 +6,7 @@ const SocketEvents = {
   UPDATE_ROOM_QUIZSET: 'updateRoomQuizset',
   JOIN_ROOM: 'joinRoom',
   START_GAME: 'startGame',
-  STOP_GAME: 'stopGame',
+  END_GAME: 'endGame',
   END_QUIZ_TIME: 'endQuizTime',
   START_QUIZ_TIME: 'startQuizTime',
   UPDATE_SCORE: 'updateScore',
