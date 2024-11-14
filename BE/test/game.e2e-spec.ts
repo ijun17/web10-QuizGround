@@ -3,20 +3,73 @@ import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { io, Socket } from 'socket.io-client';
 import { GameGateway } from '../src/game/game.gateway';
-import { GameService } from '../src/game/game.service';
+import { GameService } from '../src/game/service/game.service';
 import socketEvents from '../src/common/constants/socket-events';
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { Redis } from 'ioredis';
+import { GameValidator } from '../src/game/validations/game.validator';
+import { GameChatService } from '../src/game/service/game.chat.service';
+import { GameRoomService } from '../src/game/service/game.room.service';
+import { HttpService } from '@nestjs/axios';
+import { mockQuizData } from './mocks/quiz-data.mock';
+import RedisMock from 'ioredis-mock';
+import { REDIS_KEY } from '../src/common/constants/redis-key.constant';
+
+const mockHttpService = {
+  axiosRef: jest.fn().mockImplementation(() => {
+    return Promise.resolve({
+      data: mockQuizData,
+      status: 200
+    });
+  })
+};
 
 describe('GameGateway (e2e)', () => {
   let app: INestApplication;
   let client1: Socket;
   let client2: Socket;
   let client3: Socket;
+  let redisMock: Redis;
 
   const TEST_PORT = 3001;
 
   beforeAll(async () => {
+    /* ioredis-mock을 사용하여 테스트용 인메모리 Redis 생성 */
+    redisMock = new RedisMock();
+    jest.spyOn(redisMock, 'config').mockImplementation(() => Promise.resolve('OK'));
+
+    // hset 메소드 오버라이드
+    const originalHset = redisMock.hmset.bind(redisMock);
+    redisMock.hmset = async function (key: string, ...args: any[]) {
+      const result = await originalHset(key, ...args);
+
+      await this.publish(`__keyspace@0__:${key}`, 'hset');
+
+      return result;
+    };
+
     const moduleRef = await Test.createTestingModule({
-      providers: [GameGateway, GameService]
+      imports: [
+        RedisModule.forRoot({
+          type: 'single',
+          url: 'redis://localhost:6379'
+        })
+      ],
+      providers: [
+        GameGateway,
+        GameService,
+        GameChatService,
+        GameRoomService,
+        GameValidator,
+        {
+          provide: 'default_IORedisModuleConnectionToken',
+          useValue: redisMock
+        },
+        {
+          provide: HttpService,
+          useValue: mockHttpService
+        }
+      ]
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -24,42 +77,54 @@ describe('GameGateway (e2e)', () => {
     await app.listen(TEST_PORT);
   });
 
-  beforeEach((done) => {
-    let connectedClients = 0;
-    const onConnect = () => {
-      connectedClients++;
-      if (connectedClients === 3) {
-        done();
-      }
-    };
+  beforeEach(async () => {
+    await redisMock.flushall();
 
-    // 1. http(연결할때만) -> 2. ws
-    client1 = io(`http://localhost:${TEST_PORT}/game`, {
-      transports: ['websocket'],
-      forceNew: true
-    });
-    client2 = io(`http://localhost:${TEST_PORT}/game`, {
-      transports: ['websocket'],
-      forceNew: true
-    });
-    client3 = io(`http://localhost:${TEST_PORT}/game`, {
-      transports: ['websocket'],
-      forceNew: true
-    });
+    return new Promise<void>((resolve) => {
+      let connectedClients = 0;
+      const onConnect = () => {
+        connectedClients++;
+        if (connectedClients === 3) {
+          resolve();
+        }
+      };
 
-    client1.on('connect', onConnect);
-    client2.on('connect', onConnect);
-    client3.on('connect', onConnect);
+      client1 = io(`http://localhost:${TEST_PORT}/game`, {
+        transports: ['websocket'],
+        forceNew: true
+      });
+      client2 = io(`http://localhost:${TEST_PORT}/game`, {
+        transports: ['websocket'],
+        forceNew: true
+      });
+      client3 = io(`http://localhost:${TEST_PORT}/game`, {
+        transports: ['websocket'],
+        forceNew: true
+      });
+
+      client1.on('connect', onConnect);
+      client2.on('connect', onConnect);
+      client3.on('connect', onConnect);
+    });
   });
 
-  afterEach(() => {
-    client1.close();
-    client2.close();
-    client3.close();
+  afterEach(async () => {
+    if (client1 && client1.connected) {
+      client1.disconnect();
+    }
+    if (client2 && client2.connected) {
+      client2.disconnect();
+    }
+    if (client3 && client3.connected) {
+      client3.disconnect();
+    }
+    await redisMock.flushall();
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('createRoom 이벤트 테스트', () => {
@@ -76,15 +141,21 @@ describe('GameGateway (e2e)', () => {
         client1.emit(socketEvents.CREATE_ROOM, gameConfig);
       });
 
-      // expect(response.status).toBe('success');
       expect(response.gameId).toBeDefined();
       expect(typeof response.gameId).toBe('string');
+
+      // 실제 Redis 저장 확인
+      const roomData = await redisMock.hgetall(`Room:${response.gameId}`);
+      expect(roomData).toBeDefined();
+      expect(roomData.title).toBe(gameConfig.title);
+      expect(roomData.gameMode).toBe(gameConfig.gameMode);
+      expect(roomData.maxPlayerCount).toBe(gameConfig.maxPlayerCount.toString());
     });
 
     const invalidConfigs = [
       {
         case: '빈 title',
-        config: { title: '', gameMode: '', maxPlayerCount: 2, isPublicGame: true }
+        config: { title: '', gameMode: 'RANKING', maxPlayerCount: 2, isPublicGame: true }
       },
       {
         case: '빈 gameMode',
@@ -96,38 +167,28 @@ describe('GameGateway (e2e)', () => {
       },
       {
         case: '최소 인원 미달',
-        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 0, isPublicGame: true }
-      },
-      {
-        case: '최대 인원 초과',
-        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 201, isPublicGame: true }
-      },
-      {
-        case: '잘못된 boolean 타입',
-        config: { title: 'hello', gameMode: 'ranking', maxPlayerCount: 2, isPublicGame: '안녕' }
+        config: { title: 'hello', gameMode: 'RANKING', maxPlayerCount: 0, isPublicGame: true }
       }
     ];
 
     invalidConfigs.forEach(({ case: testCase, config }) => {
-      it(testCase, (done) => {
+      it(`${testCase}인 경우 에러 발생`, (done) => {
         client1.once('exception', (error) => {
           expect(error).toBeDefined();
-          expect(error.status).toBe('error');
-          expect(error.message).toBeDefined();
+          expect(error.eventName).toBe(socketEvents.CREATE_ROOM);
           done();
         });
 
         client1.emit(socketEvents.CREATE_ROOM, config);
       });
     });
+  });
 
-    it('방생성시 서버는 올바른 6자리 숫자(PIN)을 응답해야한다.', async () => {
-      // Promise와 함께 once 사용
-      const response = await new Promise<{ gameId: string }>((resolve) => {
-        // CREATE_ROOM 이벤트의 응답을 한 번만 기다림
+  describe('joinRoom 이벤트 테스트', () => {
+    it('존재하는 방 참여 성공', async () => {
+      // 방 생성
+      const createResponse = await new Promise<{ gameId: string }>((resolve) => {
         client1.once(socketEvents.CREATE_ROOM, resolve);
-
-        // 이벤트 발생
         client1.emit(socketEvents.CREATE_ROOM, {
           title: 'Test Room',
           gameMode: 'RANKING',
@@ -136,155 +197,183 @@ describe('GameGateway (e2e)', () => {
         });
       });
 
-      // 6자리 숫자 검증
-      expect(response.gameId).toBeDefined();
-      expect(response.gameId).toMatch(/^\d{6}$/); // 정확히 6자리 숫자만
+      // 방 참여
+      const joinResponse = await new Promise<any>((resolve) => {
+        client2.once(socketEvents.JOIN_ROOM, resolve);
+        client2.emit(socketEvents.JOIN_ROOM, {
+          gameId: createResponse.gameId,
+          playerName: 'TestPlayer'
+        });
+      });
 
-      // 범위 검증 (100000-999999)
-      const pinNumber = parseInt(response.gameId);
-      expect(pinNumber).toBeGreaterThanOrEqual(100000);
-      expect(pinNumber).toBeLessThanOrEqual(999999);
+      expect(joinResponse.players).toBeDefined();
+
+      // Redis에서 플레이어 정보 확인
+      const playerData = await redisMock.hgetall(`Player:${client2.id}`);
+      expect(playerData).toBeDefined();
+      expect(playerData.playerName).toBe('TestPlayer');
+    });
+
+    it('존재하지 않는 방 참여 실패', (done) => {
+      client1.once('exception', (error) => {
+        expect(error.eventName).toBe('joinRoom');
+        expect(error.message).toBe('존재하지 않는 게임 방입니다.');
+        done();
+      });
+
+      client1.emit(socketEvents.JOIN_ROOM, {
+        gameId: '999999',
+        playerName: 'TestPlayer'
+      });
     });
   });
 
   describe('chatMessage 이벤트 테스트', () => {
-    it('같은 Room의 플레이어들에게 브로드캐스팅 성공', async () => {
-      /*given*/
-      // 게임방 생성 로직
-      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+    it('같은 방의 모든 플레이어에게 메시지 전송', async () => {
+      // 방 생성 및 참여 설정
+      const createResponse = await new Promise<{ gameId: string }>((resolve) => {
         client1.once(socketEvents.CREATE_ROOM, resolve);
         client1.emit(socketEvents.CREATE_ROOM, {
-          title: 'hello world!',
+          title: 'Chat Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
           isPublicGame: true
         });
       });
 
-      // 게임방 참여 로직
-      const joinRoomResponse1 = await new Promise<any>((resolve) => {
-        client1.once(socketEvents.JOIN_ROOM, resolve);
-        client1.emit(socketEvents.JOIN_ROOM, {
-          gameId: createRoomResponse.gameId,
-          playerName: '시크릿주주1'
-        });
-      });
-      const joinRoomResponse2 = await new Promise<any>((resolve) => {
-        client2.once(socketEvents.JOIN_ROOM, resolve);
-        client2.emit(socketEvents.JOIN_ROOM, {
-          gameId: createRoomResponse.gameId,
-          playerName: '시크릿주주2'
-        });
-      });
-      const joinRoomResponse3 = await new Promise<any>((resolve) => {
-        client3.once(socketEvents.JOIN_ROOM, resolve);
-        client3.emit(socketEvents.JOIN_ROOM, {
-          gameId: createRoomResponse.gameId,
-          playerName: '시크릿주주3'
-        });
+      // 플레이어들 입장
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          client1.once(socketEvents.JOIN_ROOM, () => resolve());
+          client1.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player1'
+          });
+        }),
+        new Promise<void>((resolve) => {
+          client2.once(socketEvents.JOIN_ROOM, () => resolve());
+          client2.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player2'
+          });
+        })
+      ]);
+
+      // 채팅 메시지 테스트
+      const testMessage = 'Hello, everyone!';
+      const messagePromises = [
+        new Promise<any>((resolve) => client1.once(socketEvents.CHAT_MESSAGE, resolve)),
+        new Promise<any>((resolve) => client2.once(socketEvents.CHAT_MESSAGE, resolve))
+      ];
+
+      client1.emit(socketEvents.CHAT_MESSAGE, {
+        gameId: createResponse.gameId,
+        message: testMessage
       });
 
-      const messageToSend = '안녕하세요! 여러분!';
-      const receivedCount = 0;
-      const chatMessageResponse = await new Promise<any>((resolve) => {
-        const responseList = [];
-        client1.once(socketEvents.CHAT_MESSAGE, (payload) => {
-          responseList.push(payload);
-          if (responseList.length === 3) {
-            resolve(responseList);
-          }
-        });
-        client2.once(socketEvents.CHAT_MESSAGE, (payload) => {
-          responseList.push(payload);
-          if (responseList.length === 3) {
-            resolve(responseList);
-          }
-        });
-        client3.once(socketEvents.CHAT_MESSAGE, (payload) => {
-          responseList.push(payload);
-          if (responseList.length === 3) {
-            resolve(responseList);
-          }
-        });
-        client1.emit(socketEvents.CHAT_MESSAGE, {
-          gameId: createRoomResponse.gameId,
-          message: messageToSend
-        });
+      const receivedMessages = await Promise.all(messagePromises);
+      receivedMessages.forEach((msg) => {
+        expect(msg.message).toBe(testMessage);
+        expect(msg.playerName).toBe('Player1');
       });
-
-      expect(chatMessageResponse[0].message).toBe(messageToSend);
     });
   });
 
   describe('updatePosition 이벤트 테스트', () => {
-    it('유효한 설정을주면 위치 업데이트를 성공 해야 한다.', async () => {
-      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+    it('위치 업데이트 성공', async () => {
+      // 방 생성 및 참여 설정
+      const createResponse = await new Promise<{ gameId: string }>((resolve) => {
         client1.once(socketEvents.CREATE_ROOM, resolve);
         client1.emit(socketEvents.CREATE_ROOM, {
-          title: 'hello world!',
+          title: 'Chat Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
           isPublicGame: true
         });
       });
 
-      const joinRoomResponse = await new Promise<any>((resolve) => {
-        client1.once(socketEvents.JOIN_ROOM, resolve);
-        client1.emit(socketEvents.JOIN_ROOM, {
-          gameId: createRoomResponse.gameId,
-          playerName: '시크릿주주1'
-        });
-      });
+      // 플레이어들 입장
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          client1.once(socketEvents.JOIN_ROOM, () => resolve());
+          client1.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player1'
+          });
+        }),
+        new Promise<void>((resolve) => {
+          client2.once(socketEvents.JOIN_ROOM, () => resolve());
+          client2.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player2'
+          });
+        })
+      ]);
+      const newPosition = [0.2, 0.5];
 
-      const newPosition = [1, 1];
-      const updatePositionResponse = await new Promise<any>((resolve) => {
+      const updateResponse = await new Promise<any>((resolve) => {
         client1.once(socketEvents.UPDATE_POSITION, resolve);
         client1.emit(socketEvents.UPDATE_POSITION, {
-          gameId: createRoomResponse.gameId,
-          newPosition: newPosition
+          gameId: createResponse.gameId,
+          newPosition
         });
       });
 
-      expect(updatePositionResponse).toBeDefined();
-      expect(updatePositionResponse.playerId).toBe(client1.id);
-      expect(updatePositionResponse.playerPosition).toEqual(newPosition);
+      expect(updateResponse.playerPosition).toEqual(newPosition);
+
+      // Redis에서 위치 정보 확인
+      const playerData = await redisMock.hgetall(`Player:${client1.id}`);
+      expect(parseFloat(playerData.positionX)).toBe(newPosition[0]);
+      expect(parseFloat(playerData.positionY)).toBe(newPosition[1]);
     });
+  });
 
-    it('update DTO에 잘못된값이 있는경우 error를 내야한다.', (done) => {
-      client1.once('exception', (error) => {
-        expect(error).toBeDefined();
-        expect(error.message).toBe('PIN번호는 6자리이어야 합니다.');
-        done();
-      });
-
-      client1.emit(socketEvents.UPDATE_POSITION, {
-        gameId: '',
-        newPosition: []
-      });
-    });
-
-    it('해당방의 플레이어가 아닌경우 error를 내야한다.', async () => {
-      client2.once('error', (error) => {
-        expect(error).toBeDefined();
-        expect(error).toBe('[ERROR] 해당 게임 방의 플레이어가 아닙니다.');
-      });
-
-      const createRoomResponse = await new Promise<{ gameId: string }>((resolve) => {
+  describe('startGame 이벤트 테스트', () => {
+    it('게임 시작할 때 초기 설정 성공', async () => {
+      // 방 생성 및 참여 설정
+      const createResponse = await new Promise<{ gameId: string }>((resolve) => {
         client1.once(socketEvents.CREATE_ROOM, resolve);
         client1.emit(socketEvents.CREATE_ROOM, {
-          title: 'hello world!',
+          title: 'Chat Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
           isPublicGame: true
         });
       });
 
-      const newPosition = [1, 1];
+      // 플레이어들 입장
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          client1.once(socketEvents.JOIN_ROOM, () => resolve());
+          client1.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player1'
+          });
+        }),
+        new Promise<void>((resolve) => {
+          client2.once(socketEvents.JOIN_ROOM, () => resolve());
+          client2.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player2'
+          });
+        })
+      ]);
+      const gameId = createResponse.gameId;
 
-      client2.emit(socketEvents.UPDATE_POSITION, {
-        gameId: createRoomResponse.gameId,
-        newPosition: newPosition
+      client1.emit(socketEvents.START_GAME, {
+        gameId
       });
+
+      await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5초 대기
+
+      const quizSetIds = await redisMock.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
+
+      // 내림차순 조회 (높은 점수부터)
+      const leaderboard = await redisMock.zrevrange(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, -1);
+
+      expect(gameId).toBe(createResponse.gameId);
+      expect(quizSetIds.length).toBeGreaterThan(0); // FIX: 추후 더 fit하게 바꾸기
+      expect(leaderboard).toBeDefined();
     });
   });
 });

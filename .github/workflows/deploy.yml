@@ -4,9 +4,35 @@ on:
   push:
     branches: [ "release" ]
 
+env:
+  NODE_ENV: test
+  DB_HOST_TEST: localhost
+  DB_PORT_TEST: 3306
+  DB_PASSWD_TEST: test
+  DB_NAME_TEST: test_db
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_HOST: '%'       # 모든 호스트에서 접근 허용
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
 
     steps:
       - name: Github Repository 파일 불러오기
@@ -90,9 +116,9 @@ jobs:
             cd
             cd /home/ubuntu/nest-server/current/FE
             npm i
-            pm2 stop backend-server || true
+            npx pm2 stop backend-server || true
             cd /home/ubuntu/nest-server/current/BE
-            pm2 start dist/main.js --name "backend-server"
+            npx pm2 start dist/main.js --name "backend-server"
 
 #            todo: # FrontEnd 배포
 #            # Frontend 배포

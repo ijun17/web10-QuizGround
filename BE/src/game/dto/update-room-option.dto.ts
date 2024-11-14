@@ -1,16 +1,20 @@
-import { IsIn, IsInt, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsIn, IsInt, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { WsException } from '@nestjs/websockets';
 
-export class CreateGameDto {
+export class UpdateRoomOptionDto {
   @IsString()
-  @MinLength(1, { message: '제목은 최소 1자 이상이어야 합니다' })
-  @MaxLength(20, { message: '제목은 최대 20자까지 가능합니다' })
-  title: string;
+  @Length(6, 6, { message: 'PIN번호는 6자리이어야 합니다.' })
+  gameId: string;
 
   @IsString()
   @IsIn(['RANKING', 'SURVIVAL'])
   gameMode: string;
+
+  @IsString()
+  @MinLength(1, { message: '제목은 최소 1자 이상이어야 합니다' })
+  @MaxLength(20, { message: '제목은 최대 20자까지 가능합니다' })
+  title: string;
 
   @Type(() => Number)
   @IsInt()
