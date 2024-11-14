@@ -68,5 +68,5 @@ socketService.on('startQuizTime', (data) => {
 });
 socketService.on('endQuizTime', (data) => {
   useQuizeStore.getState().setQuizState(QuizState.END);
-  useQuizeStore.getState().setCurrentAnswer(data.answer);
+  useQuizeStore.getState().setCurrentAnswer(Number(data.answer));
 });

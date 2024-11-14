@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 type AnswerModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  answer: string;
+  answer: number;
 };
 
 const AnswerModal: React.FC<AnswerModalProps> = ({ isOpen, onClose, answer }) => {

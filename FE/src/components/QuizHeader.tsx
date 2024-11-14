@@ -11,7 +11,7 @@ export const QuizHeader = () => {
   const [seconds, setSeconds] = useState(0);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
   const [limitTime, setLimitTime] = useState(0);
-  const answer = '1';
+  const answer = useQuizeStore((state) => state.currentAnswer);
   useEffect(() => {
     if (currentQuiz) {
       setSeconds((currentQuiz.endTime - Date.now()) / 1000);
