@@ -7,8 +7,21 @@ import { GameService } from '../src/game/service/game.service';
 import socketEvents from '../src/common/constants/socket-events';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
-import RedisMock from 'ioredis-mock';
 import { GameValidator } from '../src/game/validations/game.validator';
+import { GameChatService } from '../src/game/service/game.chat.service';
+import { GameRoomService } from '../src/game/service/game.room.service';
+import { HttpService } from '@nestjs/axios';
+import { mockQuizData } from './mocks/quiz-data.mock';
+import RedisMock from 'ioredis-mock';
+
+const mockHttpService = {
+  axiosRef: jest.fn().mockImplementation(() => {
+    return Promise.resolve({
+      data: mockQuizData,
+      status: 200
+    });
+  })
+};
 
 describe('GameGateway (e2e)', () => {
   let app: INestApplication;
@@ -22,6 +35,17 @@ describe('GameGateway (e2e)', () => {
   beforeAll(async () => {
     /* ioredis-mock을 사용하여 테스트용 인메모리 Redis 생성 */
     redisMock = new RedisMock();
+    jest.spyOn(redisMock, 'config').mockImplementation(() => Promise.resolve('OK'));
+
+    // hset 메소드 오버라이드
+    const originalHset = redisMock.hmset.bind(redisMock);
+    redisMock.hmset = async function (key: string, ...args: any[]) {
+      const result = await originalHset(key, ...args);
+
+      await this.publish(`__keyspace@0__:${key}`, 'hset');
+
+      return result;
+    };
 
     const moduleRef = await Test.createTestingModule({
       imports: [
@@ -33,10 +57,16 @@ describe('GameGateway (e2e)', () => {
       providers: [
         GameGateway,
         GameService,
+        GameChatService,
+        GameRoomService,
         GameValidator,
         {
           provide: 'default_IORedisModuleConnectionToken',
           useValue: redisMock
+        },
+        {
+          provide: HttpService,
+          useValue: mockHttpService
         }
       ]
     }).compile();
@@ -178,9 +208,7 @@ describe('GameGateway (e2e)', () => {
       expect(joinResponse.players).toBeDefined();
 
       // Redis에서 플레이어 정보 확인
-      const playerData = await redisMock.hgetall(
-        `Room:${createResponse.gameId}:Player:${client2.id}`
-      );
+      const playerData = await redisMock.hgetall(`Player:${client2.id}`);
       expect(playerData).toBeDefined();
       expect(playerData.playerName).toBe('TestPlayer');
     });
@@ -251,37 +279,41 @@ describe('GameGateway (e2e)', () => {
   });
 
   describe('updatePosition 이벤트 테스트', () => {
-    let gameId: string;
-
-    beforeEach(async () => {
+    it('위치 업데이트 성공', async () => {
       // 방 생성 및 참여 설정
       const createResponse = await new Promise<{ gameId: string }>((resolve) => {
         client1.once(socketEvents.CREATE_ROOM, resolve);
         client1.emit(socketEvents.CREATE_ROOM, {
-          title: 'Position Test Room',
+          title: 'Chat Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
           isPublicGame: true
         });
       });
-      gameId = createResponse.gameId;
 
-      await new Promise<void>((resolve) => {
-        client1.once(socketEvents.JOIN_ROOM, () => resolve());
-        client1.emit(socketEvents.JOIN_ROOM, {
-          gameId,
-          playerName: 'Player1'
-        });
-      });
-    });
-
-    it('위치 업데이트 성공', async () => {
-      const newPosition = [0.5, 0.5];
+      // 플레이어들 입장
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          client1.once(socketEvents.JOIN_ROOM, () => resolve());
+          client1.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player1'
+          });
+        }),
+        new Promise<void>((resolve) => {
+          client2.once(socketEvents.JOIN_ROOM, () => resolve());
+          client2.emit(socketEvents.JOIN_ROOM, {
+            gameId: createResponse.gameId,
+            playerName: 'Player2'
+          });
+        })
+      ]);
+      const newPosition = [0.2, 0.5];
 
       const updateResponse = await new Promise<any>((resolve) => {
         client1.once(socketEvents.UPDATE_POSITION, resolve);
         client1.emit(socketEvents.UPDATE_POSITION, {
-          gameId,
+          gameId: createResponse.gameId,
           newPosition
         });
       });
@@ -289,7 +321,7 @@ describe('GameGateway (e2e)', () => {
       expect(updateResponse.playerPosition).toEqual(newPosition);
 
       // Redis에서 위치 정보 확인
-      const playerData = await redisMock.hgetall(`Room:${gameId}:Player:${client1.id}`);
+      const playerData = await redisMock.hgetall(`Player:${client1.id}`);
       expect(parseFloat(playerData.positionX)).toBe(newPosition[0]);
       expect(parseFloat(playerData.positionY)).toBe(newPosition[1]);
     });
