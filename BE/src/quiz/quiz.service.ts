@@ -133,7 +133,8 @@ export class QuizService {
         limitTime: quiz.limitTime,
         choiceList: (choicesByQuizId[quiz.id] || []).map((choice) => ({
           content: choice.choiceContent,
-          order: choice.choiceOrder
+          order: choice.choiceOrder,
+          isAnswer: choice.isAnswer
         }))
       }))
     };
