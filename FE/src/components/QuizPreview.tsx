@@ -18,8 +18,8 @@ export const QuizPreview = ({ title, description }: Props) => {
         <img src={sampleQuizImage} className="object-cover w-[100%] h-[100%]" />
       </div>
       <div className="flex flex-col pl-4 justify-center">
-        <div className="font-bold text-xl">{mock.title}</div>
-        <div>{mock.description}</div>
+        <div className="font-bold text-xl">{mock.title + title}</div>
+        <div>{mock.description + description}</div>
       </div>
     </div>
   );
