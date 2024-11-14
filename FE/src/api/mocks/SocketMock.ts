@@ -57,6 +57,20 @@ export class SocketMock {
       setTimeout(() => resolve(), second * 1000);
     });
   }
+  log(message: string) {
+    this.emitServer('chatMessage', {
+      playerId: '',
+      playerName: '[LOG]',
+      message: message,
+      timestamp: 0
+    });
+  }
+  //시드 기반 랜덤 함수
+  SEED = 7777;
+  random() {
+    this.SEED = (this.SEED * 16807) % 2147483647;
+    return (this.SEED - 1) / 2147483646;
+  }
 
   isCurrentJoin = false;
   currentPlayerName = '';
@@ -66,8 +80,12 @@ export class SocketMock {
     playerPosition: [number, number];
   }[] = [];
 
-  quiz: { quiz: string; endTime: number; choiceList: { content: string; order: number }[] } | null =
-    null;
+  quiz: {
+    quiz: string;
+    endTime: number;
+    startTime: number;
+    choiceList: { content: string; order: number }[];
+  } | null = null;
 
   // 아래는 서버 비즈니스 로직
   private async handleChat(data: SocketDataMap['chatMessage']['request']) {
@@ -127,8 +145,14 @@ export class SocketMock {
   }
 
   //퀴즈 관련 비즈니스 로직
-  setQuiz(quiz: string, endTime: number, choiceList: { content: string; order: number }[]) {
-    this.quiz = { quiz, endTime, choiceList };
+  setQuiz(quiz: string, quizSecond: number, choiceList: string[]) {
+    const COUNT_DOWN_TIME = 3000;
+    this.quiz = {
+      quiz,
+      startTime: Date.now() + COUNT_DOWN_TIME,
+      endTime: Date.now() + COUNT_DOWN_TIME + quizSecond * 1000,
+      choiceList: choiceList.map((e, i) => ({ content: e, order: i }))
+    };
     this.emitServer('startQuizTime', this.quiz);
   }
   calculateScore(answer: number) {
@@ -144,5 +168,11 @@ export class SocketMock {
     });
     const payload = { answer, players };
     this.emitServer('endQuizTime', payload);
+  }
+
+  async progressQuiz(quiz: string, quizSecond: number, choiceList: string[], answer: number) {
+    this.setQuiz(quiz, quizSecond, choiceList);
+    await this.delay(3 + quizSecond);
+    this.calculateScore(answer);
   }
 }

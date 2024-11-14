@@ -1,6 +1,6 @@
 import { SocketMock } from '../SocketMock';
 
-export default class SocketMockNextQuiz extends SocketMock {
+export default class SocketMockStartGame extends SocketMock {
   constructor() {
     super('');
     this.players = Array(10)
@@ -16,22 +16,16 @@ export default class SocketMockNextQuiz extends SocketMock {
   async test() {
     //2초후 게임 시작
     await this.delay(2);
-    console.log('게임이 시작되었습니다.');
+    this.log('게임이 시작되었습니다.');
     this.emitServer('startGame', {});
     //퀴즈 전송
     await this.delay(2);
-    this.setQuiz(
-      '1+0+0은?',
-      Date.now() + 5 * 1000,
-      Array(3)
-        .fill(null)
-        .map((_, i) => ({ content: String(i + 1), order: i + 1 }))
-    );
-    console.log('퀴즈 전송 완료.');
+    this.setQuiz('1+0+0은?', 5, ['1', '2', '3', '4']);
+    this.log('퀴즈 전송 완료.');
 
     // 퀴즈 종료
-    await this.delay(6);
+    await this.delay(8);
     this.calculateScore(0);
-    console.log('퀴즈 가 종료 되었습니다.');
+    this.log('퀴즈 가 종료 되었습니다.');
   }
 }

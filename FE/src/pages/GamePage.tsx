@@ -29,7 +29,7 @@ export const GamePage = () => {
       socketService.joinRoom(gameId, currentPlayerName);
     }
   }, [gameId, currentPlayerName]);
-  setCurrentPlayerName('test123');
+  // setCurrentPlayerName('test123');
   const handleNameSubmit = (name: string) => {
     setCurrentPlayerName(name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기

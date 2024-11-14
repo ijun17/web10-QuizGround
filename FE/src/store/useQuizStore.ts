@@ -27,21 +27,25 @@ type CurrentQuiz = {
   quiz: string;
   choiceList: Choice[];
   endTime: number;
+  startTime: number;
 };
 
 type QuizStore = {
   quizSets: QuizSet[];
   currentQuiz: CurrentQuiz | null;
+  currentAnswer: number;
   quizState: (typeof QuizState)[keyof typeof QuizState];
   setQuizState: (state: (typeof QuizState)[keyof typeof QuizState]) => void;
   setQuizSets: (quizSets: QuizSet[]) => void;
   setCurrentQuiz: (quiz: CurrentQuiz) => void;
+  setCurrentAnswer: (answer: number) => void;
   addQuizSet: (quizSet: QuizSet) => void;
 };
 
 export const useQuizeStore = create<QuizStore>((set) => ({
   quizSets: [],
   currentQuiz: null,
+  currentAnswer: 0,
   quizState: QuizState.PROGRESS,
 
   setQuizSets: (quizSets) => set({ quizSets }),
@@ -53,13 +57,16 @@ export const useQuizeStore = create<QuizStore>((set) => ({
 
   // 진행 중인 퀴즈 설정
   setCurrentQuiz: (quiz) => set({ currentQuiz: quiz }),
+  setCurrentAnswer: (answer) => set({ currentAnswer: answer }),
   setQuizState: (state) => set({ quizState: state })
 }));
 
 // 진행 중인 퀴즈 설정
 socketService.on('startQuizTime', (data) => {
+  useQuizeStore.getState().setQuizState(QuizState.START);
   useQuizeStore.getState().setCurrentQuiz(data);
 });
-socketService.on('endQuizTime', () => {
+socketService.on('endQuizTime', (data) => {
   useQuizeStore.getState().setQuizState(QuizState.END);
+  useQuizeStore.getState().setCurrentAnswer(Number(data.answer));
 });

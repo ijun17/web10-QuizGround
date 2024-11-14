@@ -18,10 +18,11 @@ const Chat = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessage, setNewMessage] = useState(false);
   const [prevMessageCount, setPrevMessageCount] = useState(messages.length);
+  const prevScrollTopRef = useRef(0);
 
   const scrollToBottom = () => {
     if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       setNewMessage(false);
     }
   };
@@ -29,7 +30,9 @@ const Chat = () => {
   const handleScroll = () => {
     const container = chatContainerRef.current;
     if (container) {
-      const isBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
+      // const isBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
+      const isBottom = prevScrollTopRef.current < container.scrollTop && isAtBottom;
+      prevScrollTopRef.current = container.scrollTop;
       setIsAtBottom(isBottom); // 맨 아래에 있으면 true, 아니면 false
       if (isBottom) {
         setNewMessage(false);
@@ -68,7 +71,7 @@ const Chat = () => {
     }
   }, [prevMessageCount, myMessages, currentPlayerId, messages]);
 
-  // 스크롤
+  // 새로운 채팅이 올때 자동 스크롤
   useEffect(() => {
     if (messages.length > prevMessageCount) {
       setNewMessage(true); // 새로운 메시지가 도착한 것으로 판단
@@ -88,22 +91,26 @@ const Chat = () => {
         className="p-2 h-[calc(100%-6rem)] overflow-y-scroll"
         onScroll={handleScroll}
       >
-        <div className="flex justify-center mb-4">🎉 QuizGround에 오신 것을 환영합니다 🎉</div>
-        {messages.map((e, i) => (
-          <div className="break-words leading-5 mt-3" key={i}>
-            <span className="font-bold mr-2">{e.playerName}</span>
-            <span>{e.message}</span>
+        <div>
+          <div className="flex justify-center mb-4" key="1">
+            🎉 QuizGround에 오신 것을 환영합니다 🎉
           </div>
-        ))}
-        {myMessages.map((e, i) => (
-          <div className="break-words leading-5 mt-3" key={-i}>
-            <div className="inline-block mr-2">
-              <div className="w-4 h-4 border-4 border-blue-500 border-dotted rounded-full animate-spin"></div>
+          {messages.map((e, i) => (
+            <div className="break-words leading-5 mt-3" key={i}>
+              <span className="font-bold mr-2">{e.playerName}</span>
+              <span>{e.message}</span>
             </div>
-            <span>{e.message}</span>
-          </div>
-        ))}
-        <div ref={chatBottomRef} />
+          ))}
+          {myMessages.map((e, i) => (
+            <div className="break-words leading-5 mt-3" key={-i - 1}>
+              <div className="inline-block mr-2">
+                <div className="w-4 h-4 border-4 border-blue-500 border-dotted rounded-full animate-spin"></div>
+              </div>
+              <span>{e.message}</span>
+            </div>
+          ))}
+        </div>
+        <div ref={chatBottomRef} key="0" />
       </div>
       <div className="center border-t border-default h-[3.5rem] p-2">
         <form onSubmit={handleSubmit} className="w-full h-full">
@@ -116,7 +123,7 @@ const Chat = () => {
           />
         </form>
       </div>
-      {newMessage && (
+      {newMessage && !isAtBottom && (
         <Button
           variant="contained"
           className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white p-2 rounded"

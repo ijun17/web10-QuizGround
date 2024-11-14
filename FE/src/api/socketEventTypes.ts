@@ -102,6 +102,7 @@ type StartQuizTimeEvent = {
   quiz: string;
   choiceList: { content: string; order: number }[];
   endTime: number; //timestamp
+  startTime: number; //timestamp
 };
 
 // 게임 점수 업데이트 타입
