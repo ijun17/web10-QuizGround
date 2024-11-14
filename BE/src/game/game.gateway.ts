@@ -55,8 +55,8 @@ export class GameGateway {
     @MessageBody() dto: JoinRoomDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    const players = await this.gameRoomService.joinRoom(dto, client.id);
     client.join(dto.gameId);
+    const players = await this.gameRoomService.joinRoom(dto, client.id);
     client.emit(SocketEvents.JOIN_ROOM, { players });
   }
 

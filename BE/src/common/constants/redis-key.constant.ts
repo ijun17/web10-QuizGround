@@ -5,6 +5,7 @@ export const REDIS_KEY = {
   ROOM_QUIZ_CHOICES: (gameId: string, quizId: string) => `Room:${gameId}:Quiz:${quizId}:Choices`,
   ROOM_LEADERBOARD: (gameId: string) => `Room:${gameId}:Leaderboard`,
   ROOM_CURRENT_QUIZ: (gameId: string) => `Room:${gameId}:CurrentQuiz`,
+  ROOM_TIMER: (gameId: string) => `Room:${gameId}:Timer`,
   ROOM_QUIZ_SET: (gameId: string) => `Room:${gameId}:QuizSet`,
   PLAYER: (playerId: string) => `Player:${playerId}`,
 

@@ -43,10 +43,11 @@ export class GameChatService {
   async subscribeChatEvent(server: Server) {
     const chatSubscriber = this.redis.duplicate();
     chatSubscriber.psubscribe('chat:*');
-    chatSubscriber.on('pmessage', async (channel, message) => {
-      const key = channel.replace('chat:', '');
-      const splitKey = key.split(':');
-      const gameId = splitKey[1];
+
+    chatSubscriber.on('pmessage', async (_pattern, channel, message) => {
+      console.log(`channel: ${channel}`); // channel: chat:317172
+      console.log(`message: ${message}`); //  message: {"playerId":"8CT28Iw5FgjgPHNyAAAs","playerName":"Player1","message":"Hello, everyone!","timestamp":"2024-11-14T08:32:38.617Z"}
+      const gameId = channel.split(':')[1];
       const chatMessage = JSON.parse(message);
       server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
     });
