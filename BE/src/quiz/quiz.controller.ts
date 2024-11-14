@@ -10,17 +10,21 @@ import {
   Post,
   Query
 } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { QuizService } from './quiz.service';
-import { CreateQuizDto } from './dto/create-quiz.dto';
-import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { UpdateQuizSetDto } from './dto/update-quiz.dto';
+import { CreateQuizSetDto } from './dto/create-quiz.dto';
 
 @Controller('/api/quizset')
 export class QuizController {
   constructor(private readonly quizService: QuizService) {}
 
   @Post()
-  create(@Body() createQuizDto: CreateQuizDto) {
-    return this.quizService.create(createQuizDto);
+  @ApiOperation({ summary: '퀴즈셋 생성' })
+  @ApiResponse({ status: 201, description: '퀴즈셋이 성공적으로 생성됨' })
+  @ApiResponse({ status: 400, description: '잘못된 입력값' })
+  async createQuizSet(@Body() createQuizSetDto: CreateQuizSetDto) {
+    return this.quizService.createQuizSet(createQuizSetDto);
   }
 
   @Get()
@@ -38,8 +42,8 @@ export class QuizController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQuizDto: UpdateQuizDto) {
-    return this.quizService.update(+id, updateQuizDto);
+  update(@Param('id') id: string, @Body() updateQuizSetDto: UpdateQuizSetDto) {
+    return this.quizService.update(+id, updateQuizSetDto);
   }
 
   @Delete(':id')
