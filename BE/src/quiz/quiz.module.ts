@@ -10,10 +10,9 @@ import { QuizChoiceModel } from './entities/quiz-choice.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel]),
-    UserModule // 필요한 다른 모듈 import
+    UserModule
   ],
   controllers: [QuizController],
   providers: [QuizService],
-  exports: [QuizService]
 })
 export class QuizModule {}
