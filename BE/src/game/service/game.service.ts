@@ -7,7 +7,7 @@ import { GameValidator } from '../validations/game.validator';
 import SocketEvents from '../../common/constants/socket-events';
 import { StartGameDto } from '../dto/start-game.dto';
 import { Server } from 'socket.io';
-import { HttpService } from '@nestjs/axios';
+import { QuizService } from '../../quiz/quiz.service';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 
 @Injectable()
@@ -17,8 +17,8 @@ export class GameService {
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
-    private readonly httpService: HttpService,
-    private readonly gameValidator: GameValidator
+    private readonly gameValidator: GameValidator,
+    private readonly quizService: QuizService
   ) {}
 
   async updatePosition(updatePosition: UpdatePositionDto, clientId: string) {
@@ -49,14 +49,11 @@ export class GameService {
 
     this.gameValidator.validatePlayerIsHost(SocketEvents.START_GAME, room, clientId);
 
-    // const getQuizsetURL = `http://localhost:3000/api/quizset/${room.quizSetId}`;
-    //
-    // // REFACTOR: get 대신 Promise를 반환하는 axiosRef를 사용했으나 더 나은 방식이 있는지 확인
-    // const quizset = await this.httpService.axiosRef({
-    //   url: getQuizsetURL,
-    //   method: 'GET'
-    // });
-    const quizset = mockQuizData;
+    /**
+     * 퀴즈셋이 설정되어 있지 않으면 기본 퀴즈셋을 사용
+     */
+    const quizset =
+      room.quizSetId === '-1' ? mockQuizData : await this.quizService.findOne(+room.quizSetId);
     this.gameValidator.validateQuizsetCount(
       SocketEvents.START_GAME,
       parseInt(room.quizCount),

@@ -32,7 +32,7 @@ export class GameRoomService {
       isPublicGame: gameConfig.isPublicGame ? '1' : '0',
       isWaiting: '1',
       lastActivityAt: new Date().getTime().toString(),
-      quizSetId: '0',
+      quizSetId: '-1', // 미설정시 기본퀴즈를 진행, -1은 기본 퀴즈셋
       quizCount: '2'
     });
 
