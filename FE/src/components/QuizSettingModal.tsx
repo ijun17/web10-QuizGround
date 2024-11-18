@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { QuizPreview } from './QuizPreview';
 import { socketService } from '@/api/socket';
 import QuizSetSearchList from './QuizSetSearchList';
@@ -30,11 +30,15 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
   const [inputValue, setInputValue] = useState('');
   const [searchParam, setSearchParam] = useState('');
   const [quizCount, setQuizCount] = useState(0);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearch: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
     const trimedInputValue = inputValue.trim();
-    if (trimedInputValue && trimedInputValue !== searchParam) setSearchParam(trimedInputValue);
+    if (trimedInputValue !== searchParam) {
+      setSearchParam(trimedInputValue);
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    }
   };
 
   const handleChangeSetting = () => {
@@ -43,6 +47,11 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
       quizSetId: Number(selectedQuizSet.id),
       quizCount: quizCount
     });
+  };
+
+  const handleSelectQuizSet = (quizSet: QuizSet) => {
+    setSelectedQuizSet(quizSet);
+    setQuizCount(quizSet.quizList.length);
   };
 
   return (
@@ -68,12 +77,10 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
               ✕
             </button>
           </div>
-          <div className="flex flex-col pl-2 pr-2 max-h-[30vh] overflow-y-auto">
-            <QuizSetSearchList
-              search={searchParam}
-              onClick={setSelectedQuizSet}
-              key={searchParam}
-            />
+          <div className="flex flex-col pl-2 pr-2 max-h-[30vh] overflow-y-auto" ref={scrollRef}>
+            {searchParam && (
+              <QuizSetSearchList search={searchParam} onClick={handleSelectQuizSet} />
+            )}
           </div>
         </div>
         <div className="border-t border-default">
@@ -82,12 +89,12 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
               <div className="font-bold text-lg">선택된 퀴즈</div>
               <QuizPreview title={selectedQuizSet.title} description={selectedQuizSet.category} />
               <div>
-                <span className="mr-4">{`퀴즈 개수(${Math.min(quizCount, selectedQuizSet.quizList.length)})`}</span>
+                <span className="mr-4">{`퀴즈 개수(${quizCount})`}</span>
                 <input
                   type="range"
                   min={1}
                   max={selectedQuizSet.quizList.length}
-                  value={Math.min(quizCount, selectedQuizSet.quizList.length)}
+                  value={quizCount}
                   onChange={(e) => setQuizCount(Number(e.target.value))}
                 />
               </div>
@@ -101,7 +108,7 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
               </div>
             </div>
           ) : (
-            <div className="h-[100px] flex justify-center items-center text-gray-400">
+            <div className="h-[10rem] flex justify-center items-center text-gray-400">
               퀴즈를 선택해주세요
             </div>
           )}
