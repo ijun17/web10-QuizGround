@@ -10,5 +10,8 @@ export const handlers = [
 
     console.log(offset, size, search);
     return HttpResponse.json({ quizSetList: QuizSetList.slice(offset, offset + size) });
+  }),
+  http.get('/api/time', () => {
+    return HttpResponse.json({ serverTime: Date.now() });
   })
 ];

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const API_PATH = '/time';
+const API_PATH = '/api/time';
 
 const useServerDate = () => {
   const [offset, setOffset] = useState(0);
