@@ -6,11 +6,6 @@ type Props = {
   description: string;
 };
 
-const mock = {
-  title: '내가만든퀴즈',
-  description: '아무거나 찍어주세요 행운을 테스트합니다.'
-};
-
 export const QuizPreview = ({ title, description }: Props) => {
   return (
     <div className="component-default h-[100px] flex overflow-hidden">
@@ -18,8 +13,8 @@ export const QuizPreview = ({ title, description }: Props) => {
         <img src={sampleQuizImage} className="object-cover w-[100%] h-[100%]" />
       </div>
       <div className="flex flex-col pl-4 justify-center">
-        <div className="font-bold text-xl">{mock.title + title}</div>
-        <div>{mock.description + description}</div>
+        <div className="font-bold text-xl">{title}</div>
+        <div>{description}</div>
       </div>
     </div>
   );
