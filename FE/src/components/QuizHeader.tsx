@@ -4,6 +4,7 @@ import AnswerModal from './AnswerModal';
 import QuizState from '@/constants/quizState';
 import Lottie from 'lottie-react';
 import quizLoading from '../assets/lottie/quiz_loading.json';
+import useServerDate from '@/hooks/useServerDate';
 
 export const QuizHeader = () => {
   const currentQuiz = useQuizeStore((state) => state.currentQuiz);
@@ -12,12 +13,13 @@ export const QuizHeader = () => {
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
   const [limitTime, setLimitTime] = useState(0);
   const answer = useQuizeStore((state) => state.currentAnswer);
+  const serverNow = useServerDate();
   useEffect(() => {
     if (currentQuiz) {
-      setSeconds((currentQuiz.endTime - Date.now()) / 1000);
+      setSeconds((currentQuiz.endTime - serverNow()) / 1000);
       setLimitTime((currentQuiz.endTime - currentQuiz.startTime) / 1000);
     }
-  }, [currentQuiz]);
+  }, [currentQuiz, serverNow]);
 
   useEffect(() => {
     setIsAnswerVisible(quizState === QuizState.END);
@@ -26,9 +28,9 @@ export const QuizHeader = () => {
   useEffect(() => {
     requestAnimationFrame(() => {
       if (seconds <= 0 || !currentQuiz) return;
-      setSeconds((currentQuiz.endTime - Date.now()) / 1000);
+      setSeconds((currentQuiz.endTime - serverNow()) / 1000);
     });
-  }, [currentQuiz, seconds]);
+  }, [currentQuiz, seconds, serverNow]);
 
   if (!currentQuiz)
     return (
@@ -38,10 +40,10 @@ export const QuizHeader = () => {
       </div>
     );
 
-  if (currentQuiz.startTime > Date.now())
+  if (currentQuiz.startTime > serverNow())
     return (
       <div className="border border-default component-popup flex justify-center items-center h-[280px] w-[1000px] text-orange-300 font-bold text-7xl">
-        {Math.ceil((currentQuiz.startTime - Date.now()) / 1000)}
+        {Math.ceil((currentQuiz.startTime - serverNow()) / 1000)}
       </div>
     );
   return (
