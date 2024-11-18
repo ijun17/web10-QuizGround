@@ -5,7 +5,6 @@ import { io, Socket } from 'socket.io-client';
 import { GameGateway } from '../src/game/game.gateway';
 import { GameService } from '../src/game/service/game.service';
 import socketEvents from '../src/common/constants/socket-events';
-import { RedisModule } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
 import { GameValidator } from '../src/game/validations/game.validator';
 import { GameChatService } from '../src/game/service/game.chat.service';
@@ -14,6 +13,15 @@ import { HttpService } from '@nestjs/axios';
 import { mockQuizData } from './mocks/quiz-data.mock';
 import RedisMock from 'ioredis-mock';
 import { REDIS_KEY } from '../src/common/constants/redis-key.constant';
+import { QuizCacheService } from '../src/game/service/quiz.cache.service';
+import { QuizService } from '../src/quiz/quiz.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { QuizSetModel } from '../src/quiz/entities/quiz-set.entity';
+import { QuizModel } from '../src/quiz/entities/quiz.entity';
+import { QuizChoiceModel } from '../src/quiz/entities/quiz-choice.entity';
+import { UserModel } from '../src/user/entities/user.entity';
+import { UserQuizArchiveModel } from '../src/user/entities/user-quiz-archive.entity';
+import { ConfigModule } from '@nestjs/config';
 
 const mockHttpService = {
   axiosRef: jest.fn().mockImplementation(() => {
@@ -50,10 +58,25 @@ describe('GameGateway (e2e)', () => {
 
     const moduleRef = await Test.createTestingModule({
       imports: [
-        RedisModule.forRoot({
-          type: 'single',
-          url: 'redis://localhost:6379'
-        })
+        // RedisModule.forRoot({
+        //   type: 'single',
+        //   url: 'redis://localhost:6379'
+        // }),
+        ConfigModule.forRoot({
+          envFilePath: '../.env',
+          isGlobal: true
+        }),
+        TypeOrmModule.forRoot({
+          type: 'mysql',
+          host: process.env.DB_HOST_TEST || process.env.DB_HOST || '127.0.0.1',
+          port: +process.env.DB_PORT_TEST || +process.env.DB_PORT || 3306,
+          username: process.env.DB_USER_TEST || process.env.DB_USER || 'root',
+          password: process.env.DB_PASSWD_TEST || process.env.DB_PASSWD || 'test',
+          database: process.env.DB_NAME_TEST || process.env.DB_NAME || 'test_db',
+          entities: [QuizSetModel, QuizModel, QuizChoiceModel, UserModel, UserQuizArchiveModel],
+          synchronize: true // test모드에서는 항상 활성화
+        }),
+        TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel, UserModel])
       ],
       providers: [
         GameGateway,
@@ -61,6 +84,8 @@ describe('GameGateway (e2e)', () => {
         GameChatService,
         GameRoomService,
         GameValidator,
+        QuizCacheService,
+        QuizService,
         {
           provide: 'default_IORedisModuleConnectionToken',
           useValue: redisMock
