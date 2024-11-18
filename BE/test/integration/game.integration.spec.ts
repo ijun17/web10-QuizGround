@@ -2,18 +2,18 @@ import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { io, Socket } from 'socket.io-client';
-import { GameGateway } from '../src/game/game.gateway';
-import { GameService } from '../src/game/service/game.service';
-import socketEvents from '../src/common/constants/socket-events';
+import { GameGateway } from '../../src/game/game.gateway';
+import { GameService } from '../../src/game/service/game.service';
+import socketEvents from '../../src/common/constants/socket-events';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
-import { GameValidator } from '../src/game/validations/game.validator';
-import { GameChatService } from '../src/game/service/game.chat.service';
-import { GameRoomService } from '../src/game/service/game.room.service';
+import { GameValidator } from '../../src/game/validations/game.validator';
+import { GameChatService } from '../../src/game/service/game.chat.service';
+import { GameRoomService } from '../../src/game/service/game.room.service';
 import { HttpService } from '@nestjs/axios';
-import { mockQuizData } from './mocks/quiz-data.mock';
+import { mockQuizData } from '../mocks/quiz-data.mock';
 import RedisMock from 'ioredis-mock';
-import { REDIS_KEY } from '../src/common/constants/redis-key.constant';
+import { REDIS_KEY } from '../../src/common/constants/redis-key.constant';
 
 const mockHttpService = {
   axiosRef: jest.fn().mockImplementation(() => {
