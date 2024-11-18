@@ -43,6 +43,7 @@ describe('WaitingRoomService', () => {
         maxPlayerCount: '4',
         isWaiting: '1',
         quizSetId: '1',
+        quizSetTitle: '즐거운 퀴즈모음1'
       };
       const mockRoom2 = {
         title: '방 제목 2',
@@ -50,6 +51,7 @@ describe('WaitingRoomService', () => {
         maxPlayerCount: '6',
         isWaiting: '0',  // 대기중이 아닌 방
         quizSetId: '2',
+        quizSetTitle: '즐거운 퀴즈모음2'
       };
 
       redisMock.keys.mockResolvedValue(mockRoomKeys);
@@ -70,7 +72,7 @@ describe('WaitingRoomService', () => {
         gameMode: 'NORMAL',
         maxPlayerCount: 4,
         currentPlayerCount: 2,
-        quizSetTitle: 'QuizSet 1',
+        quizSetTitle: '즐거운 퀴즈모음1',
         gameId: '123'
       });
 

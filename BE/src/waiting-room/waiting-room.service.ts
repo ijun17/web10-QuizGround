@@ -20,21 +20,19 @@ export class WaitingRoomService {
       const gameId = roomKey.split(':')[1];
       const roomInfo = await this.redis.hgetall(roomKey);
 
-      if (roomInfo.isWaiting === '1') {
-        const currentPlayerCount = await this.redis.scard(`Room:${gameId}:Players`);
-
-        // TODO: 실제 퀴즈셋 제목 조회 로직 필요 (애초에 Redis에 quizSetTitle을 저장하는 게 좋음)
-        const quizSetTitle = `QuizSet ${roomInfo.quizSetId}`;
-
-        rooms.push({
-          title: roomInfo.title,
-          gameMode: roomInfo.gameMode,
-          maxPlayerCount: parseInt(roomInfo.maxPlayerCount),
-          currentPlayerCount: currentPlayerCount,
-          quizSetTitle: quizSetTitle,
-          gameId: gameId
-        });
+      if (roomInfo.isWaiting !== '1') {
+        continue;
       }
+
+      const currentPlayerCount = await this.redis.scard(`Room:${gameId}:Players`);
+      rooms.push({
+        title: roomInfo.title,
+        gameMode: roomInfo.gameMode,
+        maxPlayerCount: parseInt(roomInfo.maxPlayerCount),
+        currentPlayerCount: currentPlayerCount,
+        quizSetTitle: roomInfo.quizSetTitle,
+        gameId: gameId
+      });
     }
 
     return {
