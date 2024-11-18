@@ -168,7 +168,7 @@ export class QuizService {
     limit: number,
     search: string
   ): Promise<QuizSetList<QuizSetDto[]>> {
-    const quizSets = await this.fetchQuizSets(category, offset, limit);
+    let quizSets = await this.fetchQuizSets(category, offset, limit);
 
     if (!quizSets.length) {
       return new QuizSetList([]);
@@ -177,21 +177,26 @@ export class QuizService {
     const quizzes = await this.fetchQuizzesByQuizSets(quizSets);
     const choices = await this.fetchChoicesByQuizzes(quizzes);
 
-    const mappedData = this.mapRelations(quizSets, quizzes, choices);
+    quizSets = this.filterBySearch(search, quizSets, quizzes, choices);
 
-    return new QuizSetList(mappedData);
+    return new QuizSetList(this.mapRelations(quizSets, quizzes, choices));
   }
 
   private async fetchQuizSets(
-    category: string,
+    category: string | undefined,
     offset: number,
     limit: number
   ): Promise<QuizSetModel[]> {
+    const whereCondition: any = {
+      deletedAt: IsNull()
+    };
+
+    if (category) {
+      whereCondition.category = category;
+    }
+
     return this.quizSetRepository.find({
-      where: {
-        category,
-        deletedAt: IsNull()
-      },
+      where: whereCondition,
       skip: offset,
       take: limit,
       order: {
@@ -244,6 +249,20 @@ export class QuizService {
       limitTime: quiz.limitTime,
       choiceList: this.mapChoices(choicesByQuizId[quiz.id] || [])
     }));
+  }
+
+  private filterBySearch(search: string, quizSets: QuizSetModel[], quizzes: QuizModel[], choices: QuizChoiceModel[]) {
+    if (search) {
+      return quizSets.filter(quizSet => {
+        const quizList = quizzes.filter(quiz => quiz.quizSetId === quizSet.id);
+        const choiceList = choices.filter(choice => quizList.some(quiz => quiz.id === choice.quizId));
+        return quizSet.title.includes(search) ||
+          quizList.some(quiz => quiz.quiz.includes(search)) ||
+          choiceList.some(choice => choice.choiceContent.includes(search));
+      });
+    }
+
+    return quizSets;
   }
 
   private mapChoices(choices: QuizChoiceModel[]): ChoiceDto[] {

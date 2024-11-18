@@ -11,6 +11,34 @@ import { UserModel } from '../../src/user/entities/user.entity';
 import { UserQuizArchiveModel } from '../../src/user/entities/user-quiz-archive.entity';
 import { CreateQuizSetDto } from '../../src/quiz/dto/create-quiz.dto';
 
+async function createQuizSetTestData(quizService: QuizService, quiz: string = '테스트') {
+  // Given - 테스트 데이터 생성
+  const createQuizSetDto: CreateQuizSetDto = {
+    title: '자바스크립트 기초',
+    category: 'PROGRAMMING',
+    quizList: [
+      {
+        quiz: quiz,
+        limitTime: 30,
+        choiceList: [
+          {
+            choiceContent: '보기1',
+            choiceOrder: 1,
+            isAnswer: true
+          },
+          {
+            choiceContent: '보기2',
+            choiceOrder: 2,
+            isAnswer: false
+          }
+        ]
+      }
+    ]
+  };
+
+  await quizService.createQuizSet(createQuizSetDto);
+}
+
 describe('QuizService', () => {
   let quizService: QuizService;
   let dataSource: DataSource;
@@ -68,7 +96,7 @@ describe('QuizService', () => {
     expect(dataSource).toBeDefined();
   });
 
-  describe('퀴즈셋 생성 E2E 테스트', () => {
+  describe('퀴즈셋 생성 테스트', () => {
     it('퀴즈셋을 성공적으로 생성해야 한다', async () => {
       // Given
       const createQuizSetDto: CreateQuizSetDto = {
@@ -176,7 +204,7 @@ describe('QuizService', () => {
     });
   });
 
-  describe('findAllWithQuizzesAndChoices', () => {
+  describe('퀴즈셋 목록 조회 테스트', () => {
     it('카테고리별 퀴즈셋 목록을 가져와야한다', async () => {
       // Given - 테스트 데이터 생성
       const createQuizSetDto: CreateQuizSetDto = {
@@ -205,7 +233,7 @@ describe('QuizService', () => {
       await quizService.createQuizSet(createQuizSetDto);
 
       // When
-      const result = await quizService.findAllWithQuizzesAndChoices('PROGRAMMING', 0, 10);
+      const result = await quizService.findAllWithQuizzesAndChoices('PROGRAMMING', 0, 10, '');
 
       // Then
       expect(result.quizSetList).toBeDefined();
@@ -216,14 +244,35 @@ describe('QuizService', () => {
 
     it('존재하지 않는 카테고리는 빈 배열을 반환해야 한다', async () => {
       // When
-      const result = await quizService.findAllWithQuizzesAndChoices('INVALID', 0, 10);
+      const result = await quizService.findAllWithQuizzesAndChoices('INVALID', 0, 10, '');
 
       // Then
       expect(result.quizSetList).toHaveLength(0);
     });
+
+    it('검색어로 퀴즈셋 목록을 가져와야 한다', async () => {
+      for (let i = 0; i < 20; i++) {
+        await createQuizSetTestData(quizService, `테스트${i}`);
+      }
+
+      const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '테스트19');
+
+      expect(result.quizSetList).toHaveLength(1);
+      expect(result.quizSetList[0].quizList[0].quiz).toContain('테스트19');
+    })
+
+    it('검색어가 유효하지 않아 퀴즈셋 목록이 없다', async () => {
+      for (let i = 0; i < 20; i++) {
+        await createQuizSetTestData(quizService, `테스트${i}`);
+      }
+
+      const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '테스트20');
+
+      expect(result.quizSetList).toHaveLength(0);
+    })
   });
 
-  describe('findOne', () => {
+  describe('퀴즈셋 단일 조회 테스트', () => {
     let testQuizSet;
 
     beforeEach(async () => {
