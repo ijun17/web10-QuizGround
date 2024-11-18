@@ -38,7 +38,6 @@ export const QuizOptionBoard = () => {
     setSelectedOption(option);
   };
 
-  // const
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [boardRect, setBoardRect] = useState<null | DOMRect>(null);
 
@@ -47,6 +46,16 @@ export const QuizOptionBoard = () => {
       setBoardRect(boardRef.current.getBoundingClientRect());
     }
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (boardRef.current) setBoardRect(boardRef.current.getBoundingClientRect());
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [boardRef]);
 
   return (
     <div
