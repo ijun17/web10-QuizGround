@@ -47,13 +47,11 @@ const QuizSetSearchList = ({ onClick, search }: Params) => {
   const [selectedQuizSet, setSelectedQuizSet] = useState<null | QuizSet>(null);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } =
     useInfiniteQuery({
-      queryKey: ['posts'],
+      queryKey: [search],
       queryFn: fetchPosts,
       initialPageParam: 0,
       getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextPage : undefined)
     });
-
-  console.log(data);
 
   const observerRef = useRef<null | HTMLDivElement>(null);
 
