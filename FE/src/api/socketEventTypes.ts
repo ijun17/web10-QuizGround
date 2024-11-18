@@ -52,12 +52,12 @@ type UpdateRoomOptionResponse = {
 
 // 게임방 퀴즈셋 수정 타입
 type UpdateRoomQuizsetRequest = {
-  quizsetId: number;
+  quizSetId: number;
   quizCount: number;
 };
 
 type UpdateRoomQuizsetResponse = {
-  quizsetId: number;
+  quizSetId: number;
   quizCount: number;
 };
 
