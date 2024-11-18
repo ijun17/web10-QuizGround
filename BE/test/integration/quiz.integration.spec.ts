@@ -12,7 +12,6 @@ import { UserQuizArchiveModel } from '../../src/user/entities/user-quiz-archive.
 import { CreateQuizSetDto } from '../../src/quiz/dto/create-quiz.dto';
 
 async function createQuizSetTestData(quizService: QuizService, quiz: string = '테스트') {
-  // Given - 테스트 데이터 생성
   const createQuizSetDto: CreateQuizSetDto = {
     title: '자바스크립트 기초',
     category: 'PROGRAMMING',

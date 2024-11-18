@@ -13,6 +13,7 @@ import { UserQuizArchiveModel } from './user/entities/user-quiz-archive.entity';
 import { InitDBModule } from './InitDB/InitDB.module';
 import { UserModule } from './user/user.module';
 import { QuizModule } from './quiz/quiz.module';
+import { WaitingRoomModule } from './waiting-room/waiting-room.module';
 
 @Module({
   imports: [
@@ -43,7 +44,8 @@ import { QuizModule } from './quiz/quiz.module';
     }),
     QuizModule,
     UserModule,
-    InitDBModule
+    InitDBModule,
+    WaitingRoomModule
   ],
   controllers: [AppController],
   providers: [AppService]
