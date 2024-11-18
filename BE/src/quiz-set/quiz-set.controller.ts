@@ -11,13 +11,13 @@ import {
   Query
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { QuizService } from './quiz.service';
+import { QuizSetService } from './service/quiz-set.service';
 import { UpdateQuizSetDto } from './dto/update-quiz.dto';
 import { CreateQuizSetDto } from './dto/create-quiz.dto';
 
-@Controller('/api/quizset')
-export class QuizController {
-  constructor(private readonly quizService: QuizService) {}
+@Controller('/api/quiz-set')
+export class QuizSetController {
+  constructor(private readonly quizService: QuizSetService) {}
 
   @Post()
   @ApiOperation({ summary: '퀴즈셋 생성' })

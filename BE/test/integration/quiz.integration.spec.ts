@@ -3,43 +3,20 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { QuizService } from '../../src/quiz/quiz.service';
-import { QuizSetModel } from '../../src/quiz/entities/quiz-set.entity';
-import { QuizModel } from '../../src/quiz/entities/quiz.entity';
-import { QuizChoiceModel } from '../../src/quiz/entities/quiz-choice.entity';
+import { QuizSetService } from '../../src/quiz-set/service/quiz-set.service';
+import { QuizSetModel } from '../../src/quiz-set/entities/quiz-set.entity';
+import { QuizModel } from '../../src/quiz-set/entities/quiz.entity';
+import { QuizChoiceModel } from '../../src/quiz-set/entities/quiz-choice.entity';
 import { UserModel } from '../../src/user/entities/user.entity';
 import { UserQuizArchiveModel } from '../../src/user/entities/user-quiz-archive.entity';
-import { CreateQuizSetDto } from '../../src/quiz/dto/create-quiz.dto';
-
-async function createQuizSetTestData(quizService: QuizService, quiz: string = '테스트') {
-  const createQuizSetDto: CreateQuizSetDto = {
-    title: '자바스크립트 기초',
-    category: 'PROGRAMMING',
-    quizList: [
-      {
-        quiz: quiz,
-        limitTime: 30,
-        choiceList: [
-          {
-            choiceContent: '보기1',
-            choiceOrder: 1,
-            isAnswer: true
-          },
-          {
-            choiceContent: '보기2',
-            choiceOrder: 2,
-            isAnswer: false
-          }
-        ]
-      }
-    ]
-  };
-
-  await quizService.createQuizSet(createQuizSetDto);
-}
+import { CreateQuizSetDto } from '../../src/quiz-set/dto/create-quiz.dto';
+import { QuizSetCreateService } from '../../src/quiz-set/service/quiz-set-create.service';
+import { QuizSetReadService } from '../../src/quiz-set/service/quiz-set-read.service';
+import { QuizSetUpdateService } from '../../src/quiz-set/service/quiz-set-update.service';
+import { QuizSetDeleteService } from '../../src/quiz-set/service/quiz-set-delete.service';
 
 describe('QuizService', () => {
-  let quizService: QuizService;
+  let quizService: QuizSetService;
   let dataSource: DataSource;
   let queryRunner: QueryRunner;
 
@@ -68,10 +45,16 @@ describe('QuizService', () => {
         }),
         TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel, UserModel])
       ],
-      providers: [QuizService]
+      providers: [
+        QuizSetService,
+        QuizSetCreateService,
+        QuizSetReadService,
+        QuizSetUpdateService,
+        QuizSetDeleteService
+      ]
     }).compile();
 
-    quizService = module.get<QuizService>(QuizService);
+    quizService = module.get<QuizSetService>(QuizSetService);
     dataSource = module.get<DataSource>(DataSource);
   });
 
@@ -315,7 +298,7 @@ describe('QuizService', () => {
     });
   });
 
-  describe('update', () => {
+  describe('퀴즈셋 수정 테스트', () => {
     let originQuizSetId;
 
     beforeEach(async () => {
@@ -380,7 +363,7 @@ describe('QuizService', () => {
     });
   });
 
-  describe('remove', () => {
+  describe('퀴즈셋 삭제 테스트', () => {
     let testQuizSet;
 
     beforeEach(async () => {
@@ -424,3 +407,30 @@ describe('QuizService', () => {
     });
   });
 });
+
+async function createQuizSetTestData(quizService: QuizSetService, quiz: string = '테스트') {
+  const createQuizSetDto: CreateQuizSetDto = {
+    title: '자바스크립트 기초',
+    category: 'PROGRAMMING',
+    quizList: [
+      {
+        quiz: quiz,
+        limitTime: 30,
+        choiceList: [
+          {
+            choiceContent: '보기1',
+            choiceOrder: 1,
+            isAnswer: true
+          },
+          {
+            choiceContent: '보기2',
+            choiceOrder: 2,
+            isAnswer: false
+          }
+        ]
+      }
+    ]
+  };
+
+  await quizService.createQuizSet(createQuizSetDto);
+}
