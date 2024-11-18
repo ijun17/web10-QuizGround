@@ -3,13 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { QuizService } from '../src/quiz/quiz.service';
-import { QuizSetModel } from '../src/quiz/entities/quiz-set.entity';
-import { QuizModel } from '../src/quiz/entities/quiz.entity';
-import { QuizChoiceModel } from '../src/quiz/entities/quiz-choice.entity';
-import { UserModel } from '../src/user/entities/user.entity';
-import { UserQuizArchiveModel } from '../src/user/entities/user-quiz-archive.entity';
-import { CreateQuizSetDto } from '../src/quiz/dto/create-quiz.dto';
+import { QuizService } from '../../src/quiz/quiz.service';
+import { QuizSetModel } from '../../src/quiz/entities/quiz-set.entity';
+import { QuizModel } from '../../src/quiz/entities/quiz.entity';
+import { QuizChoiceModel } from '../../src/quiz/entities/quiz-choice.entity';
+import { UserModel } from '../../src/user/entities/user.entity';
+import { UserQuizArchiveModel } from '../../src/user/entities/user-quiz-archive.entity';
+import { CreateQuizSetDto } from '../../src/quiz/dto/create-quiz.dto';
 
 describe('QuizService', () => {
   let quizService: QuizService;
@@ -68,7 +68,7 @@ describe('QuizService', () => {
     expect(dataSource).toBeDefined();
   });
 
-  describe('createQuizSet', () => {
+  describe('퀴즈셋 생성 E2E 테스트', () => {
     it('퀴즈셋을 성공적으로 생성해야 한다', async () => {
       // Given
       const createQuizSetDto: CreateQuizSetDto = {
@@ -99,22 +99,16 @@ describe('QuizService', () => {
         ]
       };
 
-      // When
       const result = await quizService.createQuizSet(createQuizSetDto);
-
-      // Then
-      expect(result).toBeDefined();
-      expect(result.data.id).toBeDefined();
-
-      // 데이터가 정상적으로 저장되었는지 확인
       const savedQuizSet = await queryRunner.manager.findOne(QuizSetModel, {
-        where: { id: result.data.id },
+        where: { id: result.id },
         relations: ['quizList', 'quizList.choiceList', 'user']
       });
 
+      expect(result).toBeDefined();
+      expect(result.id).toBeDefined();
       expect(savedQuizSet).toBeDefined();
       expect(savedQuizSet.title).toBe(createQuizSetDto.title);
-      // expect(savedQuizSet.user.email).toBe('honux@codesquad.co.kr');
       expect(savedQuizSet.quizList).toHaveLength(1);
       expect(savedQuizSet.quizList[0].choiceList).toHaveLength(3);
     });
@@ -253,7 +247,7 @@ describe('QuizService', () => {
       };
 
       const result = await quizService.createQuizSet(dto);
-      testQuizSet = result.data;
+      testQuizSet = result;
     });
 
     it('ID로 퀴즈셋을 찾을 수 있어야 한다.', async () => {
@@ -297,7 +291,7 @@ describe('QuizService', () => {
       };
 
       const result = await quizService.createQuizSet(dto);
-      originQuizSetId = result.data.id;
+      originQuizSetId = result.id;
     });
 
     it('퀴즈셋을 수정할 수 있어야 한다.', async () => {
@@ -325,7 +319,6 @@ describe('QuizService', () => {
 
       // Then
       const updated = await quizService.findOne(originQuizSetId);
-      console.log('updated: ' + JSON.stringify(updated));
       expect(updated.id).toBe(originQuizSetId.toString());
       expect(updated.title).toBe('수정된 퀴즈');
       expect(updated.category).toBe('UPDATED');
@@ -363,7 +356,7 @@ describe('QuizService', () => {
       };
 
       const result = await quizService.createQuizSet(dto);
-      testQuizSet = result.data;
+      testQuizSet = result;
     });
 
     it('퀴즈셋을 soft delete 할 수 있어야 한다.', async () => {

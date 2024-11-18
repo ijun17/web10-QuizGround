@@ -4,16 +4,16 @@ import {
   InternalServerErrorException,
   NotFoundException
 } from '@nestjs/common';
-import { CreateQuizSetDto } from './dto/create-quiz.dto';
+import { CreateChoiceDto, CreateQuizDto, CreateQuizSetDto } from './dto/create-quiz.dto';
 import { UpdateQuizSetDto } from './dto/update-quiz.dto';
 import { QuizModel } from './entities/quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
 import { QuizSetModel } from './entities/quiz-set.entity';
 import { QuizChoiceModel } from './entities/quiz-choice.entity';
-import { Result } from './dto/Response.dto';
 import { groupBy } from 'lodash';
 import { UserModel } from '../user/entities/user.entity';
+import { ChoiceDto, QuizDto, QuizSetDto, QuizSetList } from './dto/quiz-set-list-response.dto';
 
 @Injectable()
 export class QuizService {
@@ -27,12 +27,170 @@ export class QuizService {
     private dataSource: DataSource
   ) {}
 
-  async findAllWithQuizzesAndChoices(category: string, offset: number, limit: number) {
-    // 1. QuizSet 페이징 조회
-    const quizSets = await this.quizSetRepository.find({
+  /**
+   * 퀴즈셋, 퀴즈, 선택지를 생성합니다.
+   * @param createQuizSetDto 생성할 퀴즈셋 데이터
+   * @returns 생성된 퀴즈셋
+   */
+  async createQuizSet(dto: CreateQuizSetDto) {
+    this.validateQuizSet(dto);
+    return this.dataSource.transaction(async (manager) => {
+      const user = await this.extractUser(manager);
+      const quizSet = await this.createQuizSetEntity(manager, dto, user);
+      await this.createQuizzesWithChoices(manager, dto.quizList, quizSet);
+
+      return {
+        id: quizSet.id
+      };
+    }).catch(this.handleError);
+  }
+
+  private async extractUser(manager: EntityManager): Promise<UserModel> {
+    // TODO: 실제 인증된 사용자 정보 사용
+    const email = 'honux@codesquad.co.kr';
+
+    const user = await manager.findOne(UserModel, {
+      where: { email }
+    });
+
+    if (user) return user;
+
+    // TODO: 실제 인증된 사용자 정보 사용
+    const newUser = manager.create(UserModel, {
+      email,
+      password: '123456',
+      nickname: 'honux',
+      point: 100,
+      status: 'ACTIVE'
+    });
+
+    return manager.save(newUser);
+  }
+
+  private async createQuizSetEntity(
+    manager: EntityManager,
+    dto: CreateQuizSetDto,
+    user: UserModel
+  ): Promise<QuizSetModel> {
+    const quizSet = manager.create(QuizSetModel, {
+      title: dto.title,
+      category: dto.category,
+      user,
+      userId: user.id
+    });
+
+    return manager.save(quizSet);
+  }
+
+  private async createQuizzesWithChoices(
+    manager: EntityManager,
+    quizList: CreateQuizDto[],
+    quizSet: QuizSetModel
+  ): Promise<void> {
+    await Promise.all(quizList.map(async (quizData) => {
+      const quiz = await this.createQuiz(manager, quizData, quizSet);
+      await this.createChoices(manager, quizData.choiceList, quiz);
+    }));
+  }
+
+  private async createQuiz(
+    manager: EntityManager,
+    quizData: CreateQuizDto,
+    quizSet: QuizSetModel
+  ): Promise<QuizModel> {
+    const quiz = manager.create(QuizModel, {
+      quizSet,
+      quiz: quizData.quiz,
+      limitTime: quizData.limitTime
+    });
+
+    return manager.save(quiz);
+  }
+
+  private async createChoices(
+    manager: EntityManager,
+    choiceList: CreateChoiceDto[],
+    quiz: QuizModel
+  ): Promise<void> {
+    const choices = choiceList.map(choice =>
+      manager.create(QuizChoiceModel, {
+        quiz,
+        choiceContent: choice.choiceContent,
+        choiceOrder: choice.choiceOrder,
+        isAnswer: choice.isAnswer
+      })
+    );
+
+    await manager.save(choices);
+  }
+
+  private validateQuizSet(quizSet: CreateQuizSetDto): void {
+    for (const quiz of quizSet.quizList) {
+      this.validateQuizAnswers(quiz);
+      this.validateChoiceOrders(quiz);
+    }
+  }
+
+  private validateQuizAnswers(quiz: CreateQuizDto): void {
+    const hasAnswer = quiz.choiceList.some(choice => choice.isAnswer);
+    if (!hasAnswer) {
+      throw new BadRequestException(`퀴즈 "${quiz.quiz}"에 정답이 없습니다.`);
+    }
+  }
+
+  private validateChoiceOrders(quiz: CreateQuizDto): void {
+    const orders = new Set(quiz.choiceList.map(choice => choice.choiceOrder));
+    if (orders.size !== quiz.choiceList.length) {
+      throw new BadRequestException(`퀴즈 "${quiz.quiz}"의 선택지 번호가 중복됩니다.`);
+    }
+  }
+
+  private handleError(error: Error): never {
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+    if (error instanceof QueryFailedError) {
+      throw new BadRequestException(`데이터베이스 오류: ${error.message}`);
+    }
+    throw new InternalServerErrorException(`퀴즈셋 생성 실패: ${error.message}`);
+  }
+
+  /**
+   * 퀴즈셋 목록을 조회합니다.
+   * @param category 카테고리
+   * @param offset 오프셋
+   * @param limit 한 페이지당 개수
+   * @returns 퀴즈셋 목록
+   */
+  async findAllWithQuizzesAndChoices(
+    category: string,
+    offset: number,
+    limit: number,
+    search: string
+  ): Promise<QuizSetList<QuizSetDto[]>> {
+    const quizSets = await this.fetchQuizSets(category, offset, limit);
+
+    if (!quizSets.length) {
+      return new QuizSetList([]);
+    }
+
+    const quizzes = await this.fetchQuizzesByQuizSets(quizSets);
+    const choices = await this.fetchChoicesByQuizzes(quizzes);
+
+    const mappedData = this.mapRelations(quizSets, quizzes, choices);
+
+    return new QuizSetList(mappedData);
+  }
+
+  private async fetchQuizSets(
+    category: string,
+    offset: number,
+    limit: number
+  ): Promise<QuizSetModel[]> {
+    return this.quizSetRepository.find({
       where: {
         category,
-        deletedAt: IsNull() // soft delete 고려
+        deletedAt: IsNull()
       },
       skip: offset,
       take: limit,
@@ -40,52 +198,59 @@ export class QuizService {
         createdAt: 'DESC'
       }
     });
+  }
 
-    if (quizSets.length === 0) {
-      return new Result([]);
-    }
-
-    // 2. Quiz 한 번에 조회
-    const quizSetIds = quizSets.map((qs) => qs.id);
-    const quizzes = await this.quizRepository
+  private async fetchQuizzesByQuizSets(quizSets: QuizSetModel[]): Promise<QuizModel[]> {
+    const quizSetIds = quizSets.map(qs => qs.id);
+    return this.quizRepository
       .createQueryBuilder('quiz')
       .where('quiz.quizSetId IN (:...quizSetIds)', { quizSetIds })
       .andWhere('quiz.deletedAt IS NULL')
       .getMany();
+  }
 
-    // 3. Choice 한 번에 조회
-    const quizIds = quizzes.map((q) => q.id);
-    const choices = await this.quizChoiceRepository
+  private async fetchChoicesByQuizzes(quizzes: QuizModel[]): Promise<QuizChoiceModel[]> {
+    const quizIds = quizzes.map(q => q.id);
+    return this.quizChoiceRepository
       .createQueryBuilder('choice')
       .where('choice.quizId IN (:...quizIds)', { quizIds })
       .andWhere('choice.deletedAt IS NULL')
       .getMany();
+  }
 
-    // 4. 메모리에서 관계 매핑
+  private mapRelations(
+    quizSets: QuizSetModel[],
+    quizzes: QuizModel[],
+    choices: QuizChoiceModel[]
+  ): QuizSetDto[] {
     const choicesByQuizId = groupBy(choices, 'quizId');
     const quizzesByQuizSetId = groupBy(quizzes, 'quizSetId');
 
-    const dtos = this.quizSetToDto(quizSets, quizzesByQuizSetId, choicesByQuizId);
-
-    return new Result(dtos);
-  }
-
-  private quizSetToDto(quizSets: QuizSetModel[], quizzesByQuizSetId, choicesByQuizId) {
-    const dtos = quizSets.map((quizSet) => ({
+    return quizSets.map(quizSet => ({
       id: quizSet.id.toString(),
       title: quizSet.title,
       category: quizSet.category,
-      quizList: (quizzesByQuizSetId[quizSet.id] || []).map((quiz) => ({
-        id: quiz.id.toString(),
-        quiz: quiz.quiz,
-        limitTime: quiz.limitTime,
-        choiceList: (choicesByQuizId[quiz.id] || []).map((choice) => ({
-          content: choice.choiceContent,
-          order: choice.choiceOrder
-        }))
-      }))
+      quizList: this.mapQuizzes(quizzesByQuizSetId[quizSet.id] || [], choicesByQuizId)
     }));
-    return dtos;
+  }
+
+  private mapQuizzes(
+    quizzes: QuizModel[],
+    choicesByQuizId: Record<string, QuizChoiceModel[]>
+  ): QuizDto[] {
+    return quizzes.map(quiz => ({
+      id: quiz.id.toString(),
+      quiz: quiz.quiz,
+      limitTime: quiz.limitTime,
+      choiceList: this.mapChoices(choicesByQuizId[quiz.id] || [])
+    }));
+  }
+
+  private mapChoices(choices: QuizChoiceModel[]): ChoiceDto[] {
+    return choices.map(choice => ({
+      content: choice.choiceContent,
+      order: choice.choiceOrder
+    }));
   }
 
   /**
@@ -95,7 +260,13 @@ export class QuizService {
    * @param id
    */
   async findOne(id: number) {
-    // 1. QuizSet 조회
+    const quizSet = await this.findQuizSetById(id);
+    const quizzes = await this.findQuizzesByQuizSetId(id);
+    const choices = await this.findChoicesByQuizIds(quizzes.map(q => q.id));
+    return this.mapToQuizSetDetailDto(quizSet, quizzes, choices);
+  }
+
+  private async findQuizSetById(id: number): Promise<QuizSetModel> {
     const quizSet = await this.quizSetRepository.findOne({
       where: { id, deletedAt: IsNull() }
     });
@@ -104,186 +275,88 @@ export class QuizService {
       throw new NotFoundException(`QuizSet with id ${id} not found`);
     }
 
-    // 2. Quiz 조회
-    const quizzes = await this.quizRepository
+    return quizSet;
+  }
+
+  private async findQuizzesByQuizSetId(quizSetId: number): Promise<QuizModel[]> {
+    return this.quizRepository
       .createQueryBuilder('quiz')
-      .where('quiz.quizSetId = :quizSetId', { quizSetId: id })
+      .where('quiz.quizSetId = :quizSetId', { quizSetId })
       .andWhere('quiz.deletedAt IS NULL')
       .getMany();
+  }
 
-    // 3. Choice 조회
-    const quizIds = quizzes.map((q) => q.id);
-    const choices = await this.quizChoiceRepository
+  private async findChoicesByQuizIds(quizIds: number[]): Promise<QuizChoiceModel[]> {
+    if (quizIds.length === 0) return [];
+
+    return this.quizChoiceRepository
       .createQueryBuilder('choice')
       .where('choice.quizId IN (:...quizIds)', { quizIds })
       .andWhere('choice.deletedAt IS NULL')
       .getMany();
+  }
 
-    // 4. 메모리에서 관계 매핑
+  private mapToQuizSetDetailDto(
+    quizSet: QuizSetModel,
+    quizzes: QuizModel[],
+    choices: QuizChoiceModel[]
+  ) {
     const choicesByQuizId = groupBy(choices, 'quizId');
 
-    // 5. DTO 변환
-    const dto = {
+    return {
       id: quizSet.id.toString(),
       title: quizSet.title,
       category: quizSet.category,
-      quizList: quizzes.map((quiz) => ({
+      quizList: quizzes.map(quiz => ({
         id: quiz.id.toString(),
         quiz: quiz.quiz,
         limitTime: quiz.limitTime,
-        choiceList: (choicesByQuizId[quiz.id] || []).map((choice) => ({
+        choiceList: (choicesByQuizId[quiz.id] || []).map(choice => ({
           content: choice.choiceContent,
           order: choice.choiceOrder,
           isAnswer: choice.isAnswer
         }))
       }))
     };
-
-    return dto;
   }
 
+  //todo : 토큰으로 로그인한 사용자 정보 가져오기 && 권한 확인
+  // if (quizSet.userId !== userId) {
+  //   throw new ForbiddenException('해당 퀴즈셋을 삭제할 권한이 없습니다.');
+  // }
   async remove(id: number) {
     return this.dataSource.transaction(async (manager) => {
-      // 1. 퀴즈셋 조회 (삭제되지 않은 것만)
-      const quizSet = await manager.findOne(QuizSetModel, {
-        where: {
-          id,
-          deletedAt: IsNull() // soft delete 되지 않은 것만 조회
-        },
-        relations: ['user']
-      });
-
-      if (!quizSet) {
-        throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
-      }
-
-      //todo : 토큰으로 로그인한 사용자 정보 가져오기 && 권한 확인
-      // if (quizSet.userId !== userId) {
-      //   throw new ForbiddenException('해당 퀴즈셋을 삭제할 권한이 없습니다.');
-      // }
-
-      // 2. Soft Delete 실행
-      await manager.softRemove(quizSet);
-
-      return {
-        success: true,
-        message: '퀴즈셋이 성공적으로 삭제되었습니다.'
-      };
+      const quizSet = await this.findActiveQuizSet(manager, id);
+      await this.softDeleteQuizSet(manager, quizSet);
+      return this.generateRemoveResponse();
     });
   }
 
-  /**
-   * 퀴즈셋, 퀴즈, 선택지를 생성합니다.
-   * @param createQuizSetDto 생성할 퀴즈셋 데이터
-   * @returns 생성된 퀴즈셋
-   */
-  async createQuizSet(createQuizSetDto: CreateQuizSetDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
+  private async findActiveQuizSet(manager: EntityManager, id: number): Promise<QuizSetModel> {
+    const quizSet = await manager.findOne(QuizSetModel, {
+      where: {
+        id,
+        deletedAt: IsNull()
+      },
+      relations: ['user']
+    });
 
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      this.validateQuizSet(createQuizSetDto);
-
-      // 1. 유저 존재 확인
-      // TODO : 토큰으로 로그인한 사용자 정보 가져오기
-      // 1. 유저 찾기 또는 생성
-      let user = await queryRunner.manager.findOne(UserModel, {
-        where: { email: 'honux@codesquad.co.kr' }
-      });
-
-      // 유저가 없다면 생성
-      if (!user) {
-        user = queryRunner.manager.create(UserModel, {
-          email: 'honux@codesquad.co.kr',
-          password: '123456',
-          nickname: 'honux',
-          point: 100,
-          status: 'ACTIVE'
-        });
-        await queryRunner.manager.save(user);
-      }
-
-      // 2. 퀴즈셋 생성
-      const quizSet = queryRunner.manager.create(QuizSetModel, {
-        title: createQuizSetDto.title,
-        category: createQuizSetDto.category,
-        user,
-        userId: user.id
-      });
-      await queryRunner.manager.save(quizSet);
-
-      // 2. 퀴즈 생성
-      for (const quizData of createQuizSetDto.quizList) {
-        // 2.1 퀴즈 엔티티 생성 및 저장
-        const quiz = queryRunner.manager.create(QuizModel, {
-          quizSet,
-          quiz: quizData.quiz,
-          limitTime: quizData.limitTime
-        });
-        await queryRunner.manager.save(quiz);
-
-        // 2.2 선택지 생성
-        const choices = quizData.choiceList.map((choiceData) =>
-          queryRunner.manager.create(QuizChoiceModel, {
-            quiz,
-            choiceContent: choiceData.choiceContent,
-            choiceOrder: choiceData.choiceOrder,
-            isAnswer: choiceData.isAnswer
-          })
-        );
-        await queryRunner.manager.save(choices);
-      }
-
-      // 3. 생성된 퀴즈셋 조회 (관계 데이터 포함)
-      const savedQuizSet = await queryRunner.manager.findOne(QuizSetModel, {
-        where: { id: quizSet.id }
-      });
-
-      await queryRunner.commitTransaction();
-
-      const ret = {
-        data: {
-          id: savedQuizSet.id
-        }
-      };
-
-      return ret;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      // BadRequestException은 그대로 전파
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      // DB 관련 에러 처리
-      if (error instanceof QueryFailedError) {
-        throw new BadRequestException(`데이터베이스 오류: ${error.message}`);
-      }
-
-      // 그 외 에러는 InternalServerError로 변환
-      throw new InternalServerErrorException(`퀴즈셋 생성 실패: ${error.message}`);
-    } finally {
-      await queryRunner.release();
+    if (!quizSet) {
+      throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
     }
+
+    return quizSet;
   }
 
-  private validateQuizSet(quizSet: CreateQuizSetDto): void {
-    for (const quiz of quizSet.quizList) {
-      // 정답이 하나 이상 존재하는지 확인
-      const answerCount = quiz.choiceList.filter((choice) => choice.isAnswer).length;
-      if (answerCount === 0) {
-        throw new BadRequestException(`퀴즈 "${quiz.quiz}"에 정답이 없습니다.`);
-      }
+  private async softDeleteQuizSet(manager: EntityManager, quizSet: QuizSetModel): Promise<void> {
+    await manager.softRemove(quizSet);
+  }
 
-      // 선택지 번호가 중복되지 않는지 확인
-      const orders = new Set(quiz.choiceList.map((choice) => choice.choiceOrder));
-      if (orders.size !== quiz.choiceList.length) {
-        throw new BadRequestException(`퀴즈 "${quiz.quiz}"의 선택지 번호가 중복됩니다.`);
-      }
-    }
+  private generateRemoveResponse() {
+    return {
+      success: true,
+      message: '퀴즈셋이 성공적으로 삭제되었습니다.'
+    };
   }
 
   async update(id: number, updateDto: UpdateQuizSetDto) {
@@ -362,9 +435,7 @@ export class QuizService {
       await manager.save(quizSet);
 
       const ret = {
-        data: {
-          id: quizSet.id
-        }
+        id: quizSet.id
       };
 
       return ret;
