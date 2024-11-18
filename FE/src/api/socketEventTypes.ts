@@ -91,6 +91,13 @@ type StopGameResponse = {
   status: string;
 };
 
+type EndGameRequest = {
+  gameId: string;
+};
+type EndGameResponse = {
+  hostId: string;
+};
+
 // 퀴즈 시간 종료 타입
 type EndQuizTimeEvent = {
   answer: number; // 정답
@@ -164,5 +171,9 @@ export type SocketDataMap = {
   exitRoom: {
     request: null;
     response: ExitRoomEvent;
+  };
+  endGame: {
+    request: EndGameRequest;
+    response: EndGameResponse;
   };
 };
