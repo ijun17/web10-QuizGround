@@ -66,7 +66,6 @@ export const GamePage = () => {
           </div>
 
           <div className="col-span-4 lg:col-span-2">
-            <button onClick={() => setIsResultOpen(true)}>[[종료결과 테스트버튼]]</button>
             <QuizOptionBoard />
           </div>
 
