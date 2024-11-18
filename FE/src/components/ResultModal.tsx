@@ -35,12 +35,11 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
             {sortedPlayers.map((player, index) => (
               <div
                 key={index}
-                className="flex justify-between px-4 py-2 border-b border-gray-100 last:border-none"
+                className={`flex justify-between px-4 py-2 border-b border-gray-100 ${currentPlayerName === player.playerName ? `bg-cyan-100` : null} last:border-none`}
               >
                 <span className="text-gray-700 font-medium">
                   <span className="text-blue-700 font-medium">{index + 1}등</span>{' '}
                   {player.playerName}
-                  {currentPlayerName === player.playerName && `<`}
                 </span>
                 <span className="text-red-500">{player.playerScore}점</span>
               </div>
