@@ -54,6 +54,12 @@ export class GameService {
      */
     const quizset =
       room.quizSetId === '-1' ? mockQuizData : await this.quizService.findOne(+room.quizSetId);
+
+    //roomKey에 해당하는 room에 quizSetTitle을 quizset.title로 설정
+    await this.redis.hset(roomKey, {
+      quizSetTitle: quizset.title
+    });
+
     this.gameValidator.validateQuizsetCount(
       SocketEvents.START_GAME,
       parseInt(room.quizCount),
