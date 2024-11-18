@@ -7,8 +7,8 @@ import { GameValidator } from '../validations/game.validator';
 import SocketEvents from '../../common/constants/socket-events';
 import { StartGameDto } from '../dto/start-game.dto';
 import { Server } from 'socket.io';
-import { QuizService } from '../../quiz/quiz.service';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
+import { QuizCacheService } from './quiz.cache.service';
 
 @Injectable()
 export class GameService {
@@ -18,7 +18,7 @@ export class GameService {
   constructor(
     @InjectRedis() private readonly redis: Redis,
     private readonly gameValidator: GameValidator,
-    private readonly quizService: QuizService
+    private readonly quizCacheService: QuizCacheService
   ) {}
 
   async updatePosition(updatePosition: UpdatePositionDto, clientId: string) {
@@ -53,7 +53,9 @@ export class GameService {
      * 퀴즈셋이 설정되어 있지 않으면 기본 퀴즈셋을 사용
      */
     const quizset =
-      room.quizSetId === '-1' ? mockQuizData : await this.quizService.findOne(+room.quizSetId);
+      room.quizSetId === '-1'
+        ? mockQuizData
+        : await this.quizCacheService.getQuizSet(+room.quizSetId);
 
     //roomKey에 해당하는 room에 quizSetTitle을 quizset.title로 설정
     await this.redis.hset(roomKey, {

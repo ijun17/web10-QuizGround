@@ -6,9 +6,17 @@ import { GameValidator } from './validations/game.validator';
 import { GameChatService } from './service/game.chat.service';
 import { GameRoomService } from './service/game.room.service';
 import { QuizModule } from '../quiz/quiz.module';
+import { QuizCacheService } from './service/quiz.cache.service';
 
 @Module({
   imports: [RedisModule, QuizModule],
-  providers: [GameGateway, GameService, GameChatService, GameRoomService, GameValidator]
+  providers: [
+    GameGateway,
+    GameService,
+    GameChatService,
+    GameRoomService,
+    GameValidator,
+    QuizCacheService
+  ]
 })
 export class GameModule {}
