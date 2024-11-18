@@ -34,12 +34,7 @@ export const GamePage = () => {
   }, [gameId, currentPlayerName]);
 
   useEffect(() => {
-    if (gameState === GameState.END) {
-      const timer = setTimeout(() => {
-        setIsResultOpen(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    if (gameState === GameState.END) setIsResultOpen(true);
   }, [gameState]);
 
   // setCurrentPlayerName('test123');
