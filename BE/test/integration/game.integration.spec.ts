@@ -2,27 +2,30 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { io, Socket } from 'socket.io-client';
-import { GameGateway } from '../src/game/game.gateway';
-import { GameService } from '../src/game/service/game.service';
-import socketEvents from '../src/common/constants/socket-events';
-import { RedisModule } from '@nestjs-modules/ioredis';
+import { GameGateway } from '../../src/game/game.gateway';
+import { GameService } from '../../src/game/service/game.service';
+import socketEvents from '../../src/common/constants/socket-events';
 import { Redis } from 'ioredis';
-import { GameValidator } from '../src/game/validations/game.validator';
-import { GameChatService } from '../src/game/service/game.chat.service';
-import { GameRoomService } from '../src/game/service/game.room.service';
+import { GameValidator } from '../../src/game/validations/game.validator';
+import { GameChatService } from '../../src/game/service/game.chat.service';
+import { GameRoomService } from '../../src/game/service/game.room.service';
 import { HttpService } from '@nestjs/axios';
-import { mockQuizData } from './mocks/quiz-data.mock';
+import { mockQuizData } from '../mocks/quiz-data.mock';
 import RedisMock from 'ioredis-mock';
-import { REDIS_KEY } from '../src/common/constants/redis-key.constant';
-import { QuizCacheService } from '../src/game/service/quiz.cache.service';
-import { QuizService } from '../src/quiz/quiz.service';
+import { REDIS_KEY } from '../../src/common/constants/redis-key.constant';
+import { QuizCacheService } from '../../src/game/service/quiz.cache.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QuizSetModel } from '../src/quiz/entities/quiz-set.entity';
-import { QuizModel } from '../src/quiz/entities/quiz.entity';
-import { QuizChoiceModel } from '../src/quiz/entities/quiz-choice.entity';
-import { UserModel } from '../src/user/entities/user.entity';
-import { UserQuizArchiveModel } from '../src/user/entities/user-quiz-archive.entity';
+import { UserModel } from '../../src/user/entities/user.entity';
+import { UserQuizArchiveModel } from '../../src/user/entities/user-quiz-archive.entity';
 import { ConfigModule } from '@nestjs/config';
+import { QuizSetModel } from '../../src/quiz-set/entities/quiz-set.entity';
+import { QuizModel } from '../../src/quiz-set/entities/quiz.entity';
+import { QuizChoiceModel } from '../../src/quiz-set/entities/quiz-choice.entity';
+import { QuizSetService } from '../../src/quiz-set/service/quiz-set.service';
+import { QuizSetCreateService } from '../../src/quiz-set/service/quiz-set-create.service';
+import { QuizSetReadService } from '../../src/quiz-set/service/quiz-set-read.service';
+import { QuizSetUpdateService } from '../../src/quiz-set/service/quiz-set-update.service';
+import { QuizSetDeleteService } from '../../src/quiz-set/service/quiz-set-delete.service';
 
 const mockHttpService = {
   axiosRef: jest.fn().mockImplementation(() => {
@@ -84,7 +87,11 @@ describe('GameGateway (e2e)', () => {
         GameRoomService,
         GameValidator,
         QuizCacheService,
-        QuizService,
+        QuizSetService,
+        QuizSetCreateService,
+        QuizSetReadService,
+        QuizSetUpdateService,
+        QuizSetDeleteService,
         {
           provide: 'default_IORedisModuleConnectionToken',
           useValue: redisMock
@@ -486,7 +493,7 @@ describe('GameGateway (e2e)', () => {
         });
       });
 
-      // 5. QuizService mock 설정
+      // 5. QuizSetService mock 설정
       const mockQuizSet = {
         id: String(testQuizSetId),
         title: 'Test Quiz Set',
@@ -504,7 +511,7 @@ describe('GameGateway (e2e)', () => {
         ]
       };
       const quizServiceSpy = jest
-        .spyOn(moduleRef.get(QuizService), 'findOne')
+        .spyOn(moduleRef.get(QuizSetService), 'findOne')
         .mockResolvedValue(mockQuizSet);
 
       // 6. 게임 시작
@@ -521,7 +528,7 @@ describe('GameGateway (e2e)', () => {
       expect(cachedData).not.toBeNull();
       expect(JSON.parse(cachedData!)).toEqual(mockQuizSet);
 
-      // QuizService.findOne이 호출되었는지
+      // QuizSetService.findOne이 호출되었는지
       expect(quizServiceSpy).toHaveBeenCalled();
     });
 
@@ -584,8 +591,8 @@ describe('GameGateway (e2e)', () => {
         1800
       );
 
-      // 4. QuizService mock 설정 (호출되지 않아야 함)
-      const quizServiceSpy = jest.spyOn(moduleRef.get(QuizService), 'findOne');
+      // 4. QuizSetService mock 설정 (호출되지 않아야 함)
+      const quizServiceSpy = jest.spyOn(moduleRef.get(QuizSetService), 'findOne');
 
       // 5. 게임 시작
       await new Promise<void>((resolve) => {
@@ -597,7 +604,7 @@ describe('GameGateway (e2e)', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // 6. 검증
-      // QuizService.findOne이 호출되지 않았는지 확인
+      // QuizSetService.findOne이 호출되지 않았는지 확인
       expect(quizServiceSpy).not.toHaveBeenCalled();
 
       // Room에 설정된 title이 캐시된 데이터의 title과 일치하는지 확인
@@ -676,7 +683,7 @@ describe('GameGateway (e2e)', () => {
           }
         ]
       };
-      jest.spyOn(moduleRef.get(QuizService), 'findOne').mockResolvedValue(newQuizSet);
+      jest.spyOn(moduleRef.get(QuizSetService), 'findOne').mockResolvedValue(newQuizSet);
 
       // 5. 캐시 만료 대기
       await new Promise((resolve) => setTimeout(resolve, 1100));

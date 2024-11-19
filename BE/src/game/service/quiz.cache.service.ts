@@ -2,9 +2,9 @@ import { QuizSetData } from '../../InitDB/InitDB.Service';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
-import { QuizService } from '../../quiz/quiz.service';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
+import { QuizSetService } from '../../quiz-set/service/quiz-set.service';
 
 @Injectable()
 export class QuizCacheService {
@@ -14,7 +14,7 @@ export class QuizCacheService {
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
-    private readonly quizService: QuizService
+    private readonly quizService: QuizSetService
   ) {}
 
   /**
