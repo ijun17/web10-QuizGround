@@ -2,21 +2,21 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QuizPreview } from './QuizPreview';
 
-type Quiz = {
-  id: string;
-  quiz: string;
-  limitTime: number;
-  choiceList: {
-    content: string;
-    order: number;
-  }[];
-};
+// type Quiz = {
+//   id: string;
+//   quiz: string;
+//   limitTime: number;
+//   choiceList: {
+//     content: string;
+//     order: number;
+//   }[];
+// };
 
 type QuizSet = {
   id: string;
   title: string;
   category: string;
-  quizList: Quiz[];
+  quizCount: number;
 };
 
 type Params = {
