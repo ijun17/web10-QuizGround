@@ -199,21 +199,10 @@ export class GameService {
           const correctPlayers = [];
           for (const clientId of clients) {
             const player = await this.redis.hgetall(REDIS_KEY.PLAYER(clientId));
-            // 임시로 4개 선택지의 경우만 선정 (1 2 / 3 4)
-            let selectAnswer = 0;
-            if (parseFloat(player.positionY) < 0.5) {
-              if (parseFloat(player.positionX) < 0.5) {
-                selectAnswer = 1;
-              } else {
-                selectAnswer = 2;
-              }
-            } else {
-              if (parseFloat(player.positionX) < 0.5) {
-                selectAnswer = 3;
-              } else {
-                selectAnswer = 4;
-              }
-            }
+            const x = parseFloat(player.positionY);
+            const y = parseFloat(player.positionX);
+            const selectAnswer =
+              Math.round(x) + Math.floor(y * Math.ceil(parseInt(quiz.choiceCount) / 2)) * 2;
             await this.redis.set(`${REDIS_KEY.PLAYER(clientId)}:Changes`, 'AnswerCorrect');
             if (selectAnswer.toString() === quiz.answer) {
               correctPlayers.push(clientId);
