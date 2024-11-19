@@ -1,6 +1,5 @@
 import { HeaderBar } from '@/components/HeaderBar';
 import { LobbyList } from '@/components/LobbyList';
-import { useEffect, useState } from 'react';
 
 // api 코드 분리 폴더 구조 논의
 // const fetchLobbyRooms = async () => {
