@@ -25,7 +25,7 @@ export default class SocketMockStartGame extends SocketMock {
 
     // 퀴즈 종료
     await this.delay(8);
-    this.calculateScore(0);
+    this.calculateScore(1);
     this.log('퀴즈 가 종료 되었습니다.');
   }
 }

@@ -159,7 +159,7 @@ export class SocketMock {
     const players = this.players.map((p) => {
       const [y, x] = p.playerPosition;
       const option =
-        Math.round(x) + Math.floor(y * Math.ceil((this.quiz?.choiceList.length || 0) / 2)) * 2;
+        Math.round(x) + Math.floor(y * Math.ceil((this.quiz?.choiceList.length || 0) / 2)) * 2 + 1;
       return {
         playerId: p.playerId,
         isAnswer: option === answer,
