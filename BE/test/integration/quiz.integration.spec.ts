@@ -220,8 +220,7 @@ describe('QuizService', () => {
       // Then
       expect(result.quizSetList).toBeDefined();
       expect(result.quizSetList[0].category).toBe('PROGRAMMING');
-      expect(result.quizSetList[0].quizList).toHaveLength(1);
-      expect(result.quizSetList[0].quizList[0].choiceList).toHaveLength(2);
+      expect(result.quizSetList[0].quizCount).toBe(1);
     });
 
     it('존재하지 않는 카테고리는 빈 배열을 반환해야 한다', async () => {
@@ -240,7 +239,7 @@ describe('QuizService', () => {
       const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '테스트19');
 
       expect(result.quizSetList).toHaveLength(1);
-      expect(result.quizSetList[0].quizList[0].quiz).toContain('테스트19');
+      expect(result.quizSetList[0].title).toBe('테스트19');
     })
 
     it('검색어가 유효하지 않아 퀴즈셋 목록이 없다', async () => {
@@ -408,13 +407,13 @@ describe('QuizService', () => {
   });
 });
 
-async function createQuizSetTestData(quizService: QuizSetService, quiz: string = '테스트') {
+async function createQuizSetTestData(quizService: QuizSetService, quizSetTitle: string = '테스트') {
   const createQuizSetDto: CreateQuizSetDto = {
-    title: '자바스크립트 기초',
+    title: quizSetTitle,
     category: 'PROGRAMMING',
     quizList: [
       {
-        quiz: quiz,
+        quiz: '테스트',
         limitTime: 30,
         choiceList: [
           {

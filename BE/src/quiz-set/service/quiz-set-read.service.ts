@@ -45,7 +45,7 @@ export class QuizSetReadService {
 
     quizSets = this.filterBySearch(search, quizSets, quizzes, choices);
 
-    return new QuizSetList(this.mapRelations(quizSets, quizzes, choices));
+    return new QuizSetList(this.mapRelations(quizSets, quizzes));
   }
 
   private async fetchQuizSets(
@@ -91,29 +91,15 @@ export class QuizSetReadService {
 
   private mapRelations(
     quizSets: QuizSetModel[],
-    quizzes: QuizModel[],
-    choices: QuizChoiceModel[]
+    quizzes: QuizModel[]
   ): QuizSetDto[] {
-    const choicesByQuizId = groupBy(choices, 'quizId');
     const quizzesByQuizSetId = groupBy(quizzes, 'quizSetId');
 
     return quizSets.map(quizSet => ({
       id: quizSet.id.toString(),
       title: quizSet.title,
       category: quizSet.category,
-      quizList: this.mapQuizzes(quizzesByQuizSetId[quizSet.id] || [], choicesByQuizId)
-    }));
-  }
-
-  private mapQuizzes(
-    quizzes: QuizModel[],
-    choicesByQuizId: Record<string, QuizChoiceModel[]>
-  ): QuizDto[] {
-    return quizzes.map(quiz => ({
-      id: quiz.id.toString(),
-      quiz: quiz.quiz,
-      limitTime: quiz.limitTime,
-      choiceList: this.mapChoices(choicesByQuizId[quiz.id] || [])
+      quizCount: quizzesByQuizSetId[quizSet.id].length,
     }));
   }
 
@@ -129,13 +115,6 @@ export class QuizSetReadService {
     }
 
     return quizSets;
-  }
-
-  private mapChoices(choices: QuizChoiceModel[]): ChoiceDto[] {
-    return choices.map(choice => ({
-      content: choice.choiceContent,
-      order: choice.choiceOrder
-    }));
   }
 
   /**
