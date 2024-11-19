@@ -40,6 +40,7 @@ type QuizStore = {
   setCurrentQuiz: (quiz: CurrentQuiz) => void;
   setCurrentAnswer: (answer: number) => void;
   addQuizSet: (quizSet: QuizSet) => void;
+  resetQuiz: () => void;
 };
 
 export const useQuizeStore = create<QuizStore>((set) => ({
@@ -58,7 +59,8 @@ export const useQuizeStore = create<QuizStore>((set) => ({
   // 진행 중인 퀴즈 설정
   setCurrentQuiz: (quiz) => set({ currentQuiz: quiz }),
   setCurrentAnswer: (answer) => set({ currentAnswer: answer }),
-  setQuizState: (state) => set({ quizState: state })
+  setQuizState: (state) => set({ quizState: state }),
+  resetQuiz: () => set({ quizSets: [], currentQuiz: null })
 }));
 
 // 진행 중인 퀴즈 설정
@@ -69,4 +71,8 @@ socketService.on('startQuizTime', (data) => {
 socketService.on('endQuizTime', (data) => {
   useQuizeStore.getState().setQuizState(QuizState.END);
   useQuizeStore.getState().setCurrentAnswer(Number(data.answer));
+});
+
+socketService.on('endGame', () => {
+  useQuizeStore.getState().resetQuiz();
 });
