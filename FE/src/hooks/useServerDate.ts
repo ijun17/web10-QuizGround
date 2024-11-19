@@ -14,7 +14,7 @@ const useServerDate = () => {
         setOffset(clientTime - res.serverTime);
       });
   }, []);
-  const now = useCallback(() => Date.now() + offset, [offset]);
+  const now = useCallback(() => Date.now() - offset, [offset]);
   return now;
 };
 
