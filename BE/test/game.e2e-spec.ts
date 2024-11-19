@@ -429,7 +429,7 @@ describe('GameGateway (e2e)', () => {
 
       // 3. 게임 시작 전 상태 확인
       const beforeRoom = await redisMock.hgetall(`Room:${gameId}`);
-      expect(beforeRoom.quizSetTitle).toBeUndefined();
+      expect(beforeRoom.quizSetTitle).toBe(mockQuizData.title);
 
       // 4. 게임 시작
       await new Promise<void>((resolve) => {

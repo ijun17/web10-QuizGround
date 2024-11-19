@@ -54,7 +54,7 @@ export class QuizCacheService {
     if (redisCached) {
       this.logger.debug(`Quiz ${quizSetId} found in Redis cache`);
       // 로컬 캐시에도 저장
-      this.quizCache.set(REDIS_KEY.QUIZSET_ID(quizSetId), redisCached);
+      // this.quizCache.set(REDIS_KEY.QUIZSET_ID(quizSetId), redisCached);
       return redisCached;
     }
 

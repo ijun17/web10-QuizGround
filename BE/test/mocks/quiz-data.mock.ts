@@ -1,6 +1,6 @@
 export const mockQuizData = {
   id: '1',
-  title: '재미있는 상식 퀴즈',
+  title: '기본 퀴즈셋',
   category: 'common',
   quizList: [
     {
