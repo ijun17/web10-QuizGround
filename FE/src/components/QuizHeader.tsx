@@ -50,7 +50,7 @@ export const QuizHeader = () => {
     <div className="border border-default component-popup h-[280px] w-[1000px] p-8 flex flex-col">
       <div className="flex flex-row-reverse w-[100%] h-8 bg-surface-alt">
         <div
-          className="flex justify-center items-center w-20 h-8 text-lg absolute"
+          className="flex justify-center items-center w-20 h-8 text-lg absolute tabular-nums"
           style={{ color: seconds / limitTime > 0.2 ? 'black' : 'red' }}
         >
           {seconds <= 0 ? '종료' : seconds.toFixed(2)}
