@@ -6,9 +6,14 @@ type SocketEvent = keyof SocketDataMap;
 export class SocketMock {
   private listenerSet: Record<string, ((...args: unknown[]) => void)[]> = {};
   private onAnyListenerList: ((event: string, ...args: unknown[]) => void)[] = [];
-  constructor(url: string) {
-    console.log(`Mock WebSocket 연결: ${url}`);
+  constructor() {
+    console.log(`Mock WebSocket 연결`);
   }
+
+  /**
+   * socket.io 인터페이스
+   * id, connected, on, onAny, emit, disconnect
+   */
   id = 'memememememe';
   connected = true;
   on(event: string, listener: (...args: unknown[]) => void) {
@@ -45,7 +50,13 @@ export class SocketMock {
     this.connected = false;
   }
 
-  //여기서 서버 이벤트를 실행시킨다.
+  /**
+   * 유틸 함수
+   * emitServer: 서버에서 이벤트를 발생 시킨다
+   * delay: n초 지연시킨다
+   * log: 채팅창에 로그를 띄운다
+   * random: 시드 기반 랜덤 함수. 항상 동일한 결과를 보장
+   */
   emitServer<T extends SocketEvent>(event: T, data: SocketDataMap[T]['response']) {
     if (this.listenerSet[event]) {
       this.listenerSet[event].forEach((e) => e(data));
@@ -65,20 +76,33 @@ export class SocketMock {
       timestamp: 0
     });
   }
-  //시드 기반 랜덤 함수
-  SEED = 7777;
+  private SEED = 7777;
   random() {
     this.SEED = (this.SEED * 16807) % 2147483647;
     return (this.SEED - 1) / 2147483646;
   }
 
-  isCurrentJoin = false;
-  currentPlayerName = '';
-  players: {
-    playerId: string;
-    playerName: string;
-    playerPosition: [number, number];
-  }[] = [];
+  /**
+   * 서버 비즈니스 로직
+   * players: 플레이어 맵(키: 플레이어 아이디, 값: 플레이어)
+   * scores: 플레이어 점수 정보
+   * quiz: 현재 진행중인 퀴즈
+   * handleChat()
+   * handleJoin()
+   * handlePosition()
+   * handleOption()
+   * handleQuiz()
+   */
+  players: Record<
+    string,
+    {
+      playerId: string;
+      playerName: string;
+      playerPosition: [number, number];
+    }
+  > = {};
+
+  scores: Record<string, number> = {};
 
   quiz: {
     quiz: string;
@@ -87,55 +111,33 @@ export class SocketMock {
     choiceList: { content: string; order: number }[];
   } | null = null;
 
-  // 아래는 서버 비즈니스 로직
   private async handleChat(data: SocketDataMap['chatMessage']['request']) {
     await this.delay(0.1);
-    this.emitServer('chatMessage', {
-      playerId: this.id,
-      playerName: this.currentPlayerName,
-      message: data.message,
-      timestamp: 0
-    });
+    this.chatMessage(this.id, data.message);
   }
   private async handleJoin(data: SocketDataMap[typeof SocketEvents.JOIN_ROOM]['request']) {
-    if (this.isCurrentJoin) return;
-    this.isCurrentJoin = true;
+    if (this.getPlayer(this.id)) return;
     await this.delay(0.1);
-    this.currentPlayerName = data.playerName;
-    const currentPlayer: (typeof this.players)[number] = {
+    const currentPlayer: (typeof this.players)[string] = {
       playerId: this.id,
       playerName: data.playerName,
       playerPosition: [0.5, 0.5]
     };
-    this.emitServer(SocketEvents.JOIN_ROOM, {
-      players: this.players
-    });
-    this.emitServer(SocketEvents.JOIN_ROOM, {
-      players: [currentPlayer]
-    });
-    this.players.push(currentPlayer);
+    this.emitServer(SocketEvents.JOIN_ROOM, { players: this.getPlayerList() });
+    this.emitServer(SocketEvents.JOIN_ROOM, { players: [currentPlayer] });
+    this.addPlayers([currentPlayer]);
   }
   private async handlePosition(
     data: SocketDataMap[typeof SocketEvents.UPDATE_POSITION]['request']
   ) {
     await this.delay(0.1);
-    const targetPlayer = this.players.find((p) => p.playerId === this.id);
-    if (targetPlayer) targetPlayer.playerPosition = data.newPosition;
-    this.emitServer(SocketEvents.UPDATE_POSITION, {
-      playerId: this.id,
-      playerPosition: data.newPosition
-    });
+    this.updatePlayerPosition(this.id, data.newPosition);
   }
   private async handleOption(
     data: SocketDataMap[typeof SocketEvents.UPDATE_ROOM_OPTION]['request']
   ) {
     await this.delay(0.1);
-    this.emitServer(SocketEvents.UPDATE_ROOM_OPTION, {
-      title: data.title,
-      gameMode: data.gameMode,
-      maxPlayerCount: data.maxPlayerCount,
-      isPublic: data.isPublic
-    });
+    this.emitServer(SocketEvents.UPDATE_ROOM_OPTION, data);
   }
   private async handleQuiz(
     data: SocketDataMap[typeof SocketEvents.UPDATE_ROOM_QUIZSET]['request']
@@ -144,7 +146,26 @@ export class SocketMock {
     this.emitServer(SocketEvents.UPDATE_ROOM_QUIZSET, data);
   }
 
-  //퀴즈 관련 비즈니스 로직
+  /**
+   * 비즈니스 로직 관련 유틸 함수
+   * getPlayer()
+   * getPlayers()
+   * addPlayers()
+   * setQuiz()
+   * calculate()
+   * progressQuiz()
+   * updatePlayerPosition()
+   * chatMessage
+   */
+  getPlayer(id: string) {
+    return this.players[id];
+  }
+  getPlayerList() {
+    return Object.values(this.players);
+  }
+  addPlayers(players: Array<SocketMock['players'][keyof SocketMock['players']]>) {
+    players.forEach((p) => (this.players[p.playerId] = p));
+  }
   setQuiz(quiz: string, quizSecond: number, choiceList: string[]) {
     const COUNT_DOWN_TIME = 3000;
     this.quiz = {
@@ -156,23 +177,44 @@ export class SocketMock {
     this.emitServer('startQuizTime', this.quiz);
   }
   calculateScore(answer: number) {
-    const players = this.players.map((p) => {
+    const players = this.getPlayerList().map((p) => {
       const [y, x] = p.playerPosition;
       const option =
-        Math.round(x) + Math.floor(y * Math.ceil((this.quiz?.choiceList.length || 0) / 2)) * 2 + 1;
+        Math.round(x) + Math.floor(y * Math.ceil((this.quiz?.choiceList.length || 0) / 2)) * 2;
+      this.scores[p.playerId] = (this.scores[p.playerId] | 0) + (option === answer ? 22 : 0);
       return {
         playerId: p.playerId,
         isAnswer: option === answer,
-        score: option === answer ? 22 : 0
+        score: this.scores[p.playerId]
       };
     });
     const payload = { answer, players };
     this.emitServer('endQuizTime', payload);
   }
 
-  async progressQuiz(quiz: string, quizSecond: number, choiceList: string[], answer: number) {
+  async progressQuiz(quiz: string, quizSecond: number, choiceList: string[], answerIndex: number) {
     this.setQuiz(quiz, quizSecond, choiceList);
+    this.log('퀴즈 전송 완료.');
     await this.delay(3 + quizSecond);
-    this.calculateScore(answer);
+    this.calculateScore(answerIndex);
+    this.log('퀴즈가 종료 되었습니다.');
+  }
+
+  updatePlayerPosition(playerId: string, newPosition: [number, number]) {
+    this.getPlayer(playerId).playerPosition = newPosition;
+    this.emitServer('updatePosition', {
+      playerId: this.getPlayer(playerId).playerId,
+      playerPosition: newPosition
+    });
+  }
+
+  chatMessage(playerId: string, message: string) {
+    const player = this.getPlayer(playerId);
+    this.emitServer('chatMessage', {
+      playerId: player.playerId,
+      playerName: player.playerName,
+      message,
+      timestamp: 0
+    });
   }
 }
