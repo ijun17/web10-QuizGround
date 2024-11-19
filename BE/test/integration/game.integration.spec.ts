@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { GameGateway } from '../src/game/game.gateway';
 import { GameService } from '../src/game/service/game.service';
 import socketEvents from '../src/common/constants/socket-events';
+import { RedisModule } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
 import { GameValidator } from '../src/game/validations/game.validator';
 import { GameChatService } from '../src/game/service/game.chat.service';
@@ -98,9 +99,6 @@ describe('GameGateway (e2e)', () => {
     app = moduleRef.createNestApplication();
     app.useWebSocketAdapter(new IoAdapter(app));
     await app.listen(TEST_PORT);
-
-    // QuizCacheService 초기화
-    // quizCacheService = moduleRef.get<QuizCacheService>(QuizCacheService);
   });
 
   beforeEach(async () => {
