@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserModel } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { SignupDto } from '../auth/dto/signup.dto';
 
 @Injectable()
 export class UserService {
@@ -13,20 +12,16 @@ export class UserService {
     private readonly userRepository: Repository<UserModel>
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(signupDto: SignupDto) {
     const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
+    const hashedPassword = await bcrypt.hash(signupDto.password, salt);
     const newUser = this.userRepository.create({
-      email: createUserDto.email,
+      email: signupDto.email,
       password: hashedPassword,
-      nickname: createUserDto.nickname,
+      nickname: signupDto.nickname,
       status: '?'
     });
     return this.userRepository.save(newUser);
-  }
-
-  findAll() {
-    return 'This action returns all user';
   }
 
   async findOne(email: string) {
@@ -37,13 +32,5 @@ export class UserService {
       return null;
     }
     return user;
-  }
-
-  update(email: string, updateUserDto: UpdateUserDto) {
-    return `This action updates a ${email} user`;
-  }
-
-  remove(email: string) {
-    return `This action removes a ${email} user`;
   }
 }
