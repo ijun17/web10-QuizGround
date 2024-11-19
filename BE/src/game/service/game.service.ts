@@ -52,7 +52,7 @@ export class GameService {
     // const getQuizsetURL = `http://localhost:3000/api/quizset/${room.quizSetId}`;
     //
     // // REFACTOR: get 대신 Promise를 반환하는 axiosRef를 사용했으나 더 나은 방식이 있는지 확인
-    // const quizset = await this.httpService.axiosRef({
+    // const quiz-set = await this.httpService.axiosRef({
     //   url: getQuizsetURL,
     //   method: 'GET'
     // });

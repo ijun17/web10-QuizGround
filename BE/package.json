@@ -21,7 +21,12 @@
     "test:e2e:report": "jest --config ./test/jest-e2e.json --detectOpenHandles --verbose --json --outputFile=./.jest-test-results.json && jest-stare",
     "test:e2e:verbose": "jest --config ./test/jest-e2e.json --verbose --detectOpenHandles",
     "test:e2e:failed": "jest --config ./test/jest-e2e.json --verbose --detectOpenHandles --bail",
-    "test:e2e:watch": "jest --config ./test/jest-e2e.json --verbose --watchAll"
+    "test:e2e:watch": "jest --config ./test/jest-e2e.json --verbose --watchAll",
+    "test:integration": "jest --config ./test/jest-integration.json",
+    "test:integration:watch": "jest --config ./test/jest-integration.json --watch",
+    "test:integration:verbose": "jest --config ./test/jest-integration.json --verbose",
+    "test:integration:coverage": "jest --config ./test/jest-integration.json --coverage",
+    "test:integration:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --config ./test/jest-integration.json --runInBand"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.0.2",

@@ -1,7 +1,7 @@
 import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseModel } from '../../common/entity/base.entity';
 import { Exclude } from 'class-transformer';
-import { QuizSetModel } from '../../quiz/entities/quiz-set.entity';
+import { QuizSetModel } from '../../quiz-set/entities/quiz-set.entity';
 import { UserQuizArchiveModel } from './user-quiz-archive.entity';
 
 @Entity('user')
