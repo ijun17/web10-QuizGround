@@ -11,6 +11,7 @@ import { useRoomStore } from '@/store/useRoomStore';
 import { QuizHeader } from '@/components/QuizHeader';
 import GameState from '@/constants/gameState';
 import { usePlayerStore } from '@/store/usePlayerStore';
+import { ResultModal } from '@/components/ResultModal';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -18,7 +19,9 @@ export const GamePage = () => {
   const gameState = useRoomStore((state) => state.gameState);
   const currentPlayerName = usePlayerStore((state) => state.currentPlayerName);
   const setCurrentPlayerName = usePlayerStore((state) => state.setCurrentPlayerName);
+  const setGameState = useRoomStore((state) => state.setGameState);
   const [isModalOpen, setIsModalOpen] = useState(true);
+  const [isResultOpen, setIsResultOpen] = useState(false);
 
   useEffect(() => {
     updateRoom({ gameId });
@@ -29,10 +32,20 @@ export const GamePage = () => {
       socketService.joinRoom(gameId, currentPlayerName);
     }
   }, [gameId, currentPlayerName]);
+
+  useEffect(() => {
+    if (gameState === GameState.END) setIsResultOpen(true);
+  }, [gameState]);
+
   // setCurrentPlayerName('test123');
   const handleNameSubmit = (name: string) => {
     setCurrentPlayerName(name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기
+  };
+
+  const handleEndGame = () => {
+    setGameState(GameState.WAIT);
+    setIsResultOpen(false);
   };
 
   return (
@@ -54,7 +67,11 @@ export const GamePage = () => {
           <div className="hidden lg:block lg:col-span-1">
             <ParticipantDisplay gameState={gameState} />
           </div>
-
+          <ResultModal
+            isOpen={isResultOpen}
+            onClose={handleEndGame}
+            currentPlayerName={currentPlayerName}
+          />
           <Modal
             isOpen={isModalOpen && !currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
             title="플레이어 이름 설정"

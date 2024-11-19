@@ -1,6 +1,7 @@
 const GameState = {
   WAIT: 'WAIT',
-  PROGRESS: 'PROGRESS'
+  PROGRESS: 'PROGRESS',
+  END: 'END'
 } as const;
 
 export default GameState;

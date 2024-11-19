@@ -45,5 +45,9 @@ socketService.on('updateRoomOption', (data) => {
 });
 
 socketService.on('startGame', () => {
-  useRoomStore.getState().setGameState('PROGRESS');
+  useRoomStore.getState().setGameState(GameState.PROGRESS);
+});
+
+socketService.on('endGame', () => {
+  useRoomStore.getState().setGameState(GameState.END);
 });
