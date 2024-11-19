@@ -26,6 +26,9 @@ import { QuizSetCreateService } from '../../src/quiz-set/service/quiz-set-create
 import { QuizSetReadService } from '../../src/quiz-set/service/quiz-set-read.service';
 import { QuizSetUpdateService } from '../../src/quiz-set/service/quiz-set-update.service';
 import { QuizSetDeleteService } from '../../src/quiz-set/service/quiz-set-delete.service';
+import { ExceptionMessage } from '../../src/common/constants/exception-message';
+
+/*disable eslint*/
 
 const mockHttpService = {
   axiosRef: jest.fn().mockImplementation(() => {
@@ -256,6 +259,53 @@ describe('GameGateway (e2e)', () => {
       client1.emit(socketEvents.JOIN_ROOM, {
         gameId: '999999',
         playerName: 'TestPlayer'
+      });
+    });
+
+    it('게임 진행 중인 방 참여 실패', (done) => {
+      let gameId: string;
+
+      // exception 이벤트 리스너 먼저 등록
+      client2.once('exception', (error) => {
+        try {
+          expect(error.eventName).toBe('joinRoom');
+          expect(error.message).toBe(ExceptionMessage.GAME_ALREADY_STARTED);
+          done();
+        } catch (err) {
+          done(err);
+        }
+      });
+
+      // 방 생성
+      client1.emit(socketEvents.CREATE_ROOM, {
+        title: 'Test Room',
+        gameMode: 'RANKING',
+        maxPlayerCount: 5,
+        isPublicGame: true
+      });
+
+      // 순차적으로 이벤트 처리
+      client1.once(socketEvents.CREATE_ROOM, (response) => {
+        gameId = response.gameId;
+
+        // 첫 번째 플레이어 입장
+        client1.emit(socketEvents.JOIN_ROOM, {
+          gameId: gameId,
+          playerName: 'Player1'
+        });
+      });
+
+      client1.once(socketEvents.JOIN_ROOM, () => {
+        // 게임 시작
+        client1.emit(socketEvents.START_GAME, { gameId });
+      });
+
+      client1.once(socketEvents.START_GAME, () => {
+        // 두 번째 플레이어 참여 시도
+        client2.emit(socketEvents.JOIN_ROOM, {
+          gameId: gameId,
+          playerName: 'TestPlayer'
+        });
       });
     });
   });
