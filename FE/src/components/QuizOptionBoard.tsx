@@ -82,20 +82,23 @@ export const QuizOptionBoard = () => {
     >
       <div className="absolute h-[100%] w-[100%]">
         {boardRect
-          ? players.map((player) => {
-              return (
-                <Player
-                  key={player.playerId}
-                  name={player.playerName}
-                  position={[
-                    player.playerPosition[1] * boardRect.width,
-                    player.playerPosition[0] * boardRect.height
-                  ]}
-                  isCurrent={player.playerId === currentPlayerId}
-                  isAnswer={player.isAnswer ?? false}
-                />
-              );
-            })
+          ? players
+              .filter((player) => player.isAlive || player.playerId === currentPlayerId)
+              .map((player) => {
+                return (
+                  <Player
+                    key={player.playerId}
+                    name={player.playerName}
+                    position={[
+                      player.playerPosition[1] * boardRect.width,
+                      player.playerPosition[0] * boardRect.height
+                    ]}
+                    isCurrent={player.playerId === currentPlayerId}
+                    isAnswer={player.isAnswer ?? false}
+                    isAlive={player.isAlive}
+                  />
+                );
+              })
           : null}
       </div>
       <div className="grid grid-cols-2 gap-4 p-4 h-[100%] w-[100%]">
