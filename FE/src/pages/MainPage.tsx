@@ -23,7 +23,9 @@ export const MainPage = () => {
           <Button variant="outlined" onClick={() => navigate('/quiz/setup')}>
             퀴즈 생성
           </Button>
-          <Button variant="outlined">로그인</Button>
+          <Button variant="outlined" onClick={() => navigate('/login')}>
+            로그인
+          </Button>
         </div>
       </div>
     </div>

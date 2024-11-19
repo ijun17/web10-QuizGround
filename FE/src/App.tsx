@@ -4,6 +4,8 @@ import { GameSetupPage } from './pages/GameSetupPage';
 import { GamePage } from './pages/GamePage';
 import { QuizSetupPage } from './pages/QuizSetupPage';
 import { GameLobbyPage } from './pages/GameLobbyPage';
+import { LoginPage } from './pages/LoginPage';
+import { MyPage } from './pages/MyPage';
 
 function App() {
   return (
@@ -14,6 +16,8 @@ function App() {
         <Route path="/game/:gameId" element={<GamePage />} />
         <Route path="/game/lobby" element={<GameLobbyPage />} />
         <Route path="/quiz/setup" element={<QuizSetupPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/mypage" element={<MyPage />} />
         <Route path="*" element={<div>not found</div>} />
       </Routes>
     </Router>
