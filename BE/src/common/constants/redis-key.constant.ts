@@ -8,6 +8,7 @@ export const REDIS_KEY = {
   ROOM_TIMER: (gameId: string) => `Room:${gameId}:Timer`,
   ROOM_QUIZ_SET: (gameId: string) => `Room:${gameId}:QuizSet`,
   PLAYER: (playerId: string) => `Player:${playerId}`,
+  QUIZSET_ID: (quizSetId: number) => `Quizset:${quizSetId}`,
 
   ACTIVE_ROOMS: 'ActiveRooms' // 활성화된 방 목록을 저장하는 Set (핀번호 중복 체크하기 위함)
 };

@@ -463,7 +463,7 @@ describe('GameGateway (e2e)', () => {
       await redisMock.hset(`Room:${gameId}`, 'quizSetId', testQuizSetId.toString());
 
       // 캐시 키 설정
-      const cacheKey = `quizset:${testQuizSetId}`;
+      const cacheKey = REDIS_KEY.QUIZSET_ID(testQuizSetId);
 
       // 초기 상태 확인 - 캐시에 데이터 없어야 함
       const initialCache = await redisMock.get(cacheKey);
@@ -579,7 +579,12 @@ describe('GameGateway (e2e)', () => {
           }
         ]
       };
-      await redisMock.set(`quizset:${testQuizSetId}`, JSON.stringify(cachedQuizSet), 'EX', 1800);
+      await redisMock.set(
+        REDIS_KEY.QUIZSET_ID(testQuizSetId),
+        JSON.stringify(cachedQuizSet),
+        'EX',
+        1800
+      );
 
       // 4. QuizService mock 설정 (호출되지 않아야 함)
       const quizServiceSpy = jest.spyOn(moduleRef.get(QuizService), 'findOne');

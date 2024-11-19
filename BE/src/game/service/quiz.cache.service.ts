@@ -4,6 +4,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
 import { QuizService } from '../../quiz/quiz.service';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
+import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 
 @Injectable()
 export class QuizCacheService {
@@ -17,17 +18,10 @@ export class QuizCacheService {
   ) {}
 
   /**
-   * 캐시키 생성
-   */
-  private getCacheKey(quizSetId: number): string {
-    return `quizset:${quizSetId}`;
-  }
-
-  /**
    * Redis 캐시에서 퀴즈셋 조회
    */
   private async getFromRedisCache(quizSetId: number) {
-    const cacheKey = this.getCacheKey(quizSetId);
+    const cacheKey = REDIS_KEY.QUIZSET_ID(quizSetId);
     const cachedData = await this.redis.get(cacheKey);
 
     if (cachedData) {
@@ -40,7 +34,7 @@ export class QuizCacheService {
    * Redis 캐시에 퀴즈셋 저장
    */
   private async setToRedisCache(quizSetId: number, data: QuizSetData): Promise<void> {
-    const cacheKey = this.getCacheKey(quizSetId);
+    const cacheKey = REDIS_KEY.QUIZSET_ID(quizSetId);
     await this.redis.set(cacheKey, JSON.stringify(data), 'EX', this.CACHE_TTL);
   }
 
@@ -60,7 +54,7 @@ export class QuizCacheService {
     if (redisCached) {
       this.logger.debug(`Quiz ${quizSetId} found in Redis cache`);
       // 로컬 캐시에도 저장
-      this.quizCache.set(this.getCacheKey(quizSetId), redisCached);
+      this.quizCache.set(REDIS_KEY.QUIZSET_ID(quizSetId), redisCached);
       return redisCached;
     }
 
@@ -69,7 +63,7 @@ export class QuizCacheService {
 
     // 4. 캐시에 저장
     await this.setToRedisCache(quizSetId, quizData);
-    this.quizCache.set(this.getCacheKey(quizSetId), quizData);
+    this.quizCache.set(REDIS_KEY.QUIZSET_ID(quizSetId), quizData);
 
     return quizData;
   }
@@ -78,7 +72,7 @@ export class QuizCacheService {
    * 캐시 무효화
    */
   async invalidateCache(quizSetId: number): Promise<void> {
-    const cacheKey = this.getCacheKey(quizSetId);
+    const cacheKey = REDIS_KEY.QUIZSET_ID(quizSetId);
     this.quizCache.delete(cacheKey);
     await this.redis.del(cacheKey);
   }
