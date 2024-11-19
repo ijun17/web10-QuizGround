@@ -18,26 +18,36 @@ const Chat = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessage, setNewMessage] = useState(false);
   const [prevMessageCount, setPrevMessageCount] = useState(messages.length);
-  const prevScrollTopRef = useRef(0);
 
   const scrollToBottom = () => {
     if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      setNewMessage(false);
+      setTimeout(() => {
+        chatBottomRef.current?.scrollIntoView({
+          behavior: 'instant',
+          block: 'end'
+        });
+        setNewMessage(false);
+      }, 0);
     }
   };
 
   const handleScroll = () => {
     const container = chatContainerRef.current;
-    if (container) {
-      // const isBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
-      const isBottom = prevScrollTopRef.current < container.scrollTop && isAtBottom;
-      prevScrollTopRef.current = container.scrollTop;
-      setIsAtBottom(isBottom); // 맨 아래에 있으면 true, 아니면 false
-      if (isBottom) {
-        setNewMessage(false);
-      }
+    if (!container) return;
+
+    const isBottom =
+      Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 10;
+
+    if (isBottom) {
+      setIsAtBottom(true);
+    } else {
+      setIsAtBottom(false);
     }
+  };
+
+  const handleScrollToBottomClick = () => {
+    scrollToBottom();
+    setIsAtBottom(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,8 +88,8 @@ const Chat = () => {
       setPrevMessageCount(messages.length);
     }
 
-    if (isAtBottom && chatBottomRef.current) {
-      scrollToBottom();
+    if (isAtBottom) {
+      requestAnimationFrame(() => scrollToBottom());
     }
   }, [messages, isAtBottom, prevMessageCount]);
 
@@ -127,7 +137,7 @@ const Chat = () => {
         <Button
           variant="contained"
           className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white p-2 rounded"
-          onClick={scrollToBottom}
+          onClick={handleScrollToBottomClick}
           style={{ zIndex: 1000 }}
         >
           {`${messages[messages.length - 1].playerName}: ${
