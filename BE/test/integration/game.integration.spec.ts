@@ -27,6 +27,11 @@ import { QuizSetReadService } from '../../src/quiz-set/service/quiz-set-read.ser
 import { QuizSetUpdateService } from '../../src/quiz-set/service/quiz-set-update.service';
 import { QuizSetDeleteService } from '../../src/quiz-set/service/quiz-set-delete.service';
 import { ExceptionMessage } from '../../src/common/constants/exception-message';
+import { RedisSubscriberService } from '../../src/common/redis/redis-subscriber.service';
+import { ScoringSubscriber } from '../../src/common/redis/subscribers/scoring.subscriber';
+import { TimerSubscriber } from '../../src/common/redis/subscribers/timer.subscriber';
+import { RoomSubscriber } from '../../src/common/redis/subscribers/room.subscriber';
+import { PlayerSubscriber } from '../../src/common/redis/subscribers/player.subscriber';
 
 /*disable eslint*/
 
@@ -95,6 +100,11 @@ describe('GameGateway (e2e)', () => {
         QuizSetReadService,
         QuizSetUpdateService,
         QuizSetDeleteService,
+        RedisSubscriberService,
+        ScoringSubscriber,
+        TimerSubscriber,
+        RoomSubscriber,
+        PlayerSubscriber,
         {
           provide: 'default_IORedisModuleConnectionToken',
           useValue: redisMock
