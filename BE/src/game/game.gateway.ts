@@ -6,7 +6,7 @@ import {
   WebSocketServer
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseFilters, UsePipes } from '@nestjs/common';
+import { Logger, UseFilters, UseInterceptors, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import SocketEvents from '../common/constants/socket-events';
 import { CreateGameDto } from './dto/create-game.dto';
@@ -20,7 +20,9 @@ import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
 import { GameChatService } from './service/game.chat.service';
 import { GameRoomService } from './service/game.room.service';
+import { GameActivityInterceptor } from './interceptor/gameActivity.interceptor';
 
+@UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
   cors: {
@@ -120,9 +122,10 @@ export class GameGateway {
     this.logger.verbose(`클라이언트가 연결되었어요!: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     this.logger.verbose(`클라이언트가 연결 해제되었어요!: ${client.id}`);
 
     this.gameService.disconnect(client.id);
+    await this.gameRoomService.handlePlayerExit(client.id);
   }
 }

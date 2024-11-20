@@ -13,6 +13,7 @@ import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 @Injectable()
 export class GameRoomService {
   private readonly logger = new Logger(GameRoomService.name);
+  private readonly INACTIVE_THRESHOLD = 30 * 60 * 1000; // 30분
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
@@ -122,5 +123,61 @@ export class GameRoomService {
       quizCount: quizCount.toString()
     });
     this.logger.verbose(`게임방 퀴즈셋 변경: ${gameId}`);
+  }
+
+  /**
+   * 플레이어 퇴장 처리
+   */
+  async handlePlayerExit(clientId: string): Promise<void> {
+    const playerKey = REDIS_KEY.PLAYER(clientId);
+    const player = await this.redis.hgetall(playerKey);
+    const roomId = player.gameId;
+
+    const pipeline = this.redis.pipeline();
+
+    // 플레이어 제거
+    pipeline.srem(REDIS_KEY.ROOM_PLAYERS(roomId), clientId);
+    pipeline.del(REDIS_KEY.PLAYER(clientId));
+
+    // 남은 플레이어 수 확인
+    pipeline.scard(REDIS_KEY.ROOM_PLAYERS(roomId));
+
+    const results = await pipeline.exec();
+    const remainingPlayers = results[2][1] as number;
+
+    if (remainingPlayers === 0) {
+      // 마지막 플레이어가 나간 경우
+      await this.redis.publish('room:cleanup', roomId);
+      this.logger.log(`마지막 플레이어 퇴장으로 방 ${roomId} 정리 시작`);
+    }
+  }
+
+  /**
+   * 방 활동 업데이트
+   */
+  async updateRoomActivity(roomId: string): Promise<void> {
+    const pipeline = this.redis.pipeline();
+
+    pipeline.hset(REDIS_KEY.ROOM(roomId), 'lastActivityAt', Date.now().toString());
+    pipeline.hget(REDIS_KEY.ROOM(roomId), 'lastActivityAt');
+
+    await pipeline.exec();
+  }
+
+  /**
+   * 비활성 방 체크 (주기적으로 실행)
+   */
+  async checkInactiveRooms(): Promise<void> {
+    const now = Date.now();
+    const rooms = await this.redis.smembers(REDIS_KEY.ACTIVE_ROOMS);
+
+    for (const roomId of rooms) {
+      const lastActivity = await this.redis.hget(REDIS_KEY.ROOM(roomId), 'lastActivityAt');
+
+      if (lastActivity && now - parseInt(lastActivity) > this.INACTIVE_THRESHOLD) {
+        await this.redis.publish('room:cleanup', roomId);
+        this.logger.log(`비활성으로 인해 방 ${roomId} 정리 시작`);
+      }
+    }
   }
 }

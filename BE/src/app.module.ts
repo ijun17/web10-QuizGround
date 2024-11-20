@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GameModule } from './game/game.module';
@@ -19,6 +19,7 @@ import { TimeModule } from './time/time.module';
 import { AuthModule } from './auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { GameRedisMemoryService } from './game/redis/game-redis-memory.service';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -57,6 +58,13 @@ import { GameRedisMemoryService } from './game/redis/game-redis-memory.service';
     AuthModule
   ],
   controllers: [AppController, TimeController],
-  providers: [AppService, GameRedisMemoryService]
+  providers: [
+    AppService,
+    GameRedisMemoryService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor
+    }
+  ]
 })
 export class AppModule {}

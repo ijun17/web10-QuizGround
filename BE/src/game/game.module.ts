@@ -13,6 +13,7 @@ import { ScoringSubscriber } from './redis/subscribers/scoring.subscriber';
 import { TimerSubscriber } from './redis/subscribers/timer.subscriber';
 import { RoomSubscriber } from './redis/subscribers/room.subscriber';
 import { PlayerSubscriber } from './redis/subscribers/player.subscriber';
+import { RoomCleanupSubscriber } from './redis/subscribers/room.cleanup.subscriber';
 
 @Module({
   imports: [RedisModule, QuizSetModule],
@@ -28,7 +29,8 @@ import { PlayerSubscriber } from './redis/subscribers/player.subscriber';
     ScoringSubscriber,
     TimerSubscriber,
     RoomSubscriber,
-    PlayerSubscriber
+    PlayerSubscriber,
+    RoomCleanupSubscriber
   ],
   exports: [GameService]
 })
