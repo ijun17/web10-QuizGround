@@ -32,6 +32,7 @@ import { ScoringSubscriber } from '../../src/game/redis/subscribers/scoring.subs
 import { TimerSubscriber } from '../../src/game/redis/subscribers/timer.subscriber';
 import { RoomSubscriber } from '../../src/game/redis/subscribers/room.subscriber';
 import { PlayerSubscriber } from '../../src/game/redis/subscribers/player.subscriber';
+import { RoomCleanupSubscriber } from '../../src/game/redis/subscribers/room.cleanup.subscriber';
 
 /*disable eslint*/
 const mockHttpService = {
@@ -104,6 +105,7 @@ describe('GameGateway (e2e)', () => {
         TimerSubscriber,
         RoomSubscriber,
         PlayerSubscriber,
+        RoomCleanupSubscriber,
         {
           provide: 'default_IORedisModuleConnectionToken',
           useValue: redisMock
