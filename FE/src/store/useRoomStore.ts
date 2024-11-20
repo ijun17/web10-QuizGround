@@ -36,18 +36,18 @@ export const useRoomStore = create<RoomStore>((set) => ({
   }
 }));
 
-socketService.on('createRoom', (data) => {
+socketService.onPermanently('createRoom', (data) => {
   useRoomStore.getState().updateRoom({ gameId: data.gameId });
 });
 
-socketService.on('updateRoomOption', (data) => {
+socketService.onPermanently('updateRoomOption', (data) => {
   useRoomStore.getState().updateRoom(data);
 });
 
-socketService.on('startGame', () => {
+socketService.onPermanently('startGame', () => {
   useRoomStore.getState().setGameState(GameState.PROGRESS);
 });
 
-socketService.on('endGame', () => {
+socketService.onPermanently('endGame', () => {
   useRoomStore.getState().setGameState(GameState.END);
 });
