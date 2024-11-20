@@ -16,6 +16,7 @@ import { QuizSetModule } from './quiz-set/quiz-set.module';
 import { WaitingRoomModule } from './waiting-room/waiting-room.module';
 import { TimeController } from './time/time.controller';
 import { TimeModule } from './time/time.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { TimeModule } from './time/time.module';
     InitDBModule,
     WaitingRoomModule,
     TimeModule
+    AuthModule
   ],
   controllers: [AppController, TimeController],
   providers: [AppService]
