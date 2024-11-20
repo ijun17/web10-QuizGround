@@ -14,6 +14,7 @@ import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 export class GameRoomService {
   private readonly logger = new Logger(GameRoomService.name);
   private readonly INACTIVE_THRESHOLD = 30 * 60 * 1000; // 30분
+  private readonly PLAYER_GRACE_PERIOD = 10; // 10초
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
@@ -137,7 +138,13 @@ export class GameRoomService {
 
     // 플레이어 제거
     pipeline.srem(REDIS_KEY.ROOM_PLAYERS(roomId), clientId);
-    pipeline.del(REDIS_KEY.PLAYER(clientId));
+    // pipeline.del(REDIS_KEY.PLAYER(clientId));
+    // 1. 플레이어 상태를 'disconnected'로 변경하고 TTL 설정
+    pipeline.hmset(REDIS_KEY.PLAYER(clientId), {
+      disconnected: '1',
+      disconnectedAt: Date.now().toString()
+    });
+    pipeline.expire(REDIS_KEY.PLAYER(clientId), this.PLAYER_GRACE_PERIOD);
 
     // 남은 플레이어 수 확인
     pipeline.scard(REDIS_KEY.ROOM_PLAYERS(roomId));
