@@ -10,7 +10,7 @@ import { QuizSetService } from '../../quiz-set/service/quiz-set.service';
 export class QuizCacheService {
   private readonly quizCache = new Map<string, any>();
   private readonly logger = new Logger(QuizCacheService.name);
-  private readonly CACHE_TTL = 1000 * 60 * 30; // 30분
+  private readonly CACHE_TTL = 1 * 60 * 30; // 30분
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
