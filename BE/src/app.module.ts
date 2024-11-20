@@ -14,6 +14,8 @@ import { InitDBModule } from './InitDB/InitDB.module';
 import { UserModule } from './user/user.module';
 import { QuizSetModule } from './quiz-set/quiz-set.module';
 import { WaitingRoomModule } from './waiting-room/waiting-room.module';
+import { TimeController } from './time/time.controller';
+import { TimeModule } from './time/time.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -47,9 +49,10 @@ import { AuthModule } from './auth/auth.module';
     UserModule,
     InitDBModule,
     WaitingRoomModule,
+    TimeModule
     AuthModule
   ],
-  controllers: [AppController],
+  controllers: [AppController, TimeController],
   providers: [AppService]
 })
 export class AppModule {}

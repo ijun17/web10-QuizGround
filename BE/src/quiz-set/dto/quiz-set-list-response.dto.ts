@@ -43,8 +43,6 @@ export class QuizSetDto {
   @IsString()
   category: string;
 
-  @ValidateNested({ each: true })
-  @Type(() => QuizDto)
-  @IsArray()
-  quizList: QuizDto[];
+  @IsNumber()
+  quizCount: number;
 }
