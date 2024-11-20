@@ -55,6 +55,7 @@ export class GameRoomService {
       currentPlayers.length,
       parseInt(room.maxPlayerCount)
     );
+    this.gameValidator.validateRoomProgress(SocketEvents.JOIN_ROOM, room.status, room.isWaiting);
 
     const playerKey = REDIS_KEY.PLAYER(clientId);
     const positionX = Math.random();

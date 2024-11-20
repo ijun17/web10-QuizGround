@@ -33,4 +33,10 @@ export class GameValidator {
       throw new GameWsException(eventName, ExceptionMessage.EXCEEDS_QUIZ_SET_LIMIT);
     }
   }
+
+  validateRoomProgress(eventName: string, status: string, isWaiting: string) {
+    if (status !== 'waiting' || isWaiting != '1') {
+      throw new GameWsException(eventName, ExceptionMessage.GAME_ALREADY_STARTED);
+    }
+  }
 }
