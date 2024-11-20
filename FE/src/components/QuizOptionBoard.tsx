@@ -4,7 +4,7 @@ import { socketService } from '@/api/socket';
 import { useRoomStore } from '@/store/useRoomStore';
 import { useEffect, useRef, useState } from 'react';
 import { useQuizeStore } from '@/store/useQuizStore';
-import useServerDate from '@/hooks/useServerDate';
+import { getServerTimestamp } from '@/utils/serverTime';
 
 const optionColors = [
   '#FF9AA2', // pastel red
@@ -29,7 +29,6 @@ export const QuizOptionBoard = () => {
   const quizAnswer = useQuizeStore((state) => state.currentAnswer);
   const [selectedOption, setSelectedOption] = useState(currentQuiz?.choiceList.length);
   const [choiceListVisible, setChoiceListVisible] = useState(false);
-  const serverNow = useServerDate();
 
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const { pageX, pageY } = e;
@@ -66,13 +65,13 @@ export const QuizOptionBoard = () => {
   // 퀴즈 시작 시간에 선택지 렌더링
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!choiceListVisible && currentQuiz && currentQuiz.startTime <= serverNow())
+      if (!choiceListVisible && currentQuiz && currentQuiz.startTime <= getServerTimestamp())
         setChoiceListVisible(true);
-      else if (choiceListVisible && currentQuiz && currentQuiz.startTime > serverNow())
+      else if (choiceListVisible && currentQuiz && currentQuiz.startTime > getServerTimestamp())
         setChoiceListVisible(false);
     }, 100);
     return () => clearInterval(interval);
-  }, [choiceListVisible, currentQuiz, serverNow]);
+  }, [choiceListVisible, currentQuiz]);
 
   return (
     <div
@@ -82,20 +81,23 @@ export const QuizOptionBoard = () => {
     >
       <div className="absolute h-[100%] w-[100%]">
         {boardRect
-          ? players.map((player) => {
-              return (
-                <Player
-                  key={player.playerId}
-                  name={player.playerName}
-                  position={[
-                    player.playerPosition[1] * boardRect.width,
-                    player.playerPosition[0] * boardRect.height
-                  ]}
-                  isCurrent={player.playerId === currentPlayerId}
-                  isAnswer={player.isAnswer ?? false}
-                />
-              );
-            })
+          ? players
+              .filter((player) => player.isAlive || player.playerId === currentPlayerId)
+              .map((player) => {
+                return (
+                  <Player
+                    key={player.playerId}
+                    name={player.playerName}
+                    position={[
+                      player.playerPosition[1] * boardRect.width,
+                      player.playerPosition[0] * boardRect.height
+                    ]}
+                    isCurrent={player.playerId === currentPlayerId}
+                    isAnswer={player.isAnswer ?? false}
+                    isAlive={player.isAlive}
+                  />
+                );
+              })
           : null}
       </div>
       <div className="grid grid-cols-2 gap-4 p-4 h-[100%] w-[100%]">

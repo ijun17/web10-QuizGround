@@ -2,14 +2,16 @@ import { SocketMock } from '../SocketMock';
 
 export default class SocketMockStartEnd extends SocketMock {
   constructor() {
-    super('');
-    this.players = Array(10)
-      .fill(null)
-      .map((_, i) => ({
-        playerId: String(i + 1),
-        playerName: 'player' + i,
-        playerPosition: [i / 10, i / 10]
-      }));
+    super();
+    this.addPlayers(
+      Array(10)
+        .fill(null)
+        .map((_, i) => ({
+          playerId: String(i + 1),
+          playerName: 'player' + i,
+          playerPosition: [i / 10, i / 10]
+        }))
+    );
     this.test();
   }
 
@@ -18,15 +20,13 @@ export default class SocketMockStartEnd extends SocketMock {
     await this.delay(2);
     this.log('게임이 시작되었습니다.');
     this.emitServer('startGame', {});
-    //퀴즈 전송
+    //퀴즈 진행
     await this.delay(2);
-    this.setQuiz('1+0+0은?', 5, ['1', '2', '3', '4']);
-    this.log('퀴즈 전송 완료.');
+    await this.progressQuiz('1+0+0은?', 5, ['1', '2', '3', '4'], 0);
 
     // 퀴즈 종료
-    await this.delay(8);
-    this.calculateScore(0);
-    this.log('퀴즈 가 종료 되었습니다.');
-    this.emitServer('endGame', { hostId: '123123' });
+    await this.delay(5);
+    this.log('게임이 종료되었습니다.');
+    this.emitServer('endGame', { hostId: this.id });
   }
 }

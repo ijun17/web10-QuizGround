@@ -1,6 +1,7 @@
 import Lottie from 'lottie-react';
 import starBg from '../assets/lottie/star_bg.json';
 import { usePlayerStore } from '@/store/usePlayerStore';
+import { useRoomStore } from '@/store/useRoomStore';
 
 type GameResultModalProps = {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
   onClose,
   currentPlayerName
 }) => {
+  const gameMode = useRoomStore((state) => state.gameMode);
   const players = usePlayerStore((state) => state.players);
   const sortedPlayers = [...players].sort((a, b) => b.playerScore - a.playerScore);
 
@@ -38,10 +40,18 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
                 className={`flex justify-between px-4 py-2 border-b border-gray-100 ${currentPlayerName === player.playerName ? `bg-cyan-100` : null} last:border-none`}
               >
                 <span className="text-gray-700 font-medium">
-                  <span className="text-blue-700 font-medium">{index + 1}등</span>{' '}
+                  {gameMode === 'RANKING' ? (
+                    <span className="text-blue-700 font-medium">{index + 1}등</span>
+                  ) : player.isAlive ? (
+                    <span className="text-green-700 font-medium">생존</span>
+                  ) : (
+                    <span className="text-red-700 font-medium">탈락</span>
+                  )}{' '}
                   {player.playerName}
                 </span>
-                <span className="text-red-500">{player.playerScore}점</span>
+                {gameMode === 'RANKING' && (
+                  <span className="text-red-500">{player.playerScore}점</span>
+                )}
               </div>
             ))}
           </div>

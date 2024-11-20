@@ -20,6 +20,7 @@ export const GamePage = () => {
   const currentPlayerName = usePlayerStore((state) => state.currentPlayerName);
   const setCurrentPlayerName = usePlayerStore((state) => state.setCurrentPlayerName);
   const setGameState = useRoomStore((state) => state.setGameState);
+  const resetScore = usePlayerStore((state) => state.resetScore);
   const [isModalOpen, setIsModalOpen] = useState(true);
   const [isResultOpen, setIsResultOpen] = useState(false);
 
@@ -37,7 +38,6 @@ export const GamePage = () => {
     if (gameState === GameState.END) setIsResultOpen(true);
   }, [gameState]);
 
-  // setCurrentPlayerName('test123');
   const handleNameSubmit = (name: string) => {
     setCurrentPlayerName(name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기
@@ -45,6 +45,7 @@ export const GamePage = () => {
 
   const handleEndGame = () => {
     setGameState(GameState.WAIT);
+    resetScore();
     setIsResultOpen(false);
   };
 

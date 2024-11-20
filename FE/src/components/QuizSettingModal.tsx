@@ -3,21 +3,21 @@ import { QuizPreview } from './QuizPreview';
 import { socketService } from '@/api/socket';
 import QuizSetSearchList from './QuizSetSearchList';
 
-type Quiz = {
-  id: string;
-  quiz: string;
-  limitTime: number;
-  choiceList: {
-    content: string;
-    order: number;
-  }[];
-};
+// type Quiz = {
+//   id: string;
+//   quiz: string;
+//   limitTime: number;
+//   choiceList: {
+//     content: string;
+//     order: number;
+//   }[];
+// };
 
 type QuizSet = {
   id: string;
   title: string;
   category: string;
-  quizList: Quiz[];
+  quizCount: number;
 };
 
 type Props = {
@@ -51,7 +51,7 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
 
   const handleSelectQuizSet = (quizSet: QuizSet) => {
     setSelectedQuizSet(quizSet);
-    setQuizCount(quizSet.quizList.length);
+    setQuizCount(quizSet.quizCount);
   };
 
   return (
@@ -93,7 +93,7 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
                 <input
                   type="range"
                   min={1}
-                  max={selectedQuizSet.quizList.length}
+                  max={selectedQuizSet.quizCount}
                   value={quizCount}
                   onChange={(e) => setQuizCount(Number(e.target.value))}
                 />
