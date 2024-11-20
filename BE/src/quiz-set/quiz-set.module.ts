@@ -12,10 +12,7 @@ import { QuizSetReadService } from './service/quiz-set-read.service';
 import { QuizSetUpdateService } from './service/quiz-set-update.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel]),
-    UserModule
-  ],
+  imports: [TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel]), UserModule],
   controllers: [QuizSetController],
   providers: [
     QuizSetService,
@@ -23,7 +20,13 @@ import { QuizSetUpdateService } from './service/quiz-set-update.service';
     QuizSetReadService,
     QuizSetUpdateService,
     QuizSetDeleteService
+  ],
+  exports: [
+    QuizSetService,
+    QuizSetCreateService,
+    QuizSetReadService,
+    QuizSetUpdateService,
+    QuizSetDeleteService
   ]
 })
-export class QuizSetModule {
-}
+export class QuizSetModule {}

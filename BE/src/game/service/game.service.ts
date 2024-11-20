@@ -9,6 +9,7 @@ import { StartGameDto } from '../dto/start-game.dto';
 import { Server } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
+import { RedisSubscriberService } from '../../common/redis/redis-subscriber.service';
 
 @Injectable()
 export class GameService {
@@ -18,7 +19,8 @@ export class GameService {
   constructor(
     @InjectRedis() private readonly redis: Redis,
     private readonly gameValidator: GameValidator,
-    private readonly quizCacheService: QuizCacheService
+    private readonly quizCacheService: QuizCacheService,
+    private readonly redisSubscriberService: RedisSubscriberService
   ) {}
 
   async updatePosition(updatePosition: UpdatePositionDto, clientId: string) {
@@ -124,220 +126,7 @@ export class GameService {
   }
 
   async subscribeRedisEvent(server: Server) {
-    this.redis.config('SET', 'notify-keyspace-events', 'KEhx');
-
-    // TODO: 분리 필요
-
-    const scoringSubscriber = this.redis.duplicate();
-    await scoringSubscriber.psubscribe('scoring:*');
-    scoringSubscriber.on('pmessage', async (_pattern, channel, message) => {
-      const gameId = channel.split(':')[1];
-
-      const completeClientsCount = parseInt(message);
-      if (!this.scoringMap.has(gameId)) {
-        this.scoringMap[gameId] = 0;
-      }
-      this.scoringMap[gameId] += completeClientsCount;
-
-      const playersCount = await this.redis.scard(REDIS_KEY.ROOM_PLAYERS(gameId));
-      if (this.scoringMap[gameId] >= playersCount) {
-        // 채점 완료!
-        const currentQuiz = await this.redis.get(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId));
-        const splitCurrentQuiz = currentQuiz.split(':');
-
-        const quizNum = parseInt(splitCurrentQuiz[0]);
-        const quizList = await this.redis.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
-        const quiz = await this.redis.hgetall(REDIS_KEY.ROOM_QUIZ(gameId, quizList[quizNum]));
-
-        const leaderboard = await this.redis.zrange(
-          REDIS_KEY.ROOM_LEADERBOARD(gameId),
-          0,
-          -1,
-          'WITHSCORES'
-        );
-        const players = [];
-        for (let i = 0; i < leaderboard.length; i += 2) {
-          players.push({
-            playerId: leaderboard[i],
-            score: parseInt(leaderboard[i + 1]),
-            isAnswer:
-              (await this.redis.hget(REDIS_KEY.PLAYER(leaderboard[i]), 'isAnswerCorrect')) === '1'
-          });
-        }
-        server.to(gameId).emit(SocketEvents.END_QUIZ_TIME, {
-          answer: quiz.answer,
-          players: players
-        });
-
-        await this.redis.set(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId), `${quizNum}:end`); // 현재 퀴즈 상태를 종료 상태로 변경
-        await this.redis.set(REDIS_KEY.ROOM_TIMER(gameId), 'timer', 'EX', '10', 'NX'); // 타이머 설정
-        this.logger.verbose(`endQuizTime: ${gameId} - ${quizNum}`);
-      }
-    });
-
-    const timerSubscriber = this.redis.duplicate();
-    await timerSubscriber.psubscribe(`__keyspace@0__:${REDIS_KEY.ROOM_TIMER('*')}`);
-    timerSubscriber.on('pmessage', async (_pattern, channel, message) => {
-      const key = channel.replace('__keyspace@0__:', '');
-      const splitKey = key.split(':');
-      if (splitKey.length !== 3) {
-        return;
-      }
-      const gameId = splitKey[1];
-
-      if (message === 'expired') {
-        const currentQuiz = await this.redis.get(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId));
-        const splitCurrentQuiz = currentQuiz.split(':');
-        const quizNum = parseInt(splitCurrentQuiz[0]);
-        if (splitCurrentQuiz[1] === 'start') {
-          // 채점
-          const quizList = await this.redis.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
-          const quiz = await this.redis.hgetall(REDIS_KEY.ROOM_QUIZ(gameId, quizList[quizNum]));
-          // gameId를 통해 해당 room에 있는 client id들을 받기
-          const sockets = await server.in(gameId).fetchSockets();
-          const clients = sockets.map((socket) => socket.id);
-          const correctPlayers = [];
-          for (const clientId of clients) {
-            const player = await this.redis.hgetall(REDIS_KEY.PLAYER(clientId));
-            const x = parseFloat(player.positionY);
-            const y = parseFloat(player.positionX);
-            const selectAnswer =
-              Math.round(x) + Math.floor(y * Math.ceil(parseInt(quiz.choiceCount) / 2)) * 2;
-            await this.redis.set(`${REDIS_KEY.PLAYER(clientId)}:Changes`, 'AnswerCorrect');
-            if (selectAnswer.toString() === quiz.answer) {
-              correctPlayers.push(clientId);
-              await this.redis.hmset(REDIS_KEY.PLAYER(clientId), { isAnswerCorrect: '1' });
-            } else {
-              await this.redis.hmset(REDIS_KEY.PLAYER(clientId), { isAnswerCorrect: '0' });
-            }
-          }
-          for (const clientId of correctPlayers) {
-            await this.redis.zincrby(
-              REDIS_KEY.ROOM_LEADERBOARD(gameId),
-              1000 / correctPlayers.length,
-              clientId
-            );
-          }
-          await this.redis.publish(`scoring:${gameId}`, clients.length.toString());
-          this.logger.verbose(`채점: ${gameId} - ${clients.length}`);
-        } else {
-          // startQuizTime 하는 부분
-          const newQuizNum = quizNum + 1;
-          const quizList = await this.redis.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
-          if (quizList.length <= newQuizNum) {
-            // 마지막 퀴즈이면, 게임 종료!
-            // 1등을 새로운 호스트로 설정
-            const leaderboard = await this.redis.zrange(
-              REDIS_KEY.ROOM_LEADERBOARD(gameId),
-              0,
-              -1,
-              'WITHSCORES'
-            );
-            // const players = [];
-            // for (let i = 0; i < leaderboard.length; i += 2) {
-            //   players.push({
-            //     playerId: leaderboard[i],
-            //     score: parseInt(leaderboard[i + 1])
-            //   });
-            // }
-            server.to(gameId).emit(SocketEvents.END_GAME, {
-              host: leaderboard[0] // 아마 첫 번째가 1등..?
-            });
-            this.logger.verbose(`endGame: ${leaderboard[0]}`);
-            return;
-          }
-          const quiz = await this.redis.hgetall(REDIS_KEY.ROOM_QUIZ(gameId, quizList[newQuizNum]));
-          const quizChoices = await this.redis.hgetall(
-            REDIS_KEY.ROOM_QUIZ_CHOICES(gameId, quizList[newQuizNum])
-          );
-          server.to(gameId).emit(SocketEvents.START_QUIZ_TIME, {
-            quiz: quiz.quiz,
-            choiceList: Object.entries(quizChoices).map(([key, value]) => ({
-              order: key,
-              content: value
-            })),
-            startTime: Date.now() + 3000,
-            endTime: Date.now() + (parseInt(quiz.limitTime) + 3) * 1000
-          });
-          await this.redis.set(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId), `${newQuizNum}:start`); // 현재 퀴즈 상태를 시작 상태로 변경
-          await this.redis.set(
-            REDIS_KEY.ROOM_TIMER(gameId),
-            'timer',
-            'EX',
-            (parseInt(quiz.limitTime) + 3).toString(),
-            'NX'
-          ); // 타이머 설정
-          this.logger.verbose(`startQuizTime: ${gameId} - ${newQuizNum}`);
-        }
-      }
-    });
-
-    const roomSubscriber = this.redis.duplicate();
-    await roomSubscriber.psubscribe('__keyspace@0__:Room:*');
-    roomSubscriber.on('pmessage', async (_pattern, channel, message) => {
-      const key = channel.replace('__keyspace@0__:', '');
-      const splitKey = key.split(':');
-      if (splitKey.length !== 2) {
-        return;
-      }
-      const gameId = splitKey[1];
-
-      if (message === 'hset') {
-        const changes = await this.redis.get(`${key}:Changes`);
-        const roomData = await this.redis.hgetall(key);
-
-        if (changes === 'Option') {
-          server.to(gameId).emit(SocketEvents.UPDATE_ROOM_OPTION, {
-            title: roomData.title,
-            gameMode: roomData.gameMode,
-            maxPlayerCount: roomData.maxPlayerCount,
-            isPublic: roomData.isPublic
-          });
-        } else if (changes === 'Quizset') {
-          server.to(gameId).emit(SocketEvents.UPDATE_ROOM_QUIZSET, {
-            quizSetId: roomData.quizSetId,
-            quizCount: roomData.quizCount
-          });
-        } else if (changes === 'Start') {
-          server.to(gameId).emit(SocketEvents.START_GAME, '');
-        }
-      }
-    });
-
-    const playerSubscriber = this.redis.duplicate();
-    playerSubscriber.psubscribe('__keyspace@0__:Player:*');
-    playerSubscriber.on('pmessage', async (_pattern, channel, message) => {
-      const key = channel.replace('__keyspace@0__:', '');
-      const splitKey = key.split(':');
-      if (splitKey.length !== 2) {
-        return;
-      }
-      const playerId = splitKey[1];
-
-      if (message === 'hset') {
-        const changes = await this.redis.get(`${key}:Changes`);
-        const playerData = await this.redis.hgetall(key);
-        if (changes === 'Join') {
-          const newPlayer = {
-            playerId: playerId,
-            playerName: playerData.playerName,
-            playerPosition: [parseFloat(playerData.positionX), parseFloat(playerData.positionY)]
-          };
-          server.to(playerData.gameId).emit(SocketEvents.JOIN_ROOM, {
-            players: [newPlayer]
-          });
-        } else if (changes === 'Position') {
-          server.to(playerData.gameId).emit(SocketEvents.UPDATE_POSITION, {
-            playerId: playerId,
-            playerPosition: [parseFloat(playerData.positionX), parseFloat(playerData.positionY)]
-          });
-        } else if (changes === 'Disconnect') {
-          server.to(playerData.gameId).emit(SocketEvents.EXIT_ROOM, {
-            playerId: playerId
-          });
-        }
-      }
-    });
+    await this.redisSubscriberService.initializeSubscribers(server);
   }
 
   async disconnect(clientId: string) {
