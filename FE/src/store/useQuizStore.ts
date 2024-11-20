@@ -64,15 +64,15 @@ export const useQuizeStore = create<QuizStore>((set) => ({
 }));
 
 // 진행 중인 퀴즈 설정
-socketService.on('startQuizTime', (data) => {
+socketService.onPermanently('startQuizTime', (data) => {
   useQuizeStore.getState().setQuizState(QuizState.START);
   useQuizeStore.getState().setCurrentQuiz(data);
 });
-socketService.on('endQuizTime', (data) => {
+socketService.onPermanently('endQuizTime', (data) => {
   useQuizeStore.getState().setQuizState(QuizState.END);
   useQuizeStore.getState().setCurrentAnswer(Number(data.answer));
 });
 
-socketService.on('endGame', () => {
+socketService.onPermanently('endGame', () => {
   useQuizeStore.getState().resetQuiz();
 });
