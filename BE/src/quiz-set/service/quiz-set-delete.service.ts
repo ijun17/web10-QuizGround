@@ -33,15 +33,15 @@ export class QuizSetDeleteService {
       where: {
         id,
         deletedAt: IsNull()
-      },
-      relations: ['user']
+      }
     });
 
     if (!quizSet) {
       throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
     }
 
-    if (quizSet.user.id !== user.id) {
+    const quizSetUser = await quizSet.user;
+    if (quizSetUser.id !== user.id) {
       throw new ForbiddenException('퀴즈셋을 생성한 유저가 아닙니다.');
     }
 

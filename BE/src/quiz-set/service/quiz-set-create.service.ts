@@ -38,7 +38,6 @@ export class QuizSetCreateService {
     const quizSet = manager.create(QuizSetModel, {
       title: dto.title,
       category: dto.category,
-      user,
       userId: user.id
     });
 

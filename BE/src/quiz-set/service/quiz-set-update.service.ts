@@ -17,7 +17,6 @@ export class QuizSetUpdateService {
       const quizSet = await manager.findOne(QuizSetModel, {
         where: { id },
         relations: {
-          user: true,
           quizList: {
             choiceList: true
           }
@@ -28,8 +27,11 @@ export class QuizSetUpdateService {
         throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
       }
 
-      if (quizSet.user.id !== user.id) {
-        throw new ForbiddenException('퀴즈셋을 생성한 유저가 아닙니다.');
+      const quizSetUser = await quizSet.user;
+      if (quizSetUser.id !== user.id) {
+        throw new ForbiddenException(
+          `퀴즈셋을 생성한 유저가 아닙니다. ${quizSetUser.id} !== ${user.id}`
+        );
       }
 
       // 1. 기본 필드 업데이트 (변경감지 사용)

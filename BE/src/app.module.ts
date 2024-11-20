@@ -33,7 +33,7 @@ import { AuthModule } from './auth/auth.module';
       password: process.env.DB_PASSWD || 'test',
       database: process.env.DB_NAME || 'test_db',
       entities: [QuizSetModel, QuizModel, QuizChoiceModel, UserModel, UserQuizArchiveModel],
-      synchronize: process.env.DEV ? true : false, // 개발 모드에서만 활성화
+      synchronize: !!process.env.DEV, // 개발 모드에서만 활성화
       logging: true, // 모든 쿼리 로깅
       logger: 'advanced-console'
       // extra: {

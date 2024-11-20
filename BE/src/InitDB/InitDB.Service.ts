@@ -72,7 +72,7 @@ export class InitDBService {
       for (const quizSetData of QUIZ_SET_TEST_DATA) {
         // 2. Create QuizSet
         const quizSet = queryRunner.manager.create(QuizSetModel, {
-          user,
+          userId: user.id,
           title: quizSetData.title,
           category: quizSetData.category
         });
