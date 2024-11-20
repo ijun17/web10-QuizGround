@@ -1,6 +1,4 @@
-import {
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateQuizSetDto } from '../dto/create-quiz.dto';
 import { UpdateQuizSetDto } from '../dto/update-quiz.dto';
 import { QuizSetDto, QuizSetList } from '../dto/quiz-set-list-response.dto';
@@ -8,6 +6,7 @@ import { QuizSetCreateService } from './quiz-set-create.service';
 import { QuizSetReadService } from './quiz-set-read.service';
 import { QuizSetUpdateService } from './quiz-set-update.service';
 import { QuizSetDeleteService } from './quiz-set-delete.service';
+import { UserModel } from '../../user/entities/user.entity';
 
 @Injectable()
 export class QuizSetService {
@@ -21,10 +20,11 @@ export class QuizSetService {
   /**
    * 퀴즈셋, 퀴즈, 선택지를 생성합니다.
    * @param createQuizSetDto 생성할 퀴즈셋 데이터
+   * @param user 생성하는 유저
    * @returns 생성된 퀴즈셋
    */
-  async createQuizSet(dto: CreateQuizSetDto) {
-    return this.quizSetCreateService.createQuizSet(dto);
+  async createQuizSet(dto: CreateQuizSetDto, user: UserModel) {
+    return this.quizSetCreateService.createQuizSet(dto, user);
   }
 
   /**
@@ -58,12 +58,12 @@ export class QuizSetService {
    * @param id 삭제할 퀴즈셋의 ID
    * @returns 삭제 결과를 포함한 응답 객체
    */
-  async remove(id: number) {
-    return this.quizSetDeleteService.remove(id);
+  async remove(id: number, user: UserModel) {
+    return this.quizSetDeleteService.remove(id, user);
   }
 
   // REFACTOR: QuizSetUpdateService 메서드 분리 필요 및 최적화
-  async update(id: number, updateDto: UpdateQuizSetDto) {
-    return this.quizSetUpdateService.update(id, updateDto);
+  async update(id: number, updateDto: UpdateQuizSetDto, user: UserModel) {
+    return this.quizSetUpdateService.update(id, updateDto, user);
   }
 }

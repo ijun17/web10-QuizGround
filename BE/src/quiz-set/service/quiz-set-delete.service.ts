@@ -1,21 +1,11 @@
-import {
-  Injectable,
-  NotFoundException
-} from '@nestjs/common';
-import { QuizModel } from '../entities/quiz.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { DataSource, EntityManager, IsNull } from 'typeorm';
 import { QuizSetModel } from '../entities/quiz-set.entity';
-import { QuizChoiceModel } from '../entities/quiz-choice.entity';
-import { QuizSetCreateService } from './quiz-set-create.service';
-import { QuizSetReadService } from './quiz-set-read.service';
+import { UserModel } from '../../user/entities/user.entity';
 
 @Injectable()
 export class QuizSetDeleteService {
-  constructor(
-    private dataSource: DataSource,
-  ) {
-  }
+  constructor(private dataSource: DataSource) {}
 
   /**
    * 주어진 ID의 퀴즈셋을 소프트 삭제합니다.
@@ -26,15 +16,19 @@ export class QuizSetDeleteService {
   // if (quizSet.userId !== userId) {
   //   throw new ForbiddenException('해당 퀴즈셋을 삭제할 권한이 없습니다.');
   // }
-  async remove(id: number) {
+  async remove(id: number, user: UserModel) {
     return this.dataSource.transaction(async (manager) => {
-      const quizSet = await this.findActiveQuizSet(manager, id);
+      const quizSet = await this.findActiveQuizSet(manager, id, user);
       await this.softDeleteQuizSet(manager, quizSet);
       return this.generateRemoveResponse();
     });
   }
 
-  private async findActiveQuizSet(manager: EntityManager, id: number): Promise<QuizSetModel> {
+  private async findActiveQuizSet(
+    manager: EntityManager,
+    id: number,
+    user: UserModel
+  ): Promise<QuizSetModel> {
     const quizSet = await manager.findOne(QuizSetModel, {
       where: {
         id,
@@ -45,6 +39,10 @@ export class QuizSetDeleteService {
 
     if (!quizSet) {
       throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
+    }
+
+    if (quizSet.user.id !== user.id) {
+      throw new ForbiddenException('퀴즈셋을 생성한 유저가 아닙니다.');
     }
 
     return quizSet;

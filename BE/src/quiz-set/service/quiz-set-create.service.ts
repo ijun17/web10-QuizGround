@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
 import { UserModel } from '../../user/entities/user.entity';
 import { CreateChoiceDto, CreateQuizDto, CreateQuizSetDto } from '../dto/create-quiz.dto';
 import { QuizSetModel } from '../entities/quiz-set.entity';
@@ -8,48 +8,26 @@ import { QuizChoiceModel } from '../entities/quiz-choice.entity';
 
 @Injectable()
 export class QuizSetCreateService {
-  constructor(
-    private dataSource: DataSource
-  ) {}
+  constructor(private dataSource: DataSource) {}
 
   /**
    * 퀴즈셋, 퀴즈, 선택지를 생성합니다.
    * @param createQuizSetDto 생성할 퀴즈셋 데이터
+   * @param user 생성하는 유저
    * @returns 생성된 퀴즈셋
    */
-  async createQuizSet(dto: CreateQuizSetDto) {
+  async createQuizSet(dto: CreateQuizSetDto, user: UserModel) {
     this.validateQuizSet(dto);
-    return this.dataSource.transaction(async (manager) => {
-      const user = await this.extractUser(manager);
-      const quizSet = await this.createQuizSetEntity(manager, dto, user);
-      await this.createQuizzesWithChoices(manager, dto.quizList, quizSet);
+    return this.dataSource
+      .transaction(async (manager) => {
+        const quizSet = await this.createQuizSetEntity(manager, dto, user);
+        await this.createQuizzesWithChoices(manager, dto.quizList, quizSet);
 
-      return {
-        id: quizSet.id
-      };
-    }).catch(this.handleError);
-  }
-
-  private async extractUser(manager: EntityManager): Promise<UserModel> {
-    // TODO: 실제 인증된 사용자 정보 사용
-    const email = 'honux@codesquad.co.kr';
-
-    const user = await manager.findOne(UserModel, {
-      where: { email }
-    });
-
-    if (user) return user;
-
-    // TODO: 실제 인증된 사용자 정보 사용
-    const newUser = manager.create(UserModel, {
-      email,
-      password: '123456',
-      nickname: 'honux',
-      point: 100,
-      status: 'ACTIVE'
-    });
-
-    return manager.save(newUser);
+        return {
+          id: quizSet.id
+        };
+      })
+      .catch(this.handleError);
   }
 
   private async createQuizSetEntity(
@@ -72,10 +50,12 @@ export class QuizSetCreateService {
     quizList: CreateQuizDto[],
     quizSet: QuizSetModel
   ): Promise<void> {
-    await Promise.all(quizList.map(async (quizData) => {
-      const quiz = await this.createQuiz(manager, quizData, quizSet);
-      await this.createChoices(manager, quizData.choiceList, quiz);
-    }));
+    await Promise.all(
+      quizList.map(async (quizData) => {
+        const quiz = await this.createQuiz(manager, quizData, quizSet);
+        await this.createChoices(manager, quizData.choiceList, quiz);
+      })
+    );
   }
 
   private async createQuiz(
@@ -97,7 +77,7 @@ export class QuizSetCreateService {
     choiceList: CreateChoiceDto[],
     quiz: QuizModel
   ): Promise<void> {
-    const choices = choiceList.map(choice =>
+    const choices = choiceList.map((choice) =>
       manager.create(QuizChoiceModel, {
         quiz,
         choiceContent: choice.choiceContent,
@@ -117,14 +97,14 @@ export class QuizSetCreateService {
   }
 
   private validateQuizAnswers(quiz: CreateQuizDto): void {
-    const hasAnswer = quiz.choiceList.some(choice => choice.isAnswer);
+    const hasAnswer = quiz.choiceList.some((choice) => choice.isAnswer);
     if (!hasAnswer) {
       throw new BadRequestException(`퀴즈 "${quiz.quiz}"에 정답이 없습니다.`);
     }
   }
 
   private validateChoiceOrders(quiz: CreateQuizDto): void {
-    const orders = new Set(quiz.choiceList.map(choice => choice.choiceOrder));
+    const orders = new Set(quiz.choiceList.map((choice) => choice.choiceOrder));
     if (orders.size !== quiz.choiceList.length) {
       throw new BadRequestException(`퀴즈 "${quiz.quiz}"의 선택지 번호가 중복됩니다.`);
     }
