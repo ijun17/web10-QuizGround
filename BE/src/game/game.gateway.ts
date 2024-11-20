@@ -125,7 +125,7 @@ export class GameGateway {
   async handleDisconnect(client: Socket) {
     this.logger.verbose(`클라이언트가 연결 해제되었어요!: ${client.id}`);
 
-    this.gameService.disconnect(client.id);
+    await this.gameService.disconnect(client.id);
     await this.gameRoomService.handlePlayerExit(client.id);
   }
 }

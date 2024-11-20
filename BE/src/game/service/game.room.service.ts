@@ -150,7 +150,10 @@ export class GameRoomService {
     pipeline.scard(REDIS_KEY.ROOM_PLAYERS(roomId));
 
     const results = await pipeline.exec();
-    const remainingPlayers = results[2][1] as number;
+    const remainingPlayers = results[3][1] as number;
+
+    // 4. 플레이어 관련 모든 키에 TTL 설정
+    await this.setTTLForPlayerKeys(clientId);
 
     if (remainingPlayers === 0) {
       // 마지막 플레이어가 나간 경우
@@ -186,5 +189,27 @@ export class GameRoomService {
         this.logger.log(`비활성으로 인해 방 ${roomId} 정리 시작`);
       }
     }
+  }
+
+  /**
+   * 플레이어 관련 모든 데이터에 TTL 설정
+   */
+  private async setTTLForPlayerKeys(clientId: string): Promise<void> {
+    let cursor = '0';
+    const pattern = `Player:${clientId}:*`;
+    const pipeline = this.redis.pipeline();
+
+    do {
+      // SCAN으로 플레이어 관련 키들을 배치로 찾기
+      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+
+      // 찾은 모든 키에 TTL 설정
+      for (const key of keys) {
+        pipeline.expire(key, this.PLAYER_GRACE_PERIOD);
+      }
+    } while (cursor !== '0');
+
+    await pipeline.exec();
   }
 }

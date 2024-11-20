@@ -148,7 +148,7 @@ export class GameService {
         host: newHost
       });
     }
-    await this.redis.set(`${playerKey}:Changes`, 'Disconnect');
+    await this.redis.set(`${playerKey}:Changes`, 'Disconnect', 'EX', 600); // 해당플레이어의 변화정보 10분 후에 삭제
     await this.redis.hmset(playerKey, {
       disconnected: '1'
     });
