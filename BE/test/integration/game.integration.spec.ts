@@ -32,6 +32,12 @@ import { ScoringSubscriber } from '../../src/common/redis/subscribers/scoring.su
 import { TimerSubscriber } from '../../src/common/redis/subscribers/timer.subscriber';
 import { RoomSubscriber } from '../../src/common/redis/subscribers/room.subscriber';
 import { PlayerSubscriber } from '../../src/common/redis/subscribers/player.subscriber';
+import { JwtService } from '@nestjs/jwt';
+import { AuthModule } from '../../src/auth/auth.module';
+import { WsJwtAuthGuard } from '../../src/auth/guard/ws-jwt-auth.guard';
+import { JwtStrategy } from '../../src/auth/guard/jwt.strategy';
+import { AuthService } from '../../src/auth/auth.service';
+import { UserService } from '../../src/user/user.service';
 
 /*disable eslint*/
 const mockHttpService = {
@@ -85,9 +91,15 @@ describe('GameGateway (e2e)', () => {
           entities: [QuizSetModel, QuizModel, QuizChoiceModel, UserModel, UserQuizArchiveModel],
           synchronize: true // test모드에서는 항상 활성화
         }),
-        TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel, UserModel])
+        TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel, UserModel]),
+        AuthModule
       ],
       providers: [
+        WsJwtAuthGuard,
+        AuthService,
+        UserService,
+        JwtStrategy,
+        JwtService,
         GameGateway,
         GameService,
         GameChatService,
