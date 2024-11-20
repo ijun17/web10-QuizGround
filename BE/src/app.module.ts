@@ -49,7 +49,7 @@ import { AuthModule } from './auth/auth.module';
     UserModule,
     InitDBModule,
     WaitingRoomModule,
-    TimeModule
+    TimeModule,
     AuthModule
   ],
   controllers: [AppController, TimeController],

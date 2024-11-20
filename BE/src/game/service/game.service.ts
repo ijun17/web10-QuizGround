@@ -9,7 +9,7 @@ import { StartGameDto } from '../dto/start-game.dto';
 import { Server } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
-import { RedisSubscriberService } from '../../common/redis/redis-subscriber.service';
+import { RedisSubscriberService } from '../redis/redis-subscriber.service';
 
 @Injectable()
 export class GameService {
