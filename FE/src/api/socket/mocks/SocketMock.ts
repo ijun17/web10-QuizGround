@@ -20,6 +20,10 @@ export class SocketMock {
     if (!this.listenerSet[event]) this.listenerSet[event] = [];
     this.listenerSet[event].push(listener);
   }
+  off(event: string, listener: (...args: unknown[]) => void) {
+    if (!this.listenerSet[event]) this.listenerSet[event] = [];
+    this.listenerSet[event] = this.listenerSet[event].filter((l) => l !== listener);
+  }
   onAny(listener: (...args: unknown[]) => void) {
     this.onAnyListenerList.push(listener);
   }
