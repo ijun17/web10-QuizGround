@@ -14,6 +14,7 @@ import { InitDBModule } from './InitDB/InitDB.module';
 import { UserModule } from './user/user.module';
 import { QuizSetModule } from './quiz-set/quiz-set.module';
 import { WaitingRoomModule } from './waiting-room/waiting-room.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import { WaitingRoomModule } from './waiting-room/waiting-room.module';
     QuizSetModule,
     UserModule,
     InitDBModule,
-    WaitingRoomModule
+    WaitingRoomModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService]
