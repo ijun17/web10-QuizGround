@@ -2,7 +2,7 @@ import axios from 'axios';
 import axiosInstance from './instance';
 
 type LoginResponse = {
-  acess_token: string;
+  access_token: string;
 };
 
 export async function login(email: string, password: string): Promise<LoginResponse | null> {

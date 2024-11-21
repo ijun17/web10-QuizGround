@@ -30,6 +30,15 @@ export const GamePage = () => {
   const [isResultOpen, setIsResultOpen] = useState(false);
   const navigate = useNavigate();
 
+  // 페이지에서 나갈때
+  // 스트릭트 모드에서 마운트 > 언마운트 > 마운트됨
+  // useEffect(() => {
+  //   return () => {
+  //     console.log('게임방에서 나갔습니다');
+  //     socketService.disconnect();
+  //   };
+  // }, []);
+
   useEffect(() => {
     updateRoom({ gameId });
   }, [gameId, updateRoom]);
