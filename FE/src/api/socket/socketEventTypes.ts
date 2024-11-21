@@ -176,4 +176,12 @@ export type SocketDataMap = {
     request: EndGameRequest;
     response: EndGameResponse;
   };
+
+  exception: {
+    request: null;
+    response: {
+      eventName: string;
+      message: string;
+    };
+  };
 };

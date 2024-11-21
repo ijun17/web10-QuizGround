@@ -50,7 +50,7 @@ export const GameSetupPage = () => {
       <div className="w-full max-w-lg p-8 bg-white shadow-lg rounded-lg border-4 border-blue-400">
         <Button
           variant="outlined"
-          onClick={() => history.back()}
+          onClick={() => navigate('/')}
           className="mb-4 text-blue-500 border-blue-500 hover:bg-blue-500 hover:text-white transition-all"
         >
           {'<'} 뒤로가기
