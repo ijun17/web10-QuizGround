@@ -3,6 +3,7 @@ import axiosInstance from './instance';
 
 type LoginResponse = {
   result: string;
+  acess_token: string;
 };
 
 export async function login(email: string, password: string): Promise<LoginResponse | null> {
@@ -14,13 +15,7 @@ export async function login(email: string, password: string): Promise<LoginRespo
     console.log('Login Successful:', response.data);
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Login Error:', error.response?.data || error.message);
-    } else {
-      console.error('Unexpected Error:', error);
-    }
-
-    return null;
+    return handleAxiosError(error);
   }
 }
 
@@ -41,12 +36,15 @@ export async function signUp(data: SignupPayload): Promise<SignupResponse | null
 
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Signup Error:', error.response?.data || error.message);
-    } else {
-      console.error('Unexpected Error:', error);
-    }
-
-    return null;
+    return handleAxiosError(error);
   }
 }
+
+const handleAxiosError = (error: unknown): null => {
+  if (axios.isAxiosError(error)) {
+    console.error('Axios Error:', error.response?.data || error.message);
+  } else {
+    console.error('Unexpected Error:', error);
+  }
+  return null;
+};
