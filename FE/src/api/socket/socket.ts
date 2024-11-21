@@ -32,6 +32,9 @@ class SocketService {
   private socket: SocketInterface;
   private url: string;
   private handlers: (() => void)[];
+  private handlerMap: Partial<
+    Record<SocketEvent, ((data: SocketDataMap[SocketEvent]['response']) => void)[]>
+  > = {};
 
   constructor(url: string) {
     this.socket = io() as SocketInterface;
@@ -46,17 +49,21 @@ class SocketService {
       this.socket.on('connect', () => resolve());
       this.socket.on('error', () => reject());
     });
-    this.handlers.forEach((h) => h());
-    this.socket.onAny((eventName, ...args) => {
-      console.log(`SOCKET[${eventName}]`, ...args);
-    });
+    this.initHandler();
     return;
   }
 
   async connectMock(gameId: keyof typeof mockMap) {
     if (this.isActive()) return;
     this.socket = new mockMap[gameId]() as SocketInterface;
+    this.initHandler();
+  }
+
+  initHandler() {
     this.handlers.forEach((h) => h());
+    Object.entries(this.handlerMap).forEach(([event, handlers]) =>
+      handlers.forEach((h) => this.socket.on(event, h))
+    );
     this.socket.onAny((eventName, ...args) => {
       console.log(`SOCKET[${eventName}]`, ...args);
     });
@@ -74,6 +81,7 @@ class SocketService {
     return this.socket.id;
   }
 
+  // deprecated
   onPermanently<T extends SocketEvent>(
     event: T,
     callback: (data: SocketDataMap[T]['response']) => void
@@ -85,10 +93,14 @@ class SocketService {
 
   on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
     if (this.isActive()) this.socket.on(event, callback);
+    if (!this.handlerMap[event]) this.handlerMap[event] = [];
+    this.handlerMap[event].push(callback);
   }
 
   off<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
+    if (!this.handlerMap[event]) return;
     if (this.isActive()) this.socket.off(event, callback);
+    this.handlerMap[event] = this.handlerMap[event].filter((e) => e !== callback);
   }
 
   emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
