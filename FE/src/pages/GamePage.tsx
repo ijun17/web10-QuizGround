@@ -5,12 +5,15 @@ import { Modal } from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { GameHeader } from '@/components/GameHeader';
 import { HeaderBar } from '@/components/HeaderBar';
-import { socketService } from '@/api/socket';
+import { socketService, useSocketException } from '@/api/socket';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { QuizHeader } from '@/components/QuizHeader';
 import GameState from '@/constants/gameState';
 import { usePlayerStore } from '@/store/usePlayerStore';
+import { ResultModal } from '@/components/ResultModal';
+import { ErrorModal } from '@/components/ErrorModal';
+import { useNavigate } from 'react-router-dom';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -18,7 +21,13 @@ export const GamePage = () => {
   const gameState = useRoomStore((state) => state.gameState);
   const currentPlayerName = usePlayerStore((state) => state.currentPlayerName);
   const setCurrentPlayerName = usePlayerStore((state) => state.setCurrentPlayerName);
+  const setGameState = useRoomStore((state) => state.setGameState);
+  const resetScore = usePlayerStore((state) => state.resetScore);
   const [isModalOpen, setIsModalOpen] = useState(true);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(true);
+  const [errorModalTitle, setErrorModalTitle] = useState('');
+  const [isResultOpen, setIsResultOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     updateRoom({ gameId });
@@ -29,10 +38,25 @@ export const GamePage = () => {
       socketService.joinRoom(gameId, currentPlayerName);
     }
   }, [gameId, currentPlayerName]);
-  // setCurrentPlayerName('test123');
+
+  useEffect(() => {
+    if (gameState === GameState.END) setIsResultOpen(true);
+  }, [gameState]);
+
+  useSocketException('joinRoom', (data) => {
+    setErrorModalTitle(data);
+    setIsErrorModalOpen(true);
+  });
+
   const handleNameSubmit = (name: string) => {
     setCurrentPlayerName(name);
     setIsModalOpen(false); // 이름이 설정되면 모달 닫기
+  };
+
+  const handleEndGame = () => {
+    setGameState(GameState.WAIT);
+    resetScore();
+    setIsResultOpen(false);
   };
 
   return (
@@ -54,13 +78,24 @@ export const GamePage = () => {
           <div className="hidden lg:block lg:col-span-1">
             <ParticipantDisplay gameState={gameState} />
           </div>
-
+          <ResultModal
+            isOpen={isResultOpen}
+            onClose={handleEndGame}
+            currentPlayerName={currentPlayerName}
+          />
           <Modal
             isOpen={isModalOpen && !currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
             title="플레이어 이름 설정"
             placeholder="이름을 입력하세요"
             onClose={() => setIsModalOpen(false)}
             onSubmit={handleNameSubmit}
+          />
+
+          <ErrorModal
+            isOpen={isErrorModalOpen}
+            title={errorModalTitle}
+            buttonText="메인 페이지로 이동"
+            onClose={() => navigate('/')}
           />
         </div>
       </div>

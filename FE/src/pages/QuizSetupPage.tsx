@@ -8,6 +8,7 @@ import {
   Typography,
   SelectChangeEvent
 } from '@mui/material';
+import { HeaderBar } from '@/components/HeaderBar';
 /*
 {
  title: string,              // 퀴즈셋의 제목
@@ -101,97 +102,100 @@ export const QuizSetupPage: React.FC = () => {
   };
 
   return (
-    <Box className="p-8 max-w-3xl mx-auto bg-white shadow-xl rounded-lg">
-      <Typography variant="h4" className="mb-6 font-semibold text-gray-800 pb-4 text-center">
-        퀴즈셋 생성하기
-      </Typography>
+    <>
+      <HeaderBar />
+      <Box className="p-8 max-w-3xl mx-auto bg-white shadow-xl rounded-lg">
+        <Typography variant="h4" className="mb-6 font-semibold text-gray-800 pb-4 text-center">
+          퀴즈셋 생성하기
+        </Typography>
 
-      <TextField
-        label="제목"
-        variant="outlined"
-        fullWidth
-        className="mb-6"
-        value={title}
-        onChange={handleTitleChange}
-      />
+        <TextField
+          label="제목"
+          variant="outlined"
+          fullWidth
+          className="mb-6"
+          value={title}
+          onChange={handleTitleChange}
+        />
 
-      <Select
-        value={category}
-        onChange={handleCategoryChange}
-        fullWidth
-        displayEmpty
-        className="mb-6"
-      >
-        <MenuItem value="" disabled>
-          카테고리 설정
-        </MenuItem>
-        <MenuItem value="history">역사</MenuItem>
-        <MenuItem value="computer">컴퓨터</MenuItem>
-        <MenuItem value="science">과학</MenuItem>
-      </Select>
+        <Select
+          value={category}
+          onChange={handleCategoryChange}
+          fullWidth
+          displayEmpty
+          className="mb-6"
+        >
+          <MenuItem value="" disabled>
+            카테고리 설정
+          </MenuItem>
+          <MenuItem value="history">역사</MenuItem>
+          <MenuItem value="computer">컴퓨터</MenuItem>
+          <MenuItem value="science">과학</MenuItem>
+        </Select>
 
-      {quizSet.map((quiz, quizIndex) => (
-        <Box key={quizIndex} className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm ">
-          <Typography variant="h6" className="mb-4 p-2 font-semibold">
-            퀴즈 {quizIndex + 1}
-          </Typography>
-          <TextField
-            label="퀴즈 질문"
-            variant="outlined"
-            fullWidth
-            className="mb-6"
-            value={quiz.quiz}
-            onChange={(e) => handleQuizChange(quizIndex, e.target.value)}
-          />
-          <TextField
-            label="제한 시간 (초)"
-            type="number"
-            variant="outlined"
-            fullWidth
-            className="mb-6"
-            value={quiz.limitTime || 0}
-            onChange={(e) => handleLimitTimeChange(quizIndex, e.target.value)}
-          />
-          {quiz.choices.map((choice, choiceIndex) => (
-            <Box key={choiceIndex} className="flex items-center mb-6">
-              <TextField
-                label={`선택지 ${choiceIndex + 1}`}
-                variant="outlined"
-                className="flex-grow mr-4"
-                value={choice.content}
-                onChange={(e) =>
-                  handleChoiceChange(quizIndex, choiceIndex, 'content', e.target.value)
-                }
-              />
-              <Select
-                value={choice.isAnswer.toString()}
-                onChange={(e) =>
-                  handleChoiceChange(quizIndex, choiceIndex, 'isAnswer', e.target.value)
-                }
-                className="w-28"
-              >
-                <MenuItem value="false">정답아님</MenuItem>
-                <MenuItem value="true">정답</MenuItem>
-              </Select>
-            </Box>
-          ))}
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => addChoice(quizIndex)}
-            className="w-full mb-4"
-          >
-            선택지 추가
-          </Button>
-        </Box>
-      ))}
+        {quizSet.map((quiz, quizIndex) => (
+          <Box key={quizIndex} className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm ">
+            <Typography variant="h6" className="mb-4 p-2 font-semibold">
+              퀴즈 {quizIndex + 1}
+            </Typography>
+            <TextField
+              label="퀴즈 질문"
+              variant="outlined"
+              fullWidth
+              className="mb-6"
+              value={quiz.quiz}
+              onChange={(e) => handleQuizChange(quizIndex, e.target.value)}
+            />
+            <TextField
+              label="제한 시간 (초)"
+              type="number"
+              variant="outlined"
+              fullWidth
+              className="mb-6"
+              value={quiz.limitTime || 0}
+              onChange={(e) => handleLimitTimeChange(quizIndex, e.target.value)}
+            />
+            {quiz.choices.map((choice, choiceIndex) => (
+              <Box key={choiceIndex} className="flex items-center mb-6">
+                <TextField
+                  label={`선택지 ${choiceIndex + 1}`}
+                  variant="outlined"
+                  className="flex-grow mr-4"
+                  value={choice.content}
+                  onChange={(e) =>
+                    handleChoiceChange(quizIndex, choiceIndex, 'content', e.target.value)
+                  }
+                />
+                <Select
+                  value={choice.isAnswer.toString()}
+                  onChange={(e) =>
+                    handleChoiceChange(quizIndex, choiceIndex, 'isAnswer', e.target.value)
+                  }
+                  className="w-28"
+                >
+                  <MenuItem value="false">정답아님</MenuItem>
+                  <MenuItem value="true">정답</MenuItem>
+                </Select>
+              </Box>
+            ))}
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => addChoice(quizIndex)}
+              className="w-full mb-4"
+            >
+              선택지 추가
+            </Button>
+          </Box>
+        ))}
 
-      <Button variant="outlined" color="secondary" onClick={addQuiz} className="w-full mb-6">
-        퀴즈 추가
-      </Button>
-      <Button variant="contained" color="primary" onClick={handleSubmit} className="w-full">
-        퀴즈 데이터 제출
-      </Button>
-    </Box>
+        <Button variant="outlined" color="secondary" onClick={addQuiz} className="w-full mb-6">
+          퀴즈 추가
+        </Button>
+        <Button variant="contained" color="primary" onClick={handleSubmit} className="w-full">
+          퀴즈 데이터 제출
+        </Button>
+      </Box>
+    </>
   );
 };

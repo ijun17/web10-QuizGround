@@ -20,6 +20,6 @@ export const useChatStore = create<ChatStore>((set) => ({
   }
 }));
 
-socketService.on('chatMessage', (data) => {
+socketService.onPermanently('chatMessage', (data) => {
   useChatStore.getState().addMessage(data);
 });

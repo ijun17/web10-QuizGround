@@ -52,12 +52,12 @@ type UpdateRoomOptionResponse = {
 
 // 게임방 퀴즈셋 수정 타입
 type UpdateRoomQuizsetRequest = {
-  quizsetId: number;
+  quizSetId: number;
   quizCount: number;
 };
 
 type UpdateRoomQuizsetResponse = {
-  quizsetId: number;
+  quizSetId: number;
   quizCount: number;
 };
 
@@ -89,6 +89,13 @@ type StopGameRequest = {
 
 type StopGameResponse = {
   status: string;
+};
+
+type EndGameRequest = {
+  gameId: string;
+};
+type EndGameResponse = {
+  hostId: string;
 };
 
 // 퀴즈 시간 종료 타입
@@ -164,5 +171,17 @@ export type SocketDataMap = {
   exitRoom: {
     request: null;
     response: ExitRoomEvent;
+  };
+  endGame: {
+    request: EndGameRequest;
+    response: EndGameResponse;
+  };
+
+  exception: {
+    request: null;
+    response: {
+      eventName: string;
+      message: string;
+    };
   };
 };

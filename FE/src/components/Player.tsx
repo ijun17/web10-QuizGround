@@ -12,9 +12,10 @@ type Props = {
   position: [number, number];
   isCurrent: boolean;
   isAnswer: boolean;
+  isAlive: boolean;
 };
 
-export const Player = ({ name, position, isCurrent, isAnswer }: Props) => {
+export const Player = ({ name, position, isCurrent, isAnswer, isAlive }: Props) => {
   const [showEffect, setShowEffect] = useState(false);
   const [effectData, setEffectData] = useState(AnswerEffect);
   const quizState = useQuizeStore((state) => state.quizState);
@@ -73,7 +74,11 @@ export const Player = ({ name, position, isCurrent, isAnswer }: Props) => {
   return (
     <div
       className="absolute transition-all duration-500 ease-in-out"
-      style={{ transform: `translate(${xPos}px, ${yPos}px)`, zIndex: isCurrent ? 3 : 1 }}
+      style={{
+        transform: `translate(${xPos}px, ${yPos}px)`,
+        zIndex: isCurrent ? 3 : 1,
+        opacity: isAlive ? '1' : '0.3'
+      }}
       onClick={(e) => e.preventDefault()}
     >
       <div className="flex flex-col items-center justify-center relative">

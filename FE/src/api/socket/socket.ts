@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import SocketEvents from '../constants/socketEvents';
+import SocketEvents from '@/constants/socketEvents';
 import { SocketDataMap } from './socketEventTypes';
 import mockMap from './mocks/socketMocks';
 
@@ -12,6 +12,11 @@ type SocketInterface = {
   emit: <T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) => void;
 
   on: <T extends SocketEvent>(
+    event: string,
+    callback: (data: SocketDataMap[T]['response']) => void
+  ) => void;
+
+  off: <T extends SocketEvent>(
     event: string,
     callback: (data: SocketDataMap[T]['response']) => void
   ) => void;
@@ -69,18 +74,25 @@ class SocketService {
     return this.socket.id;
   }
 
-  on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
+  onPermanently<T extends SocketEvent>(
+    event: T,
+    callback: (data: SocketDataMap[T]['response']) => void
+  ) {
     const handler = () => this.socket.on(event, callback);
     this.handlers.push(handler);
     if (this.isActive()) handler();
   }
 
-  emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
-    this.socket.emit(event, data);
+  on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
+    if (this.isActive()) this.socket.on(event, callback);
   }
 
-  sendChatMessage(message: SocketDataMap[typeof SocketEvents.CHAT_MESSAGE]['request']) {
-    this.emit(SocketEvents.CHAT_MESSAGE, message);
+  off<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
+    if (this.isActive()) this.socket.off(event, callback);
+  }
+
+  emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
+    this.socket.emit(event, data);
   }
 
   async createRoom(payload: SocketDataMap['createRoom']['request']) {
@@ -99,4 +111,6 @@ class SocketService {
   }
 }
 
-export const socketService = new SocketService('http://' + window.location.hostname + ':3000/game');
+const socketPort = process.env.SOCKET_PORT || '3333';
+const socketUrl = `${window.location.origin}:${socketPort}/game`;
+export const socketService = new SocketService(socketUrl);
