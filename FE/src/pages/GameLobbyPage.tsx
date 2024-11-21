@@ -32,7 +32,7 @@ export const GameLobbyPage = () => {
         if (response) {
           setRooms((prevRooms) => {
             const newRooms = response.roomList.filter(
-              (newRoom) => !prevRooms.some((room) => room.id === newRoom.id)
+              (newRoom) => !prevRooms.some((room) => room.gameId === newRoom.gameId)
             );
             return [...prevRooms, ...newRooms];
           });
