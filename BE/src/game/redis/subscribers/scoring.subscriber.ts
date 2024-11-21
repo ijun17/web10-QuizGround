@@ -8,8 +8,6 @@ import SocketEvents from '../../../common/constants/socket-events';
 
 @Injectable()
 export class ScoringSubscriber extends RedisSubscriber {
-  private scoringMap = new Map<string, number>();
-
   constructor(@InjectRedis() redis: Redis) {
     super(redis);
   }
@@ -25,14 +23,19 @@ export class ScoringSubscriber extends RedisSubscriber {
   }
 
   private async handleScoring(gameId: string, completeClientsCount: number, server: Server) {
-    if (!this.scoringMap.has(gameId)) {
-      this.scoringMap[gameId] = 0;
+    const scoringKey = REDIS_KEY.ROOM_SCORING_COUNT(gameId);
+
+    if (!this.redis.exists(scoringKey)) {
+      this.redis.set(scoringKey, 0);
     }
-    this.scoringMap[gameId] += completeClientsCount;
+    this.redis.incrby(scoringKey, completeClientsCount);
 
     const playersCount = await this.redis.scard(REDIS_KEY.ROOM_PLAYERS(gameId));
-    if (this.scoringMap[gameId] >= playersCount) {
+    const scoringCount = await this.redis.get(scoringKey);
+
+    if (parseInt(scoringCount) >= playersCount) {
       await this.completeScoring(gameId, server);
+      this.redis.set(scoringKey, 0);
     }
   }
 

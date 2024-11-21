@@ -14,7 +14,6 @@ import { RedisSubscriberService } from '../redis/redis-subscriber.service';
 @Injectable()
 export class GameService {
   private readonly logger = new Logger(GameService.name);
-  private scoringMap = new Map<string, number>();
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
