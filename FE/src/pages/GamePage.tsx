@@ -24,7 +24,7 @@ export const GamePage = () => {
   const setGameState = useRoomStore((state) => state.setGameState);
   const resetScore = usePlayerStore((state) => state.resetScore);
   const [isModalOpen, setIsModalOpen] = useState(true);
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(true);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
   const navigate = useNavigate();
