@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QuizPreview } from './QuizPreview';
+import { getQuizSetList } from '@/api/rest/quizApi';
 
 // type Quiz = {
 //   id: string;
@@ -27,20 +28,16 @@ type Params = {
 const SEARCH_COUNT = 10;
 
 const QuizSetSearchList = ({ onClick, search }: Params) => {
-  const fetchPosts = async ({ pageParam = 1 }) => {
-    const res = await fetch(
-      '/api/quizset?' +
-        new URLSearchParams([
-          ['search', search],
-          ['offset', String(pageParam * SEARCH_COUNT)],
-          ['size', String(SEARCH_COUNT)]
-        ])
-    );
-    const data: { quizSetList: QuizSet[] } = await res.json();
+  // api로 수정시
+  const fetchPosts = async ({ pageParam = '' }) => {
+    const data = await getQuizSetList('', pageParam, SEARCH_COUNT, search);
+    if (!data) {
+      throw new Error('Failed to fetch quiz set list');
+    }
     return {
       data: data.quizSetList,
-      nextPage: pageParam + 1,
-      hasMore: data.quizSetList.length > 0
+      nextPage: data.paging.nextCursor || '',
+      hasMore: data.paging.hasNextPage
     };
   };
 
@@ -49,7 +46,7 @@ const QuizSetSearchList = ({ onClick, search }: Params) => {
     useInfiniteQuery({
       queryKey: [search],
       queryFn: fetchPosts,
-      initialPageParam: 0,
+      initialPageParam: '',
       getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextPage : undefined)
     });
 

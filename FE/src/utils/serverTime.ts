@@ -20,7 +20,8 @@ const syncServerTimestamp = () => {
     });
 };
 
-syncServerTimestamp();
+//1초 후 초기화
+setTimeout(syncServerTimestamp, 1000);
 
 export const getServerTimestamp = () => {
   syncServerTimestamp();

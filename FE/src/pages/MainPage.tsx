@@ -19,7 +19,9 @@ export const MainPage = () => {
           <Button variant="outlined" onClick={() => navigate('/game/lobby')}>
             대기방 목록
           </Button>
-          <Button variant="outlined">PIN으로 방찾기</Button>
+          <Button variant="outlined" onClick={() => navigate('/pin')}>
+            PIN으로 방찾기
+          </Button>
           <Button variant="outlined" onClick={() => navigate('/quiz/setup')}>
             퀴즈 생성
           </Button>

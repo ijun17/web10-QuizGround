@@ -6,8 +6,7 @@ import {
   FormLabel,
   RadioGroup,
   FormControlLabel,
-  Radio,
-  TextField
+  Radio
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { socketService } from '@/api/socket';
@@ -15,10 +14,12 @@ import RoomConfig from '@/constants/roomConfig';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { usePlayerStore } from '@/store/usePlayerStore';
+import { TextInput } from '@/components/TextInput';
 export const GameSetupPage = () => {
   const { gameId, updateRoom } = useRoomStore((state) => state);
   const setIsHost = usePlayerStore((state) => state.setIsHost);
   const [title, setTitle] = useState('');
+  const [titleError, setTitleError] = useState('');
   const [maxPlayerCount, setMaxPlayerCount] = useState<number>(RoomConfig.DEFAULT_PLAYERS);
   const [gameMode, setGameMode] = useState<'SURVIVAL' | 'RANKING'>('RANKING');
   const [roomPublic, setRoomPublic] = useState(true);
@@ -28,12 +29,21 @@ export const GameSetupPage = () => {
     if (gameId) navigate(`/game/${gameId}`);
   }, [gameId, navigate]);
 
+  const handleTitleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    setTitle(e.target.value);
+    setTitleError('');
+  };
+
   const handleModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value === 'RANKING' ? 'RANKING' : 'SURVIVAL';
     setGameMode(value);
   };
 
   const handleSubmit = async () => {
+    if (!title.trim()) {
+      setTitleError('제목을 입력해 주세요');
+      return;
+    }
     const roomData = {
       title,
       maxPlayerCount,
@@ -55,18 +65,11 @@ export const GameSetupPage = () => {
         >
           {'<'} 뒤로가기
         </Button>
-        <TextField
+        <TextInput
           value={title}
           label="게임방 제목"
-          variant="standard"
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full mb-4"
-          InputLabelProps={{
-            style: { color: '#1E40AF' } // 파란색 라벨 텍스트
-          }}
-          InputProps={{
-            style: { color: '#1E40AF' } // 파란색 입력 텍스트
-          }}
+          onChange={handleTitleChange}
+          error={titleError}
         />
         <div className="mt-4 mb-4 flex items-center justify-between">
           <span className="text-blue-500">최대인원</span>
