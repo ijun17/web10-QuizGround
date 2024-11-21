@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { QuizPreview } from './QuizPreview';
-import { socketService } from '@/api/socket';
+import { socketService, useSocketEvent } from '@/api/socket';
 import QuizSetSearchList from './QuizSetSearchList';
+import { useRoomStore } from '@/store/useRoomStore';
 
 // type Quiz = {
 //   id: string;
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
+  const gameId = useRoomStore((state) => state.gameId);
   const [selectedQuizSet, setSelectedQuizSet] = useState<null | QuizSet>(null);
   const [inputValue, setInputValue] = useState('');
   const [searchParam, setSearchParam] = useState('');
@@ -41,9 +43,14 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
     }
   };
 
+  useSocketEvent('updateRoomQuizset', () => {
+    onClose();
+  });
+
   const handleChangeSetting = () => {
     if (!selectedQuizSet) return;
     socketService.emit('updateRoomQuizset', {
+      gameId,
       quizSetId: Number(selectedQuizSet.id),
       quizCount: quizCount
     });

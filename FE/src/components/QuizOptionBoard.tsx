@@ -110,14 +110,14 @@ export const QuizOptionBoard = () => {
                 background: optionColors[i],
                 border: 'solid 3px ' + (i === selectedOption ? 'lightgreen' : 'white'),
                 boxShadow:
-                  quizState === 'end' && option.order === quizAnswer
+                  quizState === 'end' && option.order == quizAnswer
                     ? `
       0 0 10px rgba(255, 215, 0, 0.8), 
       0 0 20px rgba(255, 223, 0, 0.6), 
       0 0 30px rgba(255, 223, 0, 0.5), 
       0 0 40px rgba(255, 215, 0, 0.4)`
                     : 'none',
-                opacity: quizState === 'end' && option.order !== quizAnswer ? '0.3' : '1',
+                opacity: quizState === 'end' && option.order != quizAnswer ? '0.3' : '1',
                 textShadow: '-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white'
               }}
             >

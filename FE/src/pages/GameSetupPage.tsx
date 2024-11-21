@@ -9,14 +9,14 @@ import {
   Radio
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { socketService } from '@/api/socket';
+import { socketService, useSocketEvent } from '@/api/socket';
 import RoomConfig from '@/constants/roomConfig';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { usePlayerStore } from '@/store/usePlayerStore';
 import { TextInput } from '@/components/TextInput';
 export const GameSetupPage = () => {
-  const { gameId, updateRoom } = useRoomStore((state) => state);
+  const { updateRoom } = useRoomStore((state) => state);
   const setIsHost = usePlayerStore((state) => state.setIsHost);
   const [title, setTitle] = useState('');
   const [titleError, setTitleError] = useState('');
@@ -25,9 +25,13 @@ export const GameSetupPage = () => {
   const [roomPublic, setRoomPublic] = useState(true);
   const navigate = useNavigate();
 
+  useSocketEvent('createRoom', (data) => {
+    navigate(`/game/${data.gameId}`);
+  });
+
   useEffect(() => {
-    if (gameId) navigate(`/game/${gameId}`);
-  }, [gameId, navigate]);
+    socketService.disconnect();
+  }, []);
 
   const handleTitleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     setTitle(e.target.value);

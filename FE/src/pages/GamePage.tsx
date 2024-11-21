@@ -14,6 +14,7 @@ import { usePlayerStore } from '@/store/usePlayerStore';
 import { ResultModal } from '@/components/ResultModal';
 import { ErrorModal } from '@/components/ErrorModal';
 import { useNavigate } from 'react-router-dom';
+import { getRandomNickname } from '@/utils/nickname';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -87,6 +88,7 @@ export const GamePage = () => {
             isOpen={isModalOpen && !currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
             title="플레이어 이름 설정"
             placeholder="이름을 입력하세요"
+            initialValue={getRandomNickname()}
             onClose={() => setIsModalOpen(false)}
             onSubmit={handleNameSubmit}
           />

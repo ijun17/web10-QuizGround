@@ -64,9 +64,9 @@ class SocketService {
     Object.entries(this.handlerMap).forEach(([event, handlers]) =>
       handlers.forEach((h) => this.socket.on(event, h))
     );
-    this.socket.onAny((eventName, ...args) => {
-      console.log(`SOCKET[${eventName}]`, ...args);
-    });
+    // this.socket.onAny((eventName, ...args) => {
+    //   console.log(`SOCKET[${eventName}]`, ...args);
+    // });
   }
 
   disconnect() {
@@ -123,6 +123,7 @@ class SocketService {
   }
 }
 
-const socketPort = process.env.SOCKET_PORT || '3333';
-const socketUrl = `${window.location.origin}:${socketPort}/game`;
+// const socketPort = process.env.SOCKET_PORT || '3333';
+// const socketUrl = `${window.location.origin}:${socketPort}/game`;
+const socketUrl = `quizground.duckdns.org:3333/game`;
 export const socketService = new SocketService(socketUrl);
