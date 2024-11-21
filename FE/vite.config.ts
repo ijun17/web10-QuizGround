@@ -10,5 +10,8 @@ export default defineConfig({
       '@': path.resolve(process.cwd(), 'src')
     }
   },
-  publicDir: 'public'
+  publicDir: 'public',
+  define: {
+    'process.env.SOCKET_PORT': 3333
+  }
 });
