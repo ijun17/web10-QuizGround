@@ -111,4 +111,6 @@ class SocketService {
   }
 }
 
-export const socketService = new SocketService('http://' + window.location.hostname + ':3000/game');
+const socketPort = process.env.SOCKET_PORT || '3333';
+const socketUrl = `${window.location.origin}:${socketPort}/game`;
+export const socketService = new SocketService(socketUrl);
