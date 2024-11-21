@@ -92,7 +92,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   }
 }));
 
-socketService.on('joinRoom', (data) => {
+socketService.onPermanently('joinRoom', (data) => {
   const { addPlayers, setCurrentPlayerId } = usePlayerStore.getState();
   const newPlayers = data.players.map((player) => ({
     ...player,
@@ -107,11 +107,11 @@ socketService.on('joinRoom', (data) => {
   }
 });
 
-socketService.on('updatePosition', (data) => {
+socketService.onPermanently('updatePosition', (data) => {
   usePlayerStore.getState().updatePlayerPosition(data.playerId, data.playerPosition);
 });
 
-socketService.on('endQuizTime', (data) => {
+socketService.onPermanently('endQuizTime', (data) => {
   const { players, setPlayers } = usePlayerStore.getState();
   const { gameMode } = useRoomStore.getState();
 
@@ -146,10 +146,10 @@ socketService.on('endQuizTime', (data) => {
   }
 });
 
-socketService.on('endGame', (data) => {
+socketService.onPermanently('endGame', (data) => {
   usePlayerStore.getState().setIsHost(data.hostId === socketService.getSocketId());
 });
 
-socketService.on('exitRoom', (data) => {
+socketService.onPermanently('exitRoom', (data) => {
   usePlayerStore.getState().removePlayer(data.playerId);
 });
