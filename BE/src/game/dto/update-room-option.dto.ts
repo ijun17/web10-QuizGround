@@ -40,5 +40,5 @@ export class UpdateRoomOptionDto {
       message: '잘못된 boolean 값입니다'
     });
   })
-  isPublicGame: boolean;
+  isPublic: boolean;
 }

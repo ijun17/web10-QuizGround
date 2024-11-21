@@ -62,8 +62,7 @@ export class GameGateway {
     if (client.data.user) {
       dto.playerName = client.data.user.nickname;
     }
-    const players = await this.gameRoomService.joinRoom(dto, client.id);
-    client.join(dto.gameId);
+    const players = await this.gameRoomService.joinRoom(client, dto, client.id);
     client.emit(SocketEvents.JOIN_ROOM, { players });
   }
 
