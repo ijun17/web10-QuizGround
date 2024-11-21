@@ -5,7 +5,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -18,8 +17,9 @@ import { CreateQuizSetDto } from './dto/create-quiz.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserModel } from '../user/entities/user.entity';
+import { ParseIntOrDefault } from '../common/decorators/parse-int-or-default.decorator';
 
-@Controller('/api/quiz-set')
+@Controller('/api/quizset')
 export class QuizSetController {
   constructor(private readonly quizService: QuizSetService) {}
 
@@ -35,8 +35,8 @@ export class QuizSetController {
   @Get()
   findAll(
     @Query('category', new DefaultValuePipe('')) category: string,
-    @Query('cursor', new DefaultValuePipe(1), ParseIntPipe) cursor: number,
-    @Query('take', new DefaultValuePipe(10), ParseIntPipe) take: number,
+    @Query('cursor', new ParseIntOrDefault(1)) cursor: number,
+    @Query('take', new ParseIntOrDefault(10)) take: number,
     @Query('search', new DefaultValuePipe('')) search: string
   ) {
     return this.quizService.findAllWithQuizzesAndChoices(category, cursor, take, search);
