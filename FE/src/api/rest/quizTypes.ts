@@ -24,7 +24,7 @@ export type QuizChoiceInput = {
 export type QuizInput = {
   quiz: string;
   limitTime: number;
-  choiceList: QuizChoiceInput[];
+  choices: QuizChoiceInput[];
 };
 
 export type CreateQuizSetPayload = {
