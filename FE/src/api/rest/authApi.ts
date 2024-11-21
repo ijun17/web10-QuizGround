@@ -2,7 +2,6 @@ import axios from 'axios';
 import axiosInstance from './instance';
 
 type LoginResponse = {
-  result: string;
   acess_token: string;
 };
 
