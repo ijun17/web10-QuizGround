@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseModel } from '../../common/entity/base.entity';
-import { QuizSetModel } from '../../quiz/entities/quiz-set.entity';
+import { QuizSetModel } from '../../quiz-set/entities/quiz-set.entity';
 import { UserModel } from './user.entity';
 
 export enum GameMode {
