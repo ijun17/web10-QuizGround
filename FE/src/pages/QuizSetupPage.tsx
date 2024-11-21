@@ -28,15 +28,15 @@ import { CreateQuizSetPayload } from '@/api/rest/quizTypes';
 }
 */
 type Choice = {
-  content: string;
-  order: number;
+  choiceContent: string;
+  choiceOrder: number;
   isAnswer: boolean;
 };
 
 type Quiz = {
   quiz: string;
   limitTime: number;
-  choices: Choice[];
+  choiceList: Choice[];
 };
 
 type QuizData = {
@@ -93,13 +93,13 @@ export const QuizSetupPage: React.FC = () => {
     const updatedQuizSet = [...quizSet];
     if (field === 'isAnswer') {
       // 정답인지를 수정한 경우
-      updatedQuizSet[quizIndex].choices = updatedQuizSet[quizIndex].choices.map((c, i) => ({
+      updatedQuizSet[quizIndex].choiceList = updatedQuizSet[quizIndex].choiceList.map((c, i) => ({
         ...c,
         isAnswer: choiceIndex === i
       }));
     } else {
       // 질문지 인풋을 수정한 경우
-      (updatedQuizSet[quizIndex].choices[choiceIndex][field] as string) = value;
+      (updatedQuizSet[quizIndex].choiceList[choiceIndex][field] as string) = value;
       if (
         choiceErrorIndex &&
         quizIndex === choiceErrorIndex[0] &&
@@ -114,7 +114,11 @@ export const QuizSetupPage: React.FC = () => {
   const addQuiz = useCallback(() => {
     setQuizSet([
       ...quizSet,
-      { quiz: '', limitTime: 10, choices: [{ content: '', order: 1, isAnswer: true }] }
+      {
+        quiz: '',
+        limitTime: 10,
+        choiceList: [{ choiceContent: '', choiceOrder: 1, isAnswer: true }]
+      }
     ]);
   }, [quizSet]);
 
@@ -125,7 +129,7 @@ export const QuizSetupPage: React.FC = () => {
   //선택지 삭제
   const removeChoice = (quizIndex: number, choiceIndex: number) => {
     const updatedQuizSet = [...quizSet];
-    updatedQuizSet[quizIndex].choices = updatedQuizSet[quizIndex].choices.filter(
+    updatedQuizSet[quizIndex].choiceList = updatedQuizSet[quizIndex].choiceList.filter(
       (_, i) => i !== choiceIndex
     );
     setQuizSet(updatedQuizSet);
@@ -133,10 +137,14 @@ export const QuizSetupPage: React.FC = () => {
 
   //선택지 추가
   const addChoice = (quizIndex: number) => {
-    if (quizSet[quizIndex].choices.length > 5) return;
+    if (quizSet[quizIndex].choiceList.length > 5) return;
     const updatedQuizSet = [...quizSet];
-    const newChoiceOrder = updatedQuizSet[quizIndex].choices.length + 1;
-    updatedQuizSet[quizIndex].choices.push({ content: '', order: newChoiceOrder, isAnswer: false });
+    const newChoiceOrder = updatedQuizSet[quizIndex].choiceList.length + 1;
+    updatedQuizSet[quizIndex].choiceList.push({
+      choiceContent: '',
+      choiceOrder: newChoiceOrder,
+      isAnswer: false
+    });
     setQuizSet(updatedQuizSet);
   };
 
@@ -156,11 +164,11 @@ export const QuizSetupPage: React.FC = () => {
 
     //선택지 비어있는지 검사
     const emptyQuizChoiceIndex = quizSet.findIndex((quiz) =>
-      quiz.choices.find((choice) => !choice.content.trim())
+      quiz.choiceList.find((choice) => !choice.choiceContent.trim())
     );
     if (emptyQuizChoiceIndex >= 0) {
-      const emptyChoiceIndex = quizSet[emptyQuizChoiceIndex].choices.findIndex(
-        (choice) => !choice.content.trim()
+      const emptyChoiceIndex = quizSet[emptyQuizChoiceIndex].choiceList.findIndex(
+        (choice) => !choice.choiceContent.trim()
       );
       setChoiceErrorIndex([emptyQuizChoiceIndex, emptyChoiceIndex]);
       return;
@@ -172,7 +180,7 @@ export const QuizSetupPage: React.FC = () => {
       category: quizData.category,
       quizList: quizData.quizSet // 이름 변경
     };
-    console.log('Quiz Data:', quizData);
+    console.log('payload:', payload);
 
     try {
       setIsSubmitting(true); // 로딩 시작
@@ -252,13 +260,13 @@ export const QuizSetupPage: React.FC = () => {
               onChange={(e) => handleLimitTimeChange(quizIndex, e.target.value)}
             />
             <Box className="m-2">
-              {quiz.choices.map((choice, choiceIndex) => (
+              {quiz.choiceList.map((choice, choiceIndex) => (
                 <TextInput
                   key={choiceIndex}
                   label={`선택지 ${choiceIndex + 1}`}
-                  value={choice.content}
+                  value={choice.choiceContent}
                   onChange={(e) =>
-                    handleChoiceChange(quizIndex, choiceIndex, 'content', e.target.value)
+                    handleChoiceChange(quizIndex, choiceIndex, 'choiceContent', e.target.value)
                   }
                   error={
                     choiceErrorIndex &&
@@ -289,7 +297,7 @@ export const QuizSetupPage: React.FC = () => {
               color="primary"
               onClick={() => addChoice(quizIndex)}
               className="w-full mb-4"
-              style={{ display: quiz.choices.length > 5 ? 'none' : 'block' }}
+              style={{ display: quiz.choiceList.length > 5 ? 'none' : 'block' }}
             >
               선택지 추가
             </Button>

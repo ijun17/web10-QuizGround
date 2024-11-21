@@ -14,6 +14,7 @@ import { usePlayerStore } from '@/store/usePlayerStore';
 import { ResultModal } from '@/components/ResultModal';
 import { ErrorModal } from '@/components/ErrorModal';
 import { useNavigate } from 'react-router-dom';
+import { getRandomNickname } from '@/utils/nickname';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -28,6 +29,15 @@ export const GamePage = () => {
   const [errorModalTitle, setErrorModalTitle] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
   const navigate = useNavigate();
+
+  // 페이지에서 나갈때
+  // 스트릭트 모드에서 마운트 > 언마운트 > 마운트됨
+  // useEffect(() => {
+  //   return () => {
+  //     console.log('게임방에서 나갔습니다');
+  //     socketService.disconnect();
+  //   };
+  // }, []);
 
   useEffect(() => {
     updateRoom({ gameId });
@@ -87,6 +97,7 @@ export const GamePage = () => {
             isOpen={isModalOpen && !currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
             title="플레이어 이름 설정"
             placeholder="이름을 입력하세요"
+            initialValue={getRandomNickname()}
             onClose={() => setIsModalOpen(false)}
             onSubmit={handleNameSubmit}
           />

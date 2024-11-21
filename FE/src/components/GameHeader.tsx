@@ -7,12 +7,14 @@ import { useState } from 'react';
 import { QuizSettingModal } from './QuizSettingModal';
 import { socketService } from '@/api/socket';
 import { usePlayerStore } from '@/store/usePlayerStore';
+import { useQuizeStore } from '@/store/useQuizStore';
 
 export const GameHeader = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const isHost = usePlayerStore((state) => state.isHost);
   const gameTitle = useRoomStore((state) => state.title);
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const { quizSetTitle, quizSetCategory } = useQuizeStore();
   const pinNum = String(gameId);
   const linkURL = window.location.hostname + `/game/${gameId}`;
 
@@ -29,7 +31,7 @@ export const GameHeader = () => {
       <div className="flex flex-col items-center justify-center text-center space-y-2">
         <span className="text-xl font-semibold">{gameTitle}</span>
       </div>
-      <QuizPreview title="" description="" />
+      <QuizPreview title={quizSetTitle} description={quizSetCategory} />
       {isHost && (
         <div className="flex space-x-4 justify-center">
           <button

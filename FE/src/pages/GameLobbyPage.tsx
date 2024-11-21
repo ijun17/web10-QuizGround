@@ -22,9 +22,10 @@ export const GameLobbyPage = () => {
   const [paging, setPaging] = useState<Paging | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-   const loadRooms = useCallback(
+  const loadRooms = useCallback(
     async (cursor: string | null, take: number = 10) => {
       if (isLoading) return;
+      if (paging && !paging.hasNextPage) return;
       setIsLoading(true);
 
       try {

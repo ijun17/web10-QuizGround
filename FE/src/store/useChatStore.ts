@@ -11,15 +11,21 @@ type Message = {
 type ChatStore = {
   messages: Message[];
   addMessage: (message: Message) => void;
+  reset: () => void;
 };
 
 export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   addMessage: (message) => {
     set((state) => ({ messages: [...state.messages, message] }));
-  }
+  },
+  reset: () => set({ messages: [] })
 }));
 
 socketService.on('chatMessage', (data) => {
   useChatStore.getState().addMessage(data);
+});
+
+socketService.on('disconnect', () => {
+  useChatStore.getState().reset();
 });
