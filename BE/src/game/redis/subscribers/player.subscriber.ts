@@ -3,7 +3,8 @@ import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { Server } from 'socket.io';
-import SocketEvents from '../../constants/socket-events';
+import SocketEvents from '../../../common/constants/socket-events';
+import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
@@ -22,6 +23,7 @@ export class PlayerSubscriber extends RedisSubscriber {
       }
 
       const key = `Player:${playerId}`;
+
       await this.handlePlayerChanges(key, playerId, server);
     });
   }
@@ -33,7 +35,8 @@ export class PlayerSubscriber extends RedisSubscriber {
 
   private async handlePlayerChanges(key: string, playerId: string, server: Server) {
     const changes = await this.redis.get(`${key}:Changes`);
-    const playerData = await this.redis.hgetall(key);
+    const playerKey = REDIS_KEY.PLAYER(playerId);
+    const playerData = await this.redis.hgetall(playerKey);
 
     switch (changes) {
       case 'Join':

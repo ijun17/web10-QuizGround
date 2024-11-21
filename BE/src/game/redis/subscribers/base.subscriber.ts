@@ -2,7 +2,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { Logger } from '@nestjs/common';
 import { Server } from 'socket.io';
-import { REDIS_KEY } from '../../constants/redis-key.constant';
+import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 
 export abstract class RedisSubscriber {
   protected readonly logger: Logger;

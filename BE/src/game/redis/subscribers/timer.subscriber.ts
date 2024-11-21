@@ -3,8 +3,8 @@ import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { Server } from 'socket.io';
-import { REDIS_KEY } from '../../constants/redis-key.constant';
-import SocketEvents from '../../constants/socket-events';
+import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
+import SocketEvents from '../../../common/constants/socket-events';
 
 @Injectable()
 export class TimerSubscriber extends RedisSubscriber {
