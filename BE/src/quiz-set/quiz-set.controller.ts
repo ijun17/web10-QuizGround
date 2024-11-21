@@ -34,12 +34,12 @@ export class QuizSetController {
 
   @Get()
   findAll(
-    @Query('category') category: string,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
-    @Query('size', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('search') search: string
+    @Query('category', new DefaultValuePipe('')) category: string,
+    @Query('cursor', new DefaultValuePipe(1), ParseIntPipe) cursor: number,
+    @Query('take', new DefaultValuePipe(10), ParseIntPipe) take: number,
+    @Query('search', new DefaultValuePipe('')) search: string
   ) {
-    return this.quizService.findAllWithQuizzesAndChoices(category, offset, limit, search);
+    return this.quizService.findAllWithQuizzesAndChoices(category, cursor, take, search);
   }
 
   @Get(':id')

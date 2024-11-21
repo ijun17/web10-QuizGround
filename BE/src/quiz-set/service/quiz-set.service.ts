@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateQuizSetDto } from '../dto/create-quiz.dto';
 import { UpdateQuizSetDto } from '../dto/update-quiz.dto';
-import { QuizSetDto, QuizSetList } from '../dto/quiz-set-list-response.dto';
+import { QuizSetListResponseDto } from '../dto/quiz-set-list-response.dto';
 import { QuizSetCreateService } from './quiz-set-create.service';
 import { QuizSetReadService } from './quiz-set-read.service';
 import { QuizSetUpdateService } from './quiz-set-update.service';
@@ -30,17 +30,17 @@ export class QuizSetService {
   /**
    * 퀴즈셋 목록을 조회합니다.
    * @param category 카테고리
-   * @param offset 오프셋
-   * @param limit 한 페이지당 개수
+   * @param cursor 오프셋
+   * @param take 한 페이지 당 개수
    * @returns 퀴즈셋 목록
    */
   async findAllWithQuizzesAndChoices(
     category: string,
-    offset: number,
-    limit: number,
+    cursor: number,
+    take: number,
     search: string
-  ): Promise<QuizSetList<QuizSetDto[]>> {
-    return this.quizSetReadService.findAllWithQuizzesAndChoices(category, offset, limit, search);
+  ): Promise<QuizSetListResponseDto> {
+    return this.quizSetReadService.findAllWithQuizzesAndChoices(category, cursor, take, search);
   }
 
   /**

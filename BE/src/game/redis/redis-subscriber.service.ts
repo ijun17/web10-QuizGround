@@ -7,6 +7,7 @@ import { TimerSubscriber } from './subscribers/timer.subscriber';
 import { RoomSubscriber } from './subscribers/room.subscriber';
 import { PlayerSubscriber } from './subscribers/player.subscriber';
 import { Server } from 'socket.io';
+import { RoomCleanupSubscriber } from './subscribers/room.cleanup.subscriber';
 
 @Injectable()
 export class RedisSubscriberService {
@@ -18,9 +19,16 @@ export class RedisSubscriberService {
     private readonly scoringSubscriber: ScoringSubscriber,
     private readonly timerSubscriber: TimerSubscriber,
     private readonly roomSubscriber: RoomSubscriber,
-    private readonly playerSubscriber: PlayerSubscriber
+    private readonly playerSubscriber: PlayerSubscriber,
+    private readonly roomCleanupSubscriber: RoomCleanupSubscriber
   ) {
-    this.subscribers = [scoringSubscriber, timerSubscriber, roomSubscriber, playerSubscriber];
+    this.subscribers = [
+      scoringSubscriber,
+      timerSubscriber,
+      roomSubscriber,
+      playerSubscriber,
+      roomCleanupSubscriber
+    ];
   }
 
   async initializeSubscribers(server: Server) {

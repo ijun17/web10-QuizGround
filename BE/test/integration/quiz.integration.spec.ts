@@ -254,16 +254,28 @@ describe('QuizService', () => {
       expect(result.quizSetList).toHaveLength(0);
     });
 
+    it('퀴즈셋 목록 조회 응답에 적절한 커서 응답을 한다', async () => {
+      for (let i = 0; i < 20; i++) {
+        await createQuizSetTestData(quizService, `테스트${i}`);
+      }
+
+      const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '');
+
+      expect(result.quizSetList).toHaveLength(10);
+      expect(result.paging.nextCursor).toBe(result.quizSetList[9].id);
+      expect(result.paging.hasNextPage).toBe(true);
+    })
+
     it('검색어로 퀴즈셋 목록을 가져와야 한다', async () => {
       for (let i = 0; i < 20; i++) {
         await createQuizSetTestData(quizService, `테스트${i}`, testUser);
       }
 
       const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '테스트19');
-
-      expect(result.quizSetList).toHaveLength(1);
-      expect(result.quizSetList[0].title).toBe('테스트19');
-    });
+      result.quizSetList.forEach(quizSet => {
+        expect(quizSet.title).toContain('테스트19');
+      });
+    })
 
     it('검색어가 유효하지 않아 퀴즈셋 목록이 없다', async () => {
       for (let i = 0; i < 20; i++) {

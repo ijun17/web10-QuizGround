@@ -1,20 +1,46 @@
 import { Type } from 'class-transformer';
-import { IsString, IsNumber, ValidateNested, IsArray } from 'class-validator';
+import { IsString, IsNumber, ValidateNested, IsArray, IsBoolean, IsObject } from 'class-validator';
 
-export class QuizSetList<T> {
-  constructor(data: T) {
-    this.quizSetList = data;
-  }
+export class PagingDto {
+  @IsString()
+  nextCursor: string | null;
 
-  quizSetList: T;
+  @IsBoolean()
+  hasNextPage: boolean;
 }
 
-export class ChoiceDto {
+export class QuizSetListResponseDto {
+  @ValidateNested({ each: true })
+  @Type(() => QuizSetDto)
+  @IsArray()
+  quizSetList: QuizSetDto[];
+
+  @ValidateNested()
+  @Type(() => PagingDto)
+  @IsObject()
+  paging: PagingDto;
+
+  constructor(quizSetList: QuizSetDto[], nextCursor: string | null, hasNextPage: boolean) {
+    this.quizSetList = quizSetList;
+    this.paging = {
+      nextCursor,
+      hasNextPage
+    };
+  }
+}
+
+export class QuizSetDto {
   @IsString()
-  content: string;
+  id: string;
+
+  @IsString()
+  title: string;
+
+  @IsString()
+  category: string;
 
   @IsNumber()
-  order: number;
+  quizCount: number;
 }
 
 export class QuizDto {
@@ -33,16 +59,10 @@ export class QuizDto {
   choiceList: ChoiceDto[];
 }
 
-export class QuizSetDto {
+export class ChoiceDto {
   @IsString()
-  id: string;
-
-  @IsString()
-  title: string;
-
-  @IsString()
-  category: string;
+  content: string;
 
   @IsNumber()
-  quizCount: number;
+  order: number;
 }

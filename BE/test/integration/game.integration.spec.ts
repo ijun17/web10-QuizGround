@@ -32,6 +32,7 @@ import { ScoringSubscriber } from '../../src/common/redis/subscribers/scoring.su
 import { TimerSubscriber } from '../../src/common/redis/subscribers/timer.subscriber';
 import { RoomSubscriber } from '../../src/common/redis/subscribers/room.subscriber';
 import { PlayerSubscriber } from '../../src/common/redis/subscribers/player.subscriber';
+import { RoomCleanupSubscriber } from '../../src/game/redis/subscribers/room.cleanup.subscriber';
 import { JwtService } from '@nestjs/jwt';
 import { AuthModule } from '../../src/auth/auth.module';
 import { WsJwtAuthGuard } from '../../src/auth/guard/ws-jwt-auth.guard';
@@ -116,6 +117,7 @@ describe('GameGateway (e2e)', () => {
         TimerSubscriber,
         RoomSubscriber,
         PlayerSubscriber,
+        RoomCleanupSubscriber,
         {
           provide: 'default_IORedisModuleConnectionToken',
           useValue: redisMock

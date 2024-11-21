@@ -9,7 +9,7 @@ import { StartGameDto } from '../dto/start-game.dto';
 import { Server } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
-import { RedisSubscriberService } from '../../common/redis/redis-subscriber.service';
+import { RedisSubscriberService } from '../redis/redis-subscriber.service';
 
 @Injectable()
 export class GameService {
@@ -148,7 +148,7 @@ export class GameService {
         host: newHost
       });
     }
-    await this.redis.set(`${playerKey}:Changes`, 'Disconnect');
+    await this.redis.set(`${playerKey}:Changes`, 'Disconnect', 'EX', 600); // 해당플레이어의 변화정보 10분 후에 삭제
     await this.redis.hmset(playerKey, {
       disconnected: '1'
     });

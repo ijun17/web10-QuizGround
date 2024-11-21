@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GameModule } from './game/game.module';
@@ -17,6 +17,9 @@ import { WaitingRoomModule } from './waiting-room/waiting-room.module';
 import { TimeController } from './time/time.controller';
 import { TimeModule } from './time/time.module';
 import { AuthModule } from './auth/auth.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { GameRedisMemoryService } from './game/redis/game-redis-memory.service';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -25,6 +28,8 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true
     }),
     GameModule,
+    // 스케줄러 모듈 추가 (Redis 메모리 관리 서비스의 @Cron 데코레이터 사용을 위해)
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST || 'localhost',
@@ -33,7 +38,7 @@ import { AuthModule } from './auth/auth.module';
       password: process.env.DB_PASSWD || 'test',
       database: process.env.DB_NAME || 'test_db',
       entities: [QuizSetModel, QuizModel, QuizChoiceModel, UserModel, UserQuizArchiveModel],
-      synchronize: !!process.env.DEV, // 개발 모드에서만 활성화
+      synchronize: process.env.DEV ? true : false, // 개발 모드에서만 활성화
       logging: true, // 모든 쿼리 로깅
       logger: 'advanced-console'
       // extra: {
@@ -53,6 +58,13 @@ import { AuthModule } from './auth/auth.module';
     AuthModule
   ],
   controllers: [AppController, TimeController],
-  providers: [AppService]
+  providers: [
+    AppService,
+    GameRedisMemoryService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor
+    }
+  ]
 })
 export class AppModule {}

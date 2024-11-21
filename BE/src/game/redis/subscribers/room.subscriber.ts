@@ -3,7 +3,7 @@ import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { Server } from 'socket.io';
-import SocketEvents from '../../constants/socket-events';
+import SocketEvents from '../../../common/constants/socket-events';
 
 @Injectable()
 export class RoomSubscriber extends RedisSubscriber {

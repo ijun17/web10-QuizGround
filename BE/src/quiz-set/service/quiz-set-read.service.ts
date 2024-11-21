@@ -4,11 +4,11 @@ import {
 } from '@nestjs/common';
 import { QuizModel } from '../entities/quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Repository, SelectQueryBuilder } from 'typeorm';
 import { QuizSetModel } from '../entities/quiz-set.entity';
 import { QuizChoiceModel } from '../entities/quiz-choice.entity';
 import { groupBy } from 'lodash';
-import { ChoiceDto, QuizDto, QuizSetDto, QuizSetList } from '../dto/quiz-set-list-response.dto';
+import { QuizSetDto, QuizSetListResponseDto } from '../dto/quiz-set-list-response.dto';
 
 @Injectable()
 export class QuizSetReadService {
@@ -24,51 +24,125 @@ export class QuizSetReadService {
   /**
    * 퀴즈셋 목록을 조회합니다.
    * @param category 카테고리
-   * @param offset 오프셋
-   * @param limit 한 페이지당 개수
+   * @param cursor 오프셋
+   * @param take 한 페이지 당 개수
+   * @param search 검색어
    * @returns 퀴즈셋 목록
    */
   async findAllWithQuizzesAndChoices(
     category: string,
-    offset: number,
-    limit: number,
+    cursor: number,
+    take: number,
     search: string
-  ): Promise<QuizSetList<QuizSetDto[]>> {
-    let quizSets = await this.fetchQuizSets(category, offset, limit);
+  ): Promise<QuizSetListResponseDto> {
+    // take + 1을 조회하여 다음 페이지 존재 여부 확인
+    const quizSets = await this.fetchQuizSets(category, cursor, take + 1, search);
 
     if (!quizSets.length) {
-      return new QuizSetList([]);
+      return new QuizSetListResponseDto([], null, false);
     }
 
-    const quizzes = await this.fetchQuizzesByQuizSets(quizSets);
-    const choices = await this.fetchChoicesByQuizzes(quizzes);
+    const hasNextPage = quizSets.length > take;
+    const responseQuizSets = hasNextPage ? quizSets.slice(0, take) : quizSets;
 
-    quizSets = this.filterBySearch(search, quizSets, quizzes, choices);
+    const quizzes = await this.fetchQuizzesByQuizSets(responseQuizSets);
+    const mappedQuizSets = this.mapRelations(responseQuizSets, quizzes);
 
-    return new QuizSetList(this.mapRelations(quizSets, quizzes));
+    const nextCursor = hasNextPage ? responseQuizSets[responseQuizSets.length - 1].id.toString() : null;
+
+    return new QuizSetListResponseDto(mappedQuizSets, nextCursor, hasNextPage);
   }
 
   private async fetchQuizSets(
-    category: string | undefined,
-    offset: number,
-    limit: number
+    category: string,
+    cursor: number,
+    take: number,
+    search: string
   ): Promise<QuizSetModel[]> {
-    const whereCondition: any = {
-      deletedAt: IsNull()
-    };
-
-    if (category) {
-      whereCondition.category = category;
+    let searchTargetIds: number[] | undefined;
+    if (search) {
+      searchTargetIds = await this.findSearchTargetIds(search);
+      if (!searchTargetIds?.length) {
+        return [];
+      }
     }
 
-    return this.quizSetRepository.find({
-      where: whereCondition,
-      skip: offset,
-      take: limit,
-      order: {
-        createdAt: 'DESC'
-      }
-    });
+    const queryBuilder = this.buildBaseQuizSetQuery(category, searchTargetIds);
+
+    // TODO: 향후 정렬 기능 생기면 수정해야 함
+    if (cursor) {
+      queryBuilder.andWhere('quizSet.id > :cursor', { cursor });
+    }
+
+    return queryBuilder
+      .take(take)
+      .getMany();
+  }
+
+  /**
+   * 기본 QuizSet 쿼리 생성
+   * 향후 필터링 조건이 추가될 경우 이 메서드를 확장
+   */
+  private buildBaseQuizSetQuery(
+    category: string | undefined,
+    searchTargetIds?: number[]
+  ): SelectQueryBuilder<QuizSetModel> {
+    const queryBuilder = this.quizSetRepository
+      .createQueryBuilder('quizSet')
+      .where('quizSet.deletedAt IS NULL');
+
+    if (category) {
+      queryBuilder.andWhere('quizSet.category = :category', { category });
+    }
+
+    if (searchTargetIds) {
+      queryBuilder.andWhere('quizSet.id IN (:...searchTargetIds)', { searchTargetIds });
+    }
+
+    // TODO: 향후 정렬 기능 생기면 수정해야 함
+    return queryBuilder.orderBy('quizSet.id', 'ASC');
+  }
+
+  private async findSearchTargetIds(search: string): Promise<number[]> {
+    const searchTerm = `%${search}%`;
+
+    // 타이틀에서 검색
+    const quizSetIds = await this.quizSetRepository
+      .createQueryBuilder('quizSet')
+      .select('quizSet.id')
+      .where('quizSet.title LIKE :search', { search: searchTerm })
+      .andWhere('quizSet.deletedAt IS NULL')
+      .getMany();
+
+    // 퀴즈 내용에서 검색
+    const quizResults = await this.quizRepository
+      .createQueryBuilder('quiz')
+      .select('DISTINCT quiz.quizSetId')
+      .where('quiz.quiz LIKE :search', { search: searchTerm })
+      .andWhere('quiz.deletedAt IS NULL')
+      .getMany();
+
+    // 선택지 내용에서 검색
+    const choiceResults = await this.quizChoiceRepository
+      .createQueryBuilder('choice')
+      .select('DISTINCT quiz.quizSetId')
+      .innerJoin(
+        QuizModel,
+        'quiz',
+        'quiz.id = choice.quizId AND quiz.deletedAt IS NULL'
+      )
+      .where('choice.choiceContent LIKE :search', { search: searchTerm })
+      .andWhere('choice.deletedAt IS NULL')
+      .getMany();
+
+    // 결과 병합 및 중복 제거
+    const matchedQuizSetIds = new Set([
+      ...quizSetIds.map(qs => qs.id),
+      ...quizResults.map(q => q.quizSetId),
+      ...choiceResults.map(c => (c as any).quizSetId)
+    ]);
+
+    return Array.from(matchedQuizSetIds);
   }
 
   private async fetchQuizzesByQuizSets(quizSets: QuizSetModel[]): Promise<QuizModel[]> {
@@ -77,15 +151,6 @@ export class QuizSetReadService {
       .createQueryBuilder('quiz')
       .where('quiz.quizSetId IN (:...quizSetIds)', { quizSetIds })
       .andWhere('quiz.deletedAt IS NULL')
-      .getMany();
-  }
-
-  private async fetchChoicesByQuizzes(quizzes: QuizModel[]): Promise<QuizChoiceModel[]> {
-    const quizIds = quizzes.map(q => q.id);
-    return this.quizChoiceRepository
-      .createQueryBuilder('choice')
-      .where('choice.quizId IN (:...quizIds)', { quizIds })
-      .andWhere('choice.deletedAt IS NULL')
       .getMany();
   }
 
@@ -99,22 +164,8 @@ export class QuizSetReadService {
       id: quizSet.id.toString(),
       title: quizSet.title,
       category: quizSet.category,
-      quizCount: quizzesByQuizSetId[quizSet.id].length,
+      quizCount: (quizzesByQuizSetId[quizSet.id] || []).length,
     }));
-  }
-
-  private filterBySearch(search: string, quizSets: QuizSetModel[], quizzes: QuizModel[], choices: QuizChoiceModel[]) {
-    if (search) {
-      return quizSets.filter(quizSet => {
-        const quizList = quizzes.filter(quiz => quiz.quizSetId === quizSet.id);
-        const choiceList = choices.filter(choice => quizList.some(quiz => quiz.id === choice.quizId));
-        return quizSet.title.includes(search) ||
-          quizList.some(quiz => quiz.quiz.includes(search)) ||
-          choiceList.some(choice => choice.choiceContent.includes(search));
-      });
-    }
-
-    return quizSets;
   }
 
   /**
