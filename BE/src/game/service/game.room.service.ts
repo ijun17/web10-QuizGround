@@ -10,6 +10,7 @@ import SocketEvents from '../../common/constants/socket-events';
 import { UpdateRoomOptionDto } from '../dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class GameRoomService {
@@ -32,7 +33,7 @@ export class GameRoomService {
       title: gameConfig.title,
       gameMode: gameConfig.gameMode,
       maxPlayerCount: gameConfig.maxPlayerCount.toString(),
-      isPublicGame: gameConfig.isPublicGame ? '1' : '0',
+      isPublic: gameConfig.isPublic ? '1' : '0',
       isWaiting: '1',
       lastActivityAt: new Date().getTime().toString(),
       quizSetId: '-1', // 미설정시 기본퀴즈를 진행, -1은 기본 퀴즈셋
@@ -47,7 +48,7 @@ export class GameRoomService {
     return roomId;
   }
 
-  async joinRoom(dto: JoinRoomDto, clientId: string) {
+  async joinRoom(client: Socket, dto: JoinRoomDto, clientId: string) {
     const roomKey = REDIS_KEY.ROOM(dto.gameId);
     const room = await this.redis.hgetall(roomKey);
     this.gameValidator.validateRoomExists(SocketEvents.JOIN_ROOM, room);
@@ -59,6 +60,8 @@ export class GameRoomService {
       parseInt(room.maxPlayerCount)
     );
     this.gameValidator.validateRoomProgress(SocketEvents.JOIN_ROOM, room.status, room.isWaiting);
+
+    client.join(dto.gameId); //validation 후에 조인해야함
 
     const playerKey = REDIS_KEY.PLAYER(clientId);
     const positionX = Math.random();
@@ -86,13 +89,21 @@ export class GameRoomService {
       });
     }
 
+    const roomData = await this.redis.hgetall(REDIS_KEY.ROOM(dto.gameId));
+    client.emit(SocketEvents.UPDATE_ROOM_OPTION, {
+      title: roomData.title,
+      gameMode: roomData.gameMode,
+      maxPlayerCount: parseInt(roomData.maxPlayerCount),
+      isPublic: roomData.isPublic === '1'
+    });
+
     this.logger.verbose(`게임 방 입장 완료: ${dto.gameId} - ${clientId} (${dto.playerName})`);
 
     return players;
   }
 
   async updateRoomOption(updateRoomOptionDto: UpdateRoomOptionDto, clientId: string) {
-    const { gameId, gameMode, title, maxPlayerCount, isPublicGame } = updateRoomOptionDto;
+    const { gameId, gameMode, title, maxPlayerCount, isPublic } = updateRoomOptionDto;
     const roomKey = `Room:${gameId}`;
 
     const room = await this.redis.hgetall(roomKey);
@@ -105,7 +116,7 @@ export class GameRoomService {
       title: title,
       gameMode: gameMode,
       maxPlayerCount: maxPlayerCount.toString(),
-      isPublicGame: isPublicGame ? '1' : '0'
+      isPublic: isPublic ? '1' : '0'
     });
     this.logger.verbose(`게임방 옵션 변경: ${gameId}`);
   }

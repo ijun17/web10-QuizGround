@@ -116,9 +116,9 @@ jobs:
             cd
             cd /home/ubuntu/nest-server/current/FE
             npm i
-            npx pm2 stop backend-server || true
+            npx pm2 delete quiz-ground-was1 quiz-ground-was2 || true
             cd /home/ubuntu/nest-server/current/BE
-            npx pm2 start dist/src/main.js --name "backend-server"
+            npx pm2 start ecosystem.config.js
 
 #            todo: # FrontEnd 배포
 #            # Frontend 배포
