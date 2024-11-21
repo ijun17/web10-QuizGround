@@ -40,8 +40,8 @@ export class RoomSubscriber extends RedisSubscriber {
         server.to(gameId).emit(SocketEvents.UPDATE_ROOM_OPTION, {
           title: roomData.title,
           gameMode: roomData.gameMode,
-          maxPlayerCount: roomData.maxPlayerCount,
-          isPublic: roomData.isPublic
+          maxPlayerCount: parseInt(roomData.maxPlayerCount),
+          isPublic: roomData.isPublic === '1'
         });
         this.logger.verbose(`Room option updated: ${gameId}`);
         break;
@@ -49,7 +49,7 @@ export class RoomSubscriber extends RedisSubscriber {
       case 'Quizset':
         server.to(gameId).emit(SocketEvents.UPDATE_ROOM_QUIZSET, {
           quizSetId: roomData.quizSetId,
-          quizCount: roomData.quizCount
+          quizCount: parseInt(roomData.quizCount)
         });
         this.logger.verbose(`Room quizset updated: ${gameId}`);
         break;

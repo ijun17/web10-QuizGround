@@ -191,7 +191,7 @@ describe('GameGateway (e2e)', () => {
         title: 'hello world!',
         gameMode: 'RANKING',
         maxPlayerCount: 2,
-        isPublicGame: true
+        isPublic: true
       };
 
       const response = await new Promise<{ gameId: string }>((resolve) => {
@@ -213,19 +213,19 @@ describe('GameGateway (e2e)', () => {
     const invalidConfigs = [
       {
         case: '빈 title',
-        config: { title: '', gameMode: 'RANKING', maxPlayerCount: 2, isPublicGame: true }
+        config: { title: '', gameMode: 'RANKING', maxPlayerCount: 2, isPublic: true }
       },
       {
         case: '빈 gameMode',
-        config: { title: 'hello', gameMode: '', maxPlayerCount: 2, isPublicGame: true }
+        config: { title: 'hello', gameMode: '', maxPlayerCount: 2, isPublic: true }
       },
       {
         case: '잘못된 gameMode',
-        config: { title: 'hello', gameMode: 'invalid', maxPlayerCount: 2, isPublicGame: true }
+        config: { title: 'hello', gameMode: 'invalid', maxPlayerCount: 2, isPublic: true }
       },
       {
         case: '최소 인원 미달',
-        config: { title: 'hello', gameMode: 'RANKING', maxPlayerCount: 0, isPublicGame: true }
+        config: { title: 'hello', gameMode: 'RANKING', maxPlayerCount: 0, isPublic: true }
       }
     ];
 
@@ -251,7 +251,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
 
@@ -304,7 +304,7 @@ describe('GameGateway (e2e)', () => {
         title: 'Test Room',
         gameMode: 'RANKING',
         maxPlayerCount: 5,
-        isPublicGame: true
+        isPublic: true
       });
 
       // 순차적으로 이벤트 처리
@@ -342,7 +342,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Chat Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
 
@@ -393,7 +393,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Chat Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
 
@@ -442,7 +442,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Chat Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
 
@@ -489,7 +489,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
       const gameId = createResponse.gameId;
@@ -531,7 +531,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Cache Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
       const gameId = createResponse.gameId;
@@ -613,7 +613,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Cache Hit Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
       const gameId = createResponse.gameId;
@@ -693,7 +693,7 @@ describe('GameGateway (e2e)', () => {
           title: 'Expiry Test Room',
           gameMode: 'RANKING',
           maxPlayerCount: 5,
-          isPublicGame: true
+          isPublic: true
         });
       });
       const gameId = createResponse.gameId;
