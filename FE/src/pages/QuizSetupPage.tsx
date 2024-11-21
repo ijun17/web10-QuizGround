@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   TextField,
   Button,
@@ -9,6 +9,9 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { HeaderBar } from '@/components/HeaderBar';
+import { TextInput } from '@/components/TextInput';
+import { createQuizSet } from '@/api/rest/quizApi';
+import { CreateQuizSetPayload } from '@/api/rest/quizTypes';
 /*
 {
  title: string,              // 퀴즈셋의 제목
@@ -43,29 +46,44 @@ type QuizData = {
 };
 
 export const QuizSetupPage: React.FC = () => {
-  const [title, setTitle] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
-  const [quizSet, setQuizSet] = useState<Quiz[]>([
-    { quiz: '', limitTime: 0, choices: [{ content: '', order: 1, isAnswer: false }] }
-  ]);
+  const [title, setTitle] = useState('');
+  const [titleError, setTitleError] = useState('');
+  const [category, setCategory] = useState('');
+  const [quizSet, setQuizSet] = useState<Quiz[]>([]);
+  const [quizErrorIndex, setQuizErrorIndex] = useState<null | number>(null);
+  const [choiceErrorIndex, setChoiceErrorIndex] = useState<null | [number, number]>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value);
+  // 빌드가 되기 위해 변수 사용
+  console.log(isSubmitting);
+
+  const handleTitleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    setTitle(e.target.value);
+    setTitleError('');
+  };
+
   const handleCategoryChange = (e: SelectChangeEvent<string>) => {
     setCategory(e.target.value);
   };
 
+  // 퀴즈 이름 변경
   const handleQuizChange = (index: number, value: string) => {
     const updatedQuizSet = [...quizSet];
     updatedQuizSet[index].quiz = value;
     setQuizSet(updatedQuizSet);
+    if (index === quizErrorIndex) setQuizErrorIndex(null);
   };
 
+  // 제한 시간 변경
   const handleLimitTimeChange = (index: number, value: string) => {
     const updatedQuizSet = [...quizSet];
-    updatedQuizSet[index].limitTime = parseInt(value, 10);
+    let newLimitTime = parseInt(value, 10);
+    if (newLimitTime > 99) newLimitTime %= 10;
+    updatedQuizSet[index].limitTime = Math.min(60, Math.max(1, newLimitTime));
     setQuizSet(updatedQuizSet);
   };
 
+  // 질문지 변경
   const handleChoiceChange = (
     quizIndex: number,
     choiceIndex: number,
@@ -74,32 +92,111 @@ export const QuizSetupPage: React.FC = () => {
   ) => {
     const updatedQuizSet = [...quizSet];
     if (field === 'isAnswer') {
-      (updatedQuizSet[quizIndex].choices[choiceIndex][field] as boolean) = value === 'true';
+      // 정답인지를 수정한 경우
+      updatedQuizSet[quizIndex].choices = updatedQuizSet[quizIndex].choices.map((c, i) => ({
+        ...c,
+        isAnswer: choiceIndex === i
+      }));
     } else {
+      // 질문지 인풋을 수정한 경우
       (updatedQuizSet[quizIndex].choices[choiceIndex][field] as string) = value;
+      if (
+        choiceErrorIndex &&
+        quizIndex === choiceErrorIndex[0] &&
+        choiceIndex === choiceErrorIndex[1]
+      )
+        setChoiceErrorIndex(null);
     }
     setQuizSet(updatedQuizSet);
   };
-  const addQuiz = () => {
+
+  // 퀴즈 추가
+  const addQuiz = useCallback(() => {
     setQuizSet([
       ...quizSet,
-      { quiz: '', limitTime: 0, choices: [{ content: '', order: 1, isAnswer: false }] }
+      { quiz: '', limitTime: 10, choices: [{ content: '', order: 1, isAnswer: true }] }
     ]);
+  }, [quizSet]);
+
+  const removeQuiz = (quizIndex: number) => {
+    setQuizSet(quizSet.filter((_, i) => i !== quizIndex));
   };
 
+  //선택지 삭제
+  const removeChoice = (quizIndex: number, choiceIndex: number) => {
+    const updatedQuizSet = [...quizSet];
+    updatedQuizSet[quizIndex].choices = updatedQuizSet[quizIndex].choices.filter(
+      (_, i) => i !== choiceIndex
+    );
+    setQuizSet(updatedQuizSet);
+  };
+
+  //선택지 추가
   const addChoice = (quizIndex: number) => {
+    if (quizSet[quizIndex].choices.length > 5) return;
     const updatedQuizSet = [...quizSet];
     const newChoiceOrder = updatedQuizSet[quizIndex].choices.length + 1;
     updatedQuizSet[quizIndex].choices.push({ content: '', order: newChoiceOrder, isAnswer: false });
     setQuizSet(updatedQuizSet);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // 제목 비어있는지 검사
+    if (!title.trim()) {
+      setTitleError('제목을 입력해주세요');
+      return;
+    }
+
+    // 퀴즈 이름 비어있는지 검사
+    const emptyQuizIndex = quizSet.findIndex((quiz) => !quiz.quiz.trim());
+    if (emptyQuizIndex >= 0) {
+      setQuizErrorIndex(emptyQuizIndex);
+      return;
+    }
+
+    //선택지 비어있는지 검사
+    const emptyQuizChoiceIndex = quizSet.findIndex((quiz) =>
+      quiz.choices.find((choice) => !choice.content.trim())
+    );
+    if (emptyQuizChoiceIndex >= 0) {
+      const emptyChoiceIndex = quizSet[emptyQuizChoiceIndex].choices.findIndex(
+        (choice) => !choice.content.trim()
+      );
+      setChoiceErrorIndex([emptyQuizChoiceIndex, emptyChoiceIndex]);
+      return;
+    }
+
     const quizData: QuizData = { title, category, quizSet };
+    const payload: CreateQuizSetPayload = {
+      title: quizData.title,
+      category: quizData.category,
+      quizList: quizData.quizSet // 이름 변경
+    };
     console.log('Quiz Data:', quizData);
-    // POST 요청
-    // fetch "/api/quizset"
+
+    try {
+      setIsSubmitting(true); // 로딩 시작
+      const response = await createQuizSet(payload);
+      if (response) {
+        alert('퀴즈셋이 성공적으로 생성되었습니다!');
+        // 성공적으로 생성되면 상태 초기화
+        setTitle('');
+        setCategory('');
+        setQuizSet([]);
+      } else {
+        alert('퀴즈셋 생성에 실패했습니다. 다시 시도해주세요.');
+      }
+    } catch (error) {
+      console.error('Error submitting quiz data:', error);
+      alert('퀴즈셋 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false); // 로딩 종료
+    }
   };
+
+  useEffect(() => {
+    if (quizSet.length === 0) addQuiz();
+  }, [quizSet, addQuiz]);
 
   return (
     <>
@@ -109,14 +206,7 @@ export const QuizSetupPage: React.FC = () => {
           퀴즈셋 생성하기
         </Typography>
 
-        <TextField
-          label="제목"
-          variant="outlined"
-          fullWidth
-          className="mb-6"
-          value={title}
-          onChange={handleTitleChange}
-        />
+        <TextInput label="제목" value={title} onChange={handleTitleChange} error={titleError} />
 
         <Select
           value={category}
@@ -135,16 +225,22 @@ export const QuizSetupPage: React.FC = () => {
 
         {quizSet.map((quiz, quizIndex) => (
           <Box key={quizIndex} className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm ">
-            <Typography variant="h6" className="mb-4 p-2 font-semibold">
-              퀴즈 {quizIndex + 1}
-            </Typography>
-            <TextField
-              label="퀴즈 질문"
-              variant="outlined"
-              fullWidth
-              className="mb-6"
+            <div className="flex justify-between">
+              <Typography variant="h6" className="mb-4 p-2 font-semibold">
+                퀴즈 {quizIndex + 1}
+              </Typography>
+              {quizSet.length > 1 && (
+                <button className="text-red-500" onClick={() => removeQuiz(quizIndex)}>
+                  삭제
+                </button>
+              )}
+            </div>
+
+            <TextInput
+              label="퀴즈"
               value={quiz.quiz}
               onChange={(e) => handleQuizChange(quizIndex, e.target.value)}
+              error={quizErrorIndex === quizIndex ? '퀴즈를 입력해주세요' : ''}
             />
             <TextField
               label="제한 시간 (초)"
@@ -152,37 +248,48 @@ export const QuizSetupPage: React.FC = () => {
               variant="outlined"
               fullWidth
               className="mb-6"
-              value={quiz.limitTime || 0}
+              value={quiz.limitTime || 10}
               onChange={(e) => handleLimitTimeChange(quizIndex, e.target.value)}
             />
-            {quiz.choices.map((choice, choiceIndex) => (
-              <Box key={choiceIndex} className="flex items-center mb-6">
-                <TextField
+            <Box className="m-2">
+              {quiz.choices.map((choice, choiceIndex) => (
+                <TextInput
+                  key={choiceIndex}
                   label={`선택지 ${choiceIndex + 1}`}
-                  variant="outlined"
-                  className="flex-grow mr-4"
                   value={choice.content}
                   onChange={(e) =>
                     handleChoiceChange(quizIndex, choiceIndex, 'content', e.target.value)
                   }
-                />
-                <Select
-                  value={choice.isAnswer.toString()}
-                  onChange={(e) =>
-                    handleChoiceChange(quizIndex, choiceIndex, 'isAnswer', e.target.value)
+                  error={
+                    choiceErrorIndex &&
+                    quizIndex === choiceErrorIndex[0] &&
+                    choiceIndex === choiceErrorIndex[1]
+                      ? '선택지를 입력해주세요'
+                      : ''
                   }
-                  className="w-28"
                 >
-                  <MenuItem value="false">정답아님</MenuItem>
-                  <MenuItem value="true">정답</MenuItem>
-                </Select>
-              </Box>
-            ))}
+                  <button
+                    className="text-[2rem] transition transform duration-100 ease-in-out active:scale-75"
+                    onClick={() => handleChoiceChange(quizIndex, choiceIndex, 'isAnswer', 'true')}
+                  >
+                    {choice.isAnswer ? '✅' : '⬜'}
+                  </button>
+                  <button
+                    className={'text-[2rem] w-12 center text-red-500'}
+                    style={{ visibility: choice.isAnswer ? 'hidden' : 'visible' }}
+                    onClick={() => removeChoice(quizIndex, choiceIndex)}
+                  >
+                    ✕
+                  </button>
+                </TextInput>
+              ))}
+            </Box>
             <Button
               variant="outlined"
               color="primary"
               onClick={() => addChoice(quizIndex)}
               className="w-full mb-4"
+              style={{ display: quiz.choices.length > 5 ? 'none' : 'block' }}
             >
               선택지 추가
             </Button>
