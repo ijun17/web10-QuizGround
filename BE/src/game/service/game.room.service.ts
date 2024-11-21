@@ -180,6 +180,7 @@ export class GameRoomService {
   async updateRoomActivity(roomId: string): Promise<void> {
     const pipeline = this.redis.pipeline();
 
+    pipeline.set(`${REDIS_KEY.ROOM(roomId)}:Changes`, 'lastActivityAt');
     pipeline.hset(REDIS_KEY.ROOM(roomId), 'lastActivityAt', Date.now().toString());
     pipeline.hget(REDIS_KEY.ROOM(roomId), 'lastActivityAt');
 
