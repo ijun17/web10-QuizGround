@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DataSource, EntityManager, QueryRunner } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { QuizSetService } from '../../src/quiz-set/service/quiz-set.service';
@@ -15,16 +15,14 @@ import { QuizSetReadService } from '../../src/quiz-set/service/quiz-set-read.ser
 import { QuizSetUpdateService } from '../../src/quiz-set/service/quiz-set-update.service';
 import { QuizSetDeleteService } from '../../src/quiz-set/service/quiz-set-delete.service';
 import { UserService } from '../../src/user/user.service';
-import { JwtModule } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { AuthModule } from '../../src/auth/auth.module';
 
 describe('QuizService', () => {
   let quizService: QuizSetService;
   let dataSource: DataSource;
   let queryRunner: QueryRunner;
   let userService: UserService;
-  let testUser: UserModel;
-  let testOtherUser: UserModel;
+  let testUser: { user: UserModel; otherUser: UserModel };
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -49,8 +47,14 @@ describe('QuizService', () => {
           //   maxBatchSize: 100
           // }
         }),
-        TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel, UserModel]),
-        JwtModule
+        TypeOrmModule.forFeature([
+          QuizSetModel,
+          QuizModel,
+          QuizChoiceModel,
+          UserModel,
+          UserQuizArchiveModel
+        ]),
+        AuthModule
       ],
       providers: [
         QuizSetService,
@@ -72,33 +76,28 @@ describe('QuizService', () => {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    testUser = await createUser(
-      queryRunner.manager,
-      'integration_test@test.com',
-      'test_password',
-      'Test'
-    );
-    testOtherUser = await createUser(
-      queryRunner.manager,
-      'integration_other@test.comm',
-      'test_password',
-      'Test2'
-    );
+    const user = await userService.create({
+      email: 'integration_test@test.com',
+      password: 'test_password',
+      nickname: 'Test'
+    });
+    const otherUser = await userService.create({
+      email: 'integration_other@test.com',
+      password: 'test_password',
+      nickname: 'Test2'
+    });
+    testUser = { user, otherUser };
   });
 
   afterEach(async () => {
     await queryRunner.rollbackTransaction();
     await queryRunner.release();
+
+    await dataSource.synchronize(true);
   });
 
   afterAll(async () => {
     await dataSource.destroy();
-  });
-
-  it('should be defined', () => {
-    expect(quizService).toBeDefined();
-    expect(dataSource).toBeDefined();
-    expect(userService).toBeDefined();
   });
 
   describe('퀴즈셋 생성 테스트', () => {
@@ -132,7 +131,7 @@ describe('QuizService', () => {
         ]
       };
 
-      const result = await quizService.createQuizSet(createQuizSetDto, testUser);
+      const result = await quizService.createQuizSet(createQuizSetDto, testUser.user);
       const savedQuizSet = await queryRunner.manager.findOne(QuizSetModel, {
         where: { id: result.id },
         relations: ['quizList', 'quizList.choiceList', 'user']
@@ -172,7 +171,7 @@ describe('QuizService', () => {
       };
 
       // When & Then
-      await expect(quizService.createQuizSet(invalidQuizSetDto, testUser)).rejects.toThrow(
+      await expect(quizService.createQuizSet(invalidQuizSetDto, testUser.user)).rejects.toThrow(
         BadRequestException
       );
     });
@@ -203,9 +202,9 @@ describe('QuizService', () => {
       };
 
       // When & Then
-      await expect(quizService.createQuizSet(duplicateOrderQuizSetDto, testUser)).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(
+        quizService.createQuizSet(duplicateOrderQuizSetDto, testUser.user)
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -235,7 +234,7 @@ describe('QuizService', () => {
         ]
       };
 
-      await quizService.createQuizSet(createQuizSetDto, testUser);
+      await quizService.createQuizSet(createQuizSetDto, testUser.user);
 
       // When
       const result = await quizService.findAllWithQuizzesAndChoices('PROGRAMMING', 0, 10, '');
@@ -256,7 +255,7 @@ describe('QuizService', () => {
 
     it('퀴즈셋 목록 조회 응답에 적절한 커서 응답을 한다', async () => {
       for (let i = 0; i < 20; i++) {
-        await createQuizSetTestData(quizService, `테스트${i}`);
+        await createQuizSetTestData(quizService, `테스트${i}`, testUser.user);
       }
 
       const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '');
@@ -264,22 +263,22 @@ describe('QuizService', () => {
       expect(result.quizSetList).toHaveLength(10);
       expect(result.paging.nextCursor).toBe(result.quizSetList[9].id);
       expect(result.paging.hasNextPage).toBe(true);
-    })
+    });
 
     it('검색어로 퀴즈셋 목록을 가져와야 한다', async () => {
       for (let i = 0; i < 20; i++) {
-        await createQuizSetTestData(quizService, `테스트${i}`, testUser);
+        await createQuizSetTestData(quizService, `테스트${i}`, testUser.user);
       }
 
       const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '테스트19');
-      result.quizSetList.forEach(quizSet => {
+      result.quizSetList.forEach((quizSet) => {
         expect(quizSet.title).toContain('테스트19');
       });
-    })
+    });
 
     it('검색어가 유효하지 않아 퀴즈셋 목록이 없다', async () => {
       for (let i = 0; i < 20; i++) {
-        await createQuizSetTestData(quizService, `테스트${i}`, testUser);
+        await createQuizSetTestData(quizService, `테스트${i}`, testUser.user);
       }
 
       const result = await quizService.findAllWithQuizzesAndChoices('', 0, 10, '테스트20');
@@ -311,7 +310,7 @@ describe('QuizService', () => {
         ]
       };
 
-      const result = await quizService.createQuizSet(dto, testUser);
+      const result = await quizService.createQuizSet(dto, testUser.user);
       testQuizSet = result;
     });
 
@@ -355,7 +354,7 @@ describe('QuizService', () => {
         ]
       };
 
-      const result = await quizService.createQuizSet(dto, testUser);
+      const result = await quizService.createQuizSet(dto, testUser.user);
       originQuizSetId = result.id;
     });
 
@@ -380,7 +379,7 @@ describe('QuizService', () => {
       };
 
       // When
-      await quizService.update(originQuizSetId, updateDto, testUser);
+      await quizService.update(originQuizSetId, updateDto, testUser.user);
 
       // Then
       const updated = await quizService.findOne(originQuizSetId);
@@ -393,12 +392,12 @@ describe('QuizService', () => {
 
     it('존재하지 않는 퀴즈셋 수정시 에러가 발생해야 한다.', async () => {
       // When & Then
-      await expect(quizService.update(999999, { title: 'test' }, testUser)).rejects.toThrow();
+      await expect(quizService.update(999999, { title: 'test' }, testUser.user)).rejects.toThrow();
     });
 
     it('생성한 사람과 다른 사람이 수정할 시 에러가 발생해야 한다.', async () => {
       await expect(
-        quizService.update(originQuizSetId, { title: '수정' }, testOtherUser)
+        quizService.update(originQuizSetId, { title: '수정' }, testUser.otherUser)
       ).rejects.toThrow();
     });
   });
@@ -426,13 +425,13 @@ describe('QuizService', () => {
         ]
       };
 
-      const result = await quizService.createQuizSet(dto, testUser);
+      const result = await quizService.createQuizSet(dto, testUser.user);
       testQuizSet = result;
     });
 
     it('퀴즈셋을 soft delete 할 수 있어야 한다.', async () => {
       // When
-      const result = await quizService.remove(testQuizSet.id, testUser);
+      const result = await quizService.remove(testQuizSet.id, testUser.user);
 
       // Then
       expect(result.success).toBe(true);
@@ -443,11 +442,11 @@ describe('QuizService', () => {
 
     it('존재하지 않는 퀴즈셋 삭제시 에러가 발생해야 한다.', async () => {
       // When & Then
-      await expect(quizService.remove(999999, testUser)).rejects.toThrow();
+      await expect(quizService.remove(999999, testUser.user)).rejects.toThrow();
     });
 
     it('생성한 사람과 다른 사람이 삭제할 시 에러가 발생해야 한다.', async () => {
-      await expect(quizService.remove(testQuizSet.id, testOtherUser)).rejects.toThrow();
+      await expect(quizService.remove(testQuizSet.id, testUser.otherUser)).rejects.toThrow();
     });
   });
 });
@@ -481,23 +480,4 @@ async function createQuizSetTestData(
   };
 
   await quizService.createQuizSet(createQuizSetDto, user);
-}
-
-async function createUser(
-  manager: EntityManager,
-  email: string,
-  password: string,
-  nickname: string
-) {
-  const salt = await bcrypt.genSalt();
-  const hashedPassword = await bcrypt.hash(password, salt);
-  const newUser = manager.create(UserModel, {
-    email: email,
-    password: hashedPassword,
-    nickname: nickname,
-    status: '?'
-  });
-  await manager.save(newUser);
-
-  return newUser;
 }
