@@ -1,11 +1,10 @@
-import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Logger, ParseIntPipe, Query } from '@nestjs/common';
 import { WaitingRoomService } from './waiting-room.service';
 import { ParseIntOrDefault } from '../common/decorators/parse-int-or-default.decorator';
 
 @Controller('/api/rooms')
 export class WaitingRoomController {
   constructor(private readonly waitingRoomService: WaitingRoomService) {}
-
 
   @Get()
   async findAll(

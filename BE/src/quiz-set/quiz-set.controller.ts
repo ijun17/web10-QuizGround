@@ -8,7 +8,8 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards
+  UseGuards,
+  Logger
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { QuizSetService } from './service/quiz-set.service';
@@ -21,6 +22,8 @@ import { ParseIntOrDefault } from '../common/decorators/parse-int-or-default.dec
 
 @Controller('/api/quizset')
 export class QuizSetController {
+  private readonly logger = new Logger(QuizSetController.name);
+
   constructor(private readonly quizService: QuizSetService) {}
 
   @UseGuards(JwtAuthGuard)
@@ -29,6 +32,9 @@ export class QuizSetController {
   @ApiResponse({ status: 201, description: '퀴즈셋이 성공적으로 생성됨' })
   @ApiResponse({ status: 400, description: '잘못된 입력값' })
   async createQuizSet(@Body() createQuizSetDto: CreateQuizSetDto, @CurrentUser() user: UserModel) {
+    const result = this.quizService.createQuizSet(createQuizSetDto, user);
+    this.logger.verbose(`퀴즈셋 생성: ${result}`);
+
     return this.quizService.createQuizSet(createQuizSetDto, user);
   }
 
@@ -39,12 +45,16 @@ export class QuizSetController {
     @Query('take', new ParseIntOrDefault(10)) take: number,
     @Query('search', new DefaultValuePipe('')) search: string
   ) {
-    return this.quizService.findAllWithQuizzesAndChoices(category, cursor, take, search);
+    const result = this.quizService.findAllWithQuizzesAndChoices(category, cursor, take, search);
+    this.logger.verbose(`퀴즈셋 목록 조회: ${result}`);
+    return result;
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.quizService.findOne(+id);
+    const result = this.quizService.findOne(+id);
+    this.logger.verbose(`퀴즈셋 조회: ${result}`);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -54,12 +64,15 @@ export class QuizSetController {
     @Body() updateQuizSetDto: UpdateQuizSetDto,
     @CurrentUser() user: UserModel
   ) {
-    return this.quizService.update(+id, updateQuizSetDto, user);
+    const result = this.quizService.update(+id, updateQuizSetDto, user);
+    this.logger.verbose(`퀴즈셋 수정: ${result}`);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: UserModel) {
+    this.logger.verbose(`퀴즈셋 삭제: ${id}`);
     return this.quizService.remove(+id, user);
   }
 }
