@@ -5,15 +5,13 @@ import { Modal } from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { GameHeader } from '@/components/GameHeader';
 import { HeaderBar } from '@/components/HeaderBar';
-import { socketService, useSocketException } from '@/api/socket';
+import { socketService } from '@/api/socket';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { QuizHeader } from '@/components/QuizHeader';
 import GameState from '@/constants/gameState';
 import { usePlayerStore } from '@/store/usePlayerStore';
 import { ResultModal } from '@/components/ResultModal';
-import { ErrorModal } from '@/components/ErrorModal';
-import { useNavigate } from 'react-router-dom';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -27,7 +25,6 @@ export const GamePage = () => {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     updateRoom({ gameId });
@@ -42,11 +39,6 @@ export const GamePage = () => {
   useEffect(() => {
     if (gameState === GameState.END) setIsResultOpen(true);
   }, [gameState]);
-
-  useSocketException('joinRoom', (data) => {
-    setErrorModalTitle(data);
-    setIsErrorModalOpen(true);
-  });
 
   const handleNameSubmit = (name: string) => {
     setCurrentPlayerName(name);
@@ -89,13 +81,6 @@ export const GamePage = () => {
             placeholder="이름을 입력하세요"
             onClose={() => setIsModalOpen(false)}
             onSubmit={handleNameSubmit}
-          />
-
-          <ErrorModal
-            isOpen={isErrorModalOpen}
-            title={errorModalTitle}
-            buttonText="메인 페이지로 이동"
-            onClose={() => navigate('/')}
           />
         </div>
       </div>

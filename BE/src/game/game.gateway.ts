@@ -6,7 +6,7 @@ import {
   WebSocketServer
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseFilters, UsePipes } from '@nestjs/common';
+import { Logger, UseFilters, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import SocketEvents from '../common/constants/socket-events';
 import { CreateGameDto } from './dto/create-game.dto';
@@ -20,7 +20,10 @@ import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
 import { GameChatService } from './service/game.chat.service';
 import { GameRoomService } from './service/game.room.service';
+import { WsJwtAuthGuard } from '../auth/guard/ws-jwt-auth.guard';
+import { GameActivityInterceptor } from './interceptor/gameActivity.interceptor';
 
+@UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
   cors: {
@@ -51,12 +54,15 @@ export class GameGateway {
 
   @SubscribeMessage(SocketEvents.JOIN_ROOM)
   @UsePipes(new GameValidationPipe(SocketEvents.JOIN_ROOM))
+  @UseGuards(WsJwtAuthGuard)
   async handleJoinRoom(
     @MessageBody() dto: JoinRoomDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    client.join(dto.gameId);
-    const players = await this.gameRoomService.joinRoom(dto, client.id);
+    if (client.data.user) {
+      dto.playerName = client.data.user.nickname;
+    }
+    const players = await this.gameRoomService.joinRoom(client, dto, client.id);
     client.emit(SocketEvents.JOIN_ROOM, { players });
   }
 
@@ -120,9 +126,10 @@ export class GameGateway {
     this.logger.verbose(`클라이언트가 연결되었어요!: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     this.logger.verbose(`클라이언트가 연결 해제되었어요!: ${client.id}`);
 
-    this.gameService.disconnect(client.id);
+    await this.gameService.disconnect(client.id);
+    await this.gameRoomService.handlePlayerExit(client.id);
   }
 }

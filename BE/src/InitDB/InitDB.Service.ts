@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { QuizSetModel } from '../quiz/entities/quiz-set.entity';
-import { QuizModel } from '../quiz/entities/quiz.entity';
+import { QuizSetModel } from '../quiz-set/entities/quiz-set.entity';
+import { QuizModel } from '../quiz-set/entities/quiz.entity';
 import { QUIZ_SET_TEST_DATA } from './QUIZ_SET_TEST_DATA';
-import { QuizChoiceModel } from '../quiz/entities/quiz-choice.entity';
+import { QuizChoiceModel } from '../quiz-set/entities/quiz-choice.entity';
 import { UserModel } from '../user/entities/user.entity';
 
 /**
@@ -72,7 +72,7 @@ export class InitDBService {
       for (const quizSetData of QUIZ_SET_TEST_DATA) {
         // 2. Create QuizSet
         const quizSet = queryRunner.manager.create(QuizSetModel, {
-          user,
+          userId: user.id,
           title: quizSetData.title,
           category: quizSetData.category
         });

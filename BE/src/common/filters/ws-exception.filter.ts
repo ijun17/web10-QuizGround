@@ -1,5 +1,5 @@
 import { ArgumentsHost, Catch, Logger } from '@nestjs/common';
-import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
+import { BaseWsExceptionFilter } from '@nestjs/websockets';
 import { GameWsException } from '../exceptions/game.ws.exception';
 
 @Catch()

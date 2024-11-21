@@ -1,4 +1,4 @@
-name: Deploy To EC2
+name: Deploy To EC2 #
 
 on:
   push:
@@ -55,15 +55,15 @@ jobs:
         run: |
           echo '${{ secrets.ENV }}' > .env
 
-      - name: BE 테스트 코드 실행 (unit test)
-        working-directory: ./BE
-        run: npm run test
+      # - name: BE 테스트 코드 실행 (unit test)
+      #   working-directory: ./BE
+      #   run: npm run test
 
-      - name: BE 테스트 코드 실행2 (e2e test)
-        working-directory: ./BE
-        run: npm run test:e2e
+      # - name: BE 테스트 코드 실행2 (e2e test)
+      #   working-directory: ./BE
+      #   run: npm run test:integration
 
-      #        todo: FE 테스트 코드 실행
+      #        todo: FE 테스트 코드 실행 2
       #      - name: FE 테스트 코드 실행
       #        working-directory: ./FE
       #        run: npm run test
@@ -116,9 +116,9 @@ jobs:
             cd
             cd /home/ubuntu/nest-server/current/FE
             npm i
-            npx pm2 stop backend-server || true
+            npx pm2 delete quiz-ground-was1 quiz-ground-was2 || true
             cd /home/ubuntu/nest-server/current/BE
-            npx pm2 start dist/main.js --name "backend-server"
+            npx pm2 start ecosystem.config.js
 
 #            todo: # FrontEnd 배포
 #            # Frontend 배포

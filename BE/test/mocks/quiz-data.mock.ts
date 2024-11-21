@@ -1,30 +1,30 @@
 export const mockQuizData = {
   id: '1',
-  title: '재미있는 상식 퀴즈',
+  title: '기본 퀴즈셋',
   category: 'common',
   quizList: [
     {
       id: '1',
-      quiz: '다음 중 대한민국의 수도는?',
+      quiz: '호눅스님과 jk 님은 동갑인가요?',
       limitTime: 30,
       choiceList: [
         {
-          content: '서울',
+          content: 'O',
           order: 1,
           isAnswer: true
         },
         {
-          content: '부산',
+          content: 'X',
           order: 2,
           isAnswer: false
         },
         {
-          content: '인천',
+          content: '모르겠다.',
           order: 3,
           isAnswer: false
         },
         {
-          content: '대구',
+          content: '크롱',
           order: 4,
           isAnswer: false
         }
@@ -51,7 +51,7 @@ export const mockQuizData = {
           isAnswer: false
         },
         {
-          content: '4',
+          content: '킹받쥬?',
           order: 4,
           isAnswer: false
         }
