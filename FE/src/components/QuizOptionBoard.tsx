@@ -33,8 +33,8 @@ export const QuizOptionBoard = () => {
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const { pageX, pageY } = e;
     const { width, height, top, left } = e.currentTarget.getBoundingClientRect();
-    const x = (pageX - left) / width;
-    const y = (pageY - top) / height;
+    const x = (pageX - left - window.scrollX) / width;
+    const y = (pageY - top - window.scrollY) / height;
     if (x > 1 || y > 1) return;
     socketService.emit('updatePosition', { gameId, newPosition: [y, x] });
     const option = Math.round(x) + Math.floor(y * Math.ceil(choiceList.length / 2)) * 2;
