@@ -5,6 +5,7 @@ import { GameActivityInterceptor } from './game/interceptor/gameActivity.interce
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
 
   // 전역 인터셉터로 등록
   app.useGlobalInterceptors(app.get(GameActivityInterceptor));
