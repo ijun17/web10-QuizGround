@@ -10,9 +10,14 @@ import { QuizSetCreateService } from './service/quiz-set-create.service';
 import { QuizSetDeleteService } from './service/quiz-set-delete.service';
 import { QuizSetReadService } from './service/quiz-set-read.service';
 import { QuizSetUpdateService } from './service/quiz-set-update.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel]), UserModule],
+  imports: [
+    TypeOrmModule.forFeature([QuizSetModel, QuizModel, QuizChoiceModel]),
+    UserModule,
+    AuthModule
+  ],
   controllers: [QuizSetController],
   providers: [
     QuizSetService,

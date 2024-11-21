@@ -14,9 +14,11 @@ import { TimerSubscriber } from './redis/subscribers/timer.subscriber';
 import { RoomSubscriber } from './redis/subscribers/room.subscriber';
 import { PlayerSubscriber } from './redis/subscribers/player.subscriber';
 import { RoomCleanupSubscriber } from './redis/subscribers/room.cleanup.subscriber';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [RedisModule, QuizSetModule],
+  imports: [RedisModule, QuizSetModule, JwtModule, AuthModule],
   providers: [
     GameGateway,
     GameService,

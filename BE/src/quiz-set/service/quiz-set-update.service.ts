@@ -1,28 +1,22 @@
-import {
-  Injectable,
-  NotFoundException
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { QuizSetModel } from '../entities/quiz-set.entity';
 import { UpdateQuizSetDto } from '../dto/update-quiz.dto';
 import { QuizModel } from '../entities/quiz.entity';
 import { QuizChoiceModel } from '../entities/quiz-choice.entity';
+import { UserModel } from '../../user/entities/user.entity';
 
 @Injectable()
 export class QuizSetUpdateService {
-  constructor(
-    private dataSource: DataSource,
-  ) {
-  }
+  constructor(private dataSource: DataSource) {}
 
-  async update(id: number, updateDto: UpdateQuizSetDto) {
+  async update(id: number, updateDto: UpdateQuizSetDto, user: UserModel) {
     // 트랜잭션 시작
     return this.dataSource.transaction(async (manager) => {
       // 퀴즈셋 조회
       const quizSet = await manager.findOne(QuizSetModel, {
         where: { id },
         relations: {
-          user: true,
           quizList: {
             choiceList: true
           }
@@ -31,6 +25,13 @@ export class QuizSetUpdateService {
 
       if (!quizSet) {
         throw new NotFoundException(`ID ${id}인 퀴즈셋을 찾을 수 없습니다.`);
+      }
+
+      const quizSetUser = await quizSet.user;
+      if (quizSetUser.id !== user.id) {
+        throw new ForbiddenException(
+          `퀴즈셋을 생성한 유저가 아닙니다. ${quizSetUser.id} !== ${user.id}`
+        );
       }
 
       // 1. 기본 필드 업데이트 (변경감지 사용)

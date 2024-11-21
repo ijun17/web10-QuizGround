@@ -19,7 +19,7 @@ export class QuizSetModel extends BaseModel {
     lazy: true
   })
   @JoinColumn({ name: 'user_id' })
-  user: UserModel;
+  user: Promise<UserModel>;
 
   @OneToMany(() => QuizModel, (quiz) => quiz.quizSet)
   quizList: QuizModel[];
