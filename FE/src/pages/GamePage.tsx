@@ -5,13 +5,16 @@ import { Modal } from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { GameHeader } from '@/components/GameHeader';
 import { HeaderBar } from '@/components/HeaderBar';
-import { socketService } from '@/api/socket';
+import { socketService, useSocketException } from '@/api/socket';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/store/useRoomStore';
 import { QuizHeader } from '@/components/QuizHeader';
 import GameState from '@/constants/gameState';
 import { usePlayerStore } from '@/store/usePlayerStore';
 import { ResultModal } from '@/components/ResultModal';
+import { ErrorModal } from '@/components/ErrorModal';
+import { useNavigate } from 'react-router-dom';
+import { getRandomNickname } from '@/utils/nickname';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -25,6 +28,16 @@ export const GamePage = () => {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // 페이지에서 나갈때
+  // 스트릭트 모드에서 마운트 > 언마운트 > 마운트됨
+  // useEffect(() => {
+  //   return () => {
+  //     console.log('게임방에서 나갔습니다');
+  //     socketService.disconnect();
+  //   };
+  // }, []);
 
   useEffect(() => {
     updateRoom({ gameId });
@@ -39,6 +52,11 @@ export const GamePage = () => {
   useEffect(() => {
     if (gameState === GameState.END) setIsResultOpen(true);
   }, [gameState]);
+
+  useSocketException('joinRoom', (data) => {
+    setErrorModalTitle(data);
+    setIsErrorModalOpen(true);
+  });
 
   const handleNameSubmit = (name: string) => {
     setCurrentPlayerName(name);
@@ -79,8 +97,16 @@ export const GamePage = () => {
             isOpen={isModalOpen && !currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
             title="플레이어 이름 설정"
             placeholder="이름을 입력하세요"
+            initialValue={getRandomNickname()}
             onClose={() => setIsModalOpen(false)}
             onSubmit={handleNameSubmit}
+          />
+
+          <ErrorModal
+            isOpen={isErrorModalOpen}
+            title={errorModalTitle}
+            buttonText="메인 페이지로 이동"
+            onClose={() => navigate('/')}
           />
         </div>
       </div>

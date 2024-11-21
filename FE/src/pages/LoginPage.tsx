@@ -10,7 +10,9 @@ export const LoginPage = () => {
   const handleLogin = async (email: string, password: string) => {
     const response = await login(email, password);
     if (response) {
-      localStorage.setItem('accessToken', response.acess_token);
+      console.log(response);
+      console.log(response.access_token);
+      localStorage.setItem('accessToken', response.access_token);
       // 로그인 성공 시 메인 페이지로 이동
       navigate('/');
     } else {

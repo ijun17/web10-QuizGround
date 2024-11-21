@@ -16,15 +16,15 @@ export type QuizSetListResponse = {
 };
 
 export type QuizChoiceInput = {
-  content: string;
-  order: number;
+  choiceContent: string;
+  choiceOrder: number;
   isAnswer: boolean;
 };
 
 export type QuizInput = {
   quiz: string;
   limitTime: number;
-  choices: QuizChoiceInput[];
+  choiceList: QuizChoiceInput[];
 };
 
 export type CreateQuizSetPayload = {
@@ -38,8 +38,8 @@ export type CreateQuizSetResponse = {
 };
 
 export type QuizChoice = {
-  content: string;
-  order: number;
+  choiceContent: string;
+  choiceOrder: number;
   isAnswer: boolean;
 };
 

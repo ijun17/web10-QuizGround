@@ -25,16 +25,25 @@ export const GameLobbyPage = () => {
   const loadRooms = useCallback(
     async (cursor: string | null, take: number = 10) => {
       if (isLoading) return;
-
+      if (paging && !paging.hasNextPage) return;
       setIsLoading(true);
-      const response = await getRoomList(cursor ?? '', take);
 
-      if (response) {
-        setRooms((prevRooms) => [...prevRooms, ...response.roomList]);
-        setPaging(response.paging);
+      try {
+        const response = await getRoomList(cursor ?? '', take);
+        if (response) {
+          setRooms((prevRooms) => {
+            const newRooms = response.roomList.filter(
+              (newRoom) => !prevRooms.some((room) => room.gameId === newRoom.gameId)
+            );
+            return [...prevRooms, ...newRooms];
+          });
+          setPaging(response.paging);
+        }
+      } catch (error) {
+        console.error('Failed to load rooms:', error);
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     },
     [isLoading]
   );
@@ -44,17 +53,16 @@ export const GameLobbyPage = () => {
   }, [loadRooms]);
 
   const handleScroll = useCallback(() => {
-    if (!paging?.hasNextPage) return;
+    if (isLoading || !paging?.hasNextPage) return;
 
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
     if (scrollHeight - scrollTop <= clientHeight + 200) {
-      loadRooms(paging?.nextCursor); // 스크롤 시 추가 데이터 요청
+      loadRooms(paging?.nextCursor);
     }
-  }, [paging, loadRooms]);
+  }, [paging, loadRooms, isLoading]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };

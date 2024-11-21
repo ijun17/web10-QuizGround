@@ -26,6 +26,7 @@ type PlayerStore = {
   setIsHost: (isHost: boolean) => void;
   setPlayers: (players: Player[]) => void;
   resetScore: () => void;
+  reset: () => void;
 };
 
 export const usePlayerStore = create<PlayerStore>((set) => ({
@@ -89,7 +90,8 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     set((state) => ({
       players: state.players.map((p) => ({ ...p, playerScore: 0, isAlive: true, isAnswer: true }))
     }));
-  }
+  },
+  reset: () => set({ players: [], isHost: false, currentPlayerId: '', currentPlayerName: '' })
 }));
 
 socketService.on('joinRoom', (data) => {
@@ -152,4 +154,8 @@ socketService.on('endGame', (data) => {
 
 socketService.on('exitRoom', (data) => {
   usePlayerStore.getState().removePlayer(data.playerId);
+});
+
+socketService.on('disconnect', () => {
+  usePlayerStore.getState().reset();
 });

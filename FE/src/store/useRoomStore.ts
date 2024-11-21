@@ -19,6 +19,7 @@ type RoomStore = {
   gameId: string;
   updateRoom: (roomOption: RoomOption) => void;
   setGameState: (state: (typeof GameState)[keyof typeof GameState]) => void;
+  reset: () => void;
 };
 
 export const useRoomStore = create<RoomStore>((set) => ({
@@ -33,7 +34,16 @@ export const useRoomStore = create<RoomStore>((set) => ({
   },
   setGameState: (gameState) => {
     set(() => ({ gameState }));
-  }
+  },
+  reset: () =>
+    set({
+      title: '',
+      gameMode: 'SURVIVAL',
+      maxPlayerCount: 50,
+      isPublic: true,
+      gameId: '',
+      gameState: GameState.WAIT
+    })
 }));
 
 socketService.on('createRoom', (data) => {
@@ -50,4 +60,8 @@ socketService.on('startGame', () => {
 
 socketService.on('endGame', () => {
   useRoomStore.getState().setGameState(GameState.END);
+});
+
+socketService.on('disconnect', () => {
+  useRoomStore.getState().reset();
 });

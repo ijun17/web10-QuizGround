@@ -52,6 +52,7 @@ type UpdateRoomOptionResponse = {
 
 // 게임방 퀴즈셋 수정 타입
 type UpdateRoomQuizsetRequest = {
+  gameId: string;
   quizSetId: number;
   quizCount: number;
 };
@@ -184,4 +185,7 @@ export type SocketDataMap = {
       message: string;
     };
   };
+
+  connect: { request: null; response: null };
+  disconnect: { request: null; response: null };
 };

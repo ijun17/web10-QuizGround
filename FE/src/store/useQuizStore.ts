@@ -1,3 +1,4 @@
+import { getQuizSetDetail } from '@/api/rest/quizApi';
 import { socketService } from '@/api/socket';
 import QuizState from '@/constants/quizState';
 import { create } from 'zustand';
@@ -31,6 +32,8 @@ type CurrentQuiz = {
 };
 
 type QuizStore = {
+  quizSetTitle: string;
+  quizSetCategory: string;
   quizSets: QuizSet[];
   currentQuiz: CurrentQuiz | null;
   currentAnswer: number;
@@ -41,9 +44,13 @@ type QuizStore = {
   setCurrentAnswer: (answer: number) => void;
   addQuizSet: (quizSet: QuizSet) => void;
   resetQuiz: () => void;
+  setQuizSet: (title: string, category: string) => void;
+  reset: () => void;
 };
 
 export const useQuizeStore = create<QuizStore>((set) => ({
+  quizSetTitle: '',
+  quizSetCategory: '',
   quizSets: [],
   currentQuiz: null,
   currentAnswer: 0,
@@ -60,7 +67,18 @@ export const useQuizeStore = create<QuizStore>((set) => ({
   setCurrentQuiz: (quiz) => set({ currentQuiz: quiz }),
   setCurrentAnswer: (answer) => set({ currentAnswer: answer }),
   setQuizState: (state) => set({ quizState: state }),
-  resetQuiz: () => set({ quizSets: [], currentQuiz: null })
+  resetQuiz: () => set({ quizSets: [], currentQuiz: null }),
+  setQuizSet: (title: string, category: string) =>
+    set({ quizSetTitle: title, quizSetCategory: category }),
+  reset: () =>
+    set({
+      quizSetTitle: '',
+      quizSetCategory: '',
+      quizSets: [],
+      currentQuiz: null,
+      currentAnswer: 0,
+      quizState: QuizState.PROGRESS
+    })
 }));
 
 // 진행 중인 퀴즈 설정
@@ -75,4 +93,14 @@ socketService.on('endQuizTime', (data) => {
 
 socketService.on('endGame', () => {
   useQuizeStore.getState().resetQuiz();
+});
+
+// TODO update 퀴즈 셋 시 퀴즈셋 받아오기
+socketService.on('updateRoomQuizset', async (data) => {
+  const res = await getQuizSetDetail(String(data.quizSetId));
+  useQuizeStore.getState().setQuizSet(String(res?.title), String(res?.category));
+});
+
+socketService.on('disconnect', () => {
+  useQuizeStore.getState().reset();
 });

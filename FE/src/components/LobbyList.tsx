@@ -10,10 +10,14 @@ type Room = {
 type LobbyListProps = {
   rooms: Room[];
 };
+import { useNavigate } from 'react-router-dom';
 
 export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
+  const navigate = useNavigate();
+
   const handleJoinRoom = (gameId: string) => {
     console.log(gameId, 'joinRoom click');
+    navigate(`/game/${gameId}`);
   };
   return (
     <div className="flex flex-col items-center p-4">
