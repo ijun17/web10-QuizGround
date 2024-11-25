@@ -50,6 +50,9 @@ export class PlayerSubscriber extends RedisSubscriber {
       case 'Disconnect':
         await this.handlePlayerDisconnect(playerId, playerData, server);
         break;
+      case 'Kicked':
+        await this.handlePlayerKicked(playerId, playerData, server);
+        break;
     }
   }
 
@@ -79,5 +82,14 @@ export class PlayerSubscriber extends RedisSubscriber {
       playerId
     });
     this.logger.verbose(`Player disconnected: ${playerId} from game: ${playerData.gameId}`);
+  }
+
+  private async handlePlayerKicked(playerId: string, playerData: any, server: Server) {
+    server.to(playerData.gameId).emit(SocketEvents.KICK_ROOM, {
+      playerId
+    });
+    this.logger.verbose(`Player kicked: ${playerId} from game: ${playerData.gameId}`);
+    //클라에서 exitRoom도 주기를 원함
+    await this.handlePlayerDisconnect(playerId, playerData, server);
   }
 }
