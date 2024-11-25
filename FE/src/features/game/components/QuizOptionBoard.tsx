@@ -1,10 +1,10 @@
-import { usePlayerStore } from '@/store/usePlayerStore';
+import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
+import { useRoomStore } from '@/features/game/data/store/useRoomStore';
+import { useQuizStore } from '@/features/game/data/store/useQuizStore';
 import { Player } from './Player';
 import { socketService } from '@/api/socket';
-import { useRoomStore } from '@/store/useRoomStore';
 import { useEffect, useRef, useState } from 'react';
-import { useQuizeStore } from '@/store/useQuizStore';
-import { getServerTimestamp } from '@/utils/serverTime';
+import { getServerTimestamp } from '@/features/game/utils/serverTime';
 
 const optionColors = [
   '#FF9AA2', // pastel red
@@ -23,10 +23,10 @@ export const QuizOptionBoard = () => {
   const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
   const gameId = useRoomStore((state) => state.gameId);
   const players = usePlayerStore((state) => state.players);
-  const currentQuiz = useQuizeStore((state) => state.currentQuiz);
+  const currentQuiz = useQuizStore((state) => state.currentQuiz);
   const choiceList = currentQuiz?.choiceList || [];
-  const quizState = useQuizeStore((state) => state.quizState);
-  const quizAnswer = useQuizeStore((state) => state.currentAnswer);
+  const quizState = useQuizStore((state) => state.quizState);
+  const quizAnswer = useQuizStore((state) => state.currentAnswer);
   const [selectedOption, setSelectedOption] = useState(currentQuiz?.choiceList.length);
   const [choiceListVisible, setChoiceListVisible] = useState(false);
 

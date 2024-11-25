@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
-import { QuizPreview } from './QuizPreview';
+import { QuizPreview } from '../../../components/QuizPreview';
 import { socketService, useSocketEvent } from '@/api/socket';
 import QuizSetSearchList from './QuizSetSearchList';
-import { useRoomStore } from '@/store/useRoomStore';
+import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 
 // type Quiz = {
 //   id: string;

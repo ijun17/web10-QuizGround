@@ -1,5 +1,3 @@
-import { getQuizSetDetail } from '@/api/rest/quizApi';
-import { socketService } from '@/api/socket';
 import QuizState from '@/constants/quizState';
 import { create } from 'zustand';
 
@@ -48,7 +46,7 @@ type QuizStore = {
   reset: () => void;
 };
 
-export const useQuizeStore = create<QuizStore>((set) => ({
+export const useQuizStore = create<QuizStore>((set) => ({
   quizSetTitle: '',
   quizSetCategory: '',
   quizSets: [],
@@ -80,27 +78,3 @@ export const useQuizeStore = create<QuizStore>((set) => ({
       quizState: QuizState.PROGRESS
     })
 }));
-
-// 진행 중인 퀴즈 설정
-socketService.on('startQuizTime', (data) => {
-  useQuizeStore.getState().setQuizState(QuizState.START);
-  useQuizeStore.getState().setCurrentQuiz(data);
-});
-socketService.on('endQuizTime', (data) => {
-  useQuizeStore.getState().setQuizState(QuizState.END);
-  useQuizeStore.getState().setCurrentAnswer(Number(data.answer));
-});
-
-socketService.on('endGame', () => {
-  useQuizeStore.getState().resetQuiz();
-});
-
-// TODO update 퀴즈 셋 시 퀴즈셋 받아오기
-socketService.on('updateRoomQuizset', async (data) => {
-  const res = await getQuizSetDetail(String(data.quizSetId));
-  useQuizeStore.getState().setQuizSet(String(res?.title), String(res?.category));
-});
-
-socketService.on('disconnect', () => {
-  useQuizeStore.getState().reset();
-});

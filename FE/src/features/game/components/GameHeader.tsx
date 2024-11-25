@@ -1,20 +1,20 @@
-import { ClipboardCopy } from './ClipboardCopy';
+import { ClipboardCopy } from '../../../components/ClipboardCopy';
 import Card from '@mui/material/Card';
-import { QuizPreview } from './QuizPreview';
+import { QuizPreview } from '../../../components/QuizPreview';
 import { useParams } from 'react-router-dom';
-import { useRoomStore } from '@/store/useRoomStore';
+import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import { useState } from 'react';
 import { QuizSettingModal } from './QuizSettingModal';
 import { socketService } from '@/api/socket';
-import { usePlayerStore } from '@/store/usePlayerStore';
-import { useQuizeStore } from '@/store/useQuizStore';
+import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
+import { useQuizStore } from '@/features/game/data/store/useQuizStore';
 
 export const GameHeader = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const isHost = usePlayerStore((state) => state.isHost);
   const gameTitle = useRoomStore((state) => state.title);
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
-  const { quizSetTitle, quizSetCategory } = useQuizeStore();
+  const { quizSetTitle, quizSetCategory } = useQuizStore();
   const pinNum = String(gameId);
   const linkURL = window.location.hostname + `/game/${gameId}`;
 

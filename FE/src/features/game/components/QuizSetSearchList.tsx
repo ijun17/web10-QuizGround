@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { QuizPreview } from './QuizPreview';
+import { QuizPreview } from '@/components/QuizPreview';
 import { getQuizSetList } from '@/api/rest/quizApi';
 
 // type Quiz = {

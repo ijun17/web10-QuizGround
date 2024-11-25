@@ -1,6 +1,6 @@
 import GameState from '@/constants/gameState';
-import { usePlayerStore } from '@/store/usePlayerStore';
-import { useRoomStore } from '@/store/useRoomStore';
+import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
+import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import { motion } from 'framer-motion';
 
 type ParticipantDisplayProps = {
