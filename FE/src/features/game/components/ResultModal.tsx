@@ -16,7 +16,7 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
 }) => {
   const gameMode = useRoomStore((state) => state.gameMode);
   const players = usePlayerStore((state) => state.players);
-  const sortedPlayers = [...players].sort((a, b) => b.playerScore - a.playerScore);
+  const sortedPlayers = [...players].sort(([, a], [, b]) => b.playerScore - a.playerScore);
 
   if (!isOpen) return null;
 
@@ -34,7 +34,7 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
           <h2 className="text-2xl font-bold text-gray-800 text-center">게임이 종료되었습니다.</h2>
 
           <div className="overflow-y-auto max-h-[300px] w-full bg-white/80 rounded-lg p-4 border border-gray-200 shadow-md">
-            {sortedPlayers.map((player, index) => (
+            {[...sortedPlayers].map(([, player], index) => (
               <div
                 key={index}
                 className={`flex justify-between px-4 py-2 border-b border-gray-100 ${currentPlayerName === player.playerName ? `bg-cyan-100` : null} last:border-none`}

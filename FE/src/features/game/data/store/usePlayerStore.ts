@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 type Player = {
-  playerId: string; // socketId
+  playerId: string;
   playerName: string;
   playerPosition: [number, number]; // [x, y] 좌표
   playerScore: number;
@@ -13,11 +13,9 @@ type PlayerStore = {
   isHost: boolean;
   currentPlayerId: string;
   currentPlayerName: string;
-  players: Player[];
+  players: Map<string, Player>;
   addPlayers: (players: Player[]) => void;
   updatePlayerPosition: (playerId: string, newPosition: [number, number]) => void; // 위치 업데이트
-  updatePlayerScore: (playerId: string, newScore: number) => void;
-  updatePlayerAnswer: (playerId: string, newIsAnswer: boolean) => void;
   removePlayer: (playerId: string) => void;
   setCurrentPlayerId: (currentPlayerId: string) => void;
   setCurrentPlayerName: (currentPlayerName: string) => void;
@@ -27,49 +25,41 @@ type PlayerStore = {
   reset: () => void;
 };
 
-export const usePlayerStore = create<PlayerStore>((set) => ({
+const initialPlayerState = {
   isHost: false,
   currentPlayerId: '',
   currentPlayerName: '',
-  players: [],
+  players: new Map()
+} as const;
+
+export const usePlayerStore = create<PlayerStore>((set) => ({
+  ...initialPlayerState,
   addPlayers: (players) => {
-    set((state) => ({
-      players: [...state.players, ...players]
-    }));
-  },
+    set((state) => {
+      const newPlayers = new Map(state.players);
+      players.map((p) => newPlayers.set(p.playerId, p));
 
+      return { players: newPlayers };
+    });
+  },
   updatePlayerPosition: (playerId, newPosition) => {
-    set((state) => ({
-      players: state.players.map((player) =>
-        player.playerId === playerId ? { ...player, playerPosition: newPosition } : player
-      )
-    }));
+    set((state) => {
+      const targetPlayer = state.players.get(playerId);
+      if (targetPlayer)
+        state.players.set(playerId, { ...targetPlayer, playerPosition: newPosition });
+      return { players: state.players };
+    });
   },
-
-  updatePlayerScore: (playerId, newScore) => {
-    set((state) => ({
-      players: state.players.map((player) =>
-        player.playerId === playerId ? { ...player, playerScore: newScore } : player
-      )
-    }));
-  },
-
-  updatePlayerAnswer: (playerId, newIsAnswer) => {
-    set((state) => ({
-      players: state.players.map((player) =>
-        player.playerId === playerId ? { ...player, isAnswer: newIsAnswer } : player
-      )
-    }));
-  },
-
   setPlayers: (players: Player[]) => {
-    set(() => ({ players }));
+    const newPlayers = new Map(players.map((p) => [p.playerId, p]));
+    set(() => ({ players: newPlayers }));
   },
 
   removePlayer: (playerId) => {
-    set((state) => ({
-      players: state.players.filter((player) => player.playerId !== playerId)
-    }));
+    set((state) => {
+      state.players.delete(playerId);
+      return { players: new Map(state.players) };
+    });
   },
 
   setCurrentPlayerId: (currentPlayerId) => {
@@ -85,9 +75,13 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   },
 
   resetScore: () => {
-    set((state) => ({
-      players: state.players.map((p) => ({ ...p, playerScore: 0, isAlive: true, isAnswer: true }))
-    }));
+    set((state) => {
+      state.players.forEach((value, key) => {
+        state.players.set(key, { ...value, playerScore: 0, isAlive: true, isAnswer: true });
+      });
+      return { players: new Map(state.players) };
+    });
   },
-  reset: () => set({ players: [], isHost: false, currentPlayerId: '', currentPlayerName: '' })
+
+  reset: () => set(initialPlayerState)
 }));

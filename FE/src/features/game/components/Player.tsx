@@ -1,36 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import AnswerEffect from '../../../assets/lottie/answer_effect.json';
-import FailEffect from '../../../assets/lottie/fail_effect2.json';
-import Character from '../../../assets/lottie/character3.json';
+import AnswerEffect from '@/assets/lottie/answer_effect.json';
+import FailEffect from '@/assets/lottie/fail_effect2.json';
+import Character from '@/assets/lottie/character3.json';
 import QuizState from '@/constants/quizState';
 import { useQuizStore } from '@/features/game/data/store/useQuizStore';
 
 import lottie from 'lottie-web';
+import { usePlayerStore } from '../data/store/usePlayerStore';
+import { useRoomStore } from '../data/store/useRoomStore';
 
 type Props = {
-  name: string;
-  position: [number, number];
+  playerId: string;
+  boardSize: [number, number];
   isCurrent: boolean;
-  isAnswer: boolean;
-  isAlive: boolean;
 };
 
-export const Player = ({ name, position, isCurrent, isAnswer, isAlive }: Props) => {
+export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
+  const gameState = useRoomStore((state) => state.gameState);
   const [showEffect, setShowEffect] = useState(false);
   const [effectData, setEffectData] = useState(AnswerEffect);
   const quizState = useQuizStore((state) => state.quizState);
-  const [xPos, yPos] = position;
+  const player = usePlayerStore((state) => state.players.get(playerId));
 
   // Lottie 요소를 렌더링할 DOM 요소에 대한 참조
   const effectRef = useRef(null);
   const characterRef = useRef(null);
 
   useEffect(() => {
-    if (quizState === QuizState.END) {
-      setEffectData(isAnswer ? AnswerEffect : FailEffect);
+    if (quizState === QuizState.END && player && gameState === 'PROGRESS') {
+      setEffectData(player.isAnswer ? AnswerEffect : FailEffect);
       setShowEffect(true);
     }
-  }, [quizState, isAnswer]);
+  }, [quizState, player, gameState]);
 
   // 효과가 끝난 후 5초 뒤에 효과 숨기기
   useEffect(() => {
@@ -71,13 +72,20 @@ export const Player = ({ name, position, isCurrent, isAnswer, isAlive }: Props) 
     }
   }, []);
 
+  if (!player) return null;
+
+  const [xPos, yPos] = [
+    player.playerPosition[1] * boardSize[0],
+    player.playerPosition[0] * boardSize[1]
+  ];
+
   return (
     <div
       className="absolute transition-all duration-500 ease-in-out"
       style={{
-        transform: `translate(${xPos}px, ${yPos}px)`,
+        transform: `translate(calc(${xPos}px - 50%), calc(${yPos}px - 50%))`,
         zIndex: isCurrent ? 3 : 1,
-        opacity: isAlive ? '1' : '0.3'
+        opacity: player.isAlive ? '1' : '0.3'
       }}
       onClick={(e) => e.preventDefault()}
     >
@@ -98,7 +106,7 @@ export const Player = ({ name, position, isCurrent, isAnswer, isAlive }: Props) 
           />
         )}
         {/* <div ref={characterRef} style={{ width: '40px', height: '40px' }} /> */}
-        <div>{quizState === 'end' && !isAnswer ? '😭' : '😃'}</div>
+        <div className="text-xl">{quizState === 'end' && !player.isAnswer ? '😭' : '😃'}</div>
         <div
           className="mt-2 text-[0.625rem]"
           style={{
@@ -106,7 +114,7 @@ export const Player = ({ name, position, isCurrent, isAnswer, isAlive }: Props) 
             zIndex: 1
           }}
         >
-          {name}
+          {player.playerName}
         </div>
       </div>
     </div>
