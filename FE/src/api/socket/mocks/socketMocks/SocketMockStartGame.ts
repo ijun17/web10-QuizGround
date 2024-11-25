@@ -3,15 +3,7 @@ import { SocketMock } from '../SocketMock';
 export default class SocketMockStartGame extends SocketMock {
   constructor() {
     super();
-    this.addPlayers(
-      Array(10)
-        .fill(null)
-        .map((_, i) => ({
-          playerId: String(i + 1),
-          playerName: 'player' + i,
-          playerPosition: [i / 10, i / 10]
-        }))
-    );
+    this.createDummyPlayer(10);
     this.test();
   }
 
