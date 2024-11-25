@@ -52,12 +52,43 @@ export class GameRoomService {
     this.gameValidator.validateRoomExists(SocketEvents.JOIN_ROOM, room);
 
     const currentPlayers = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+    if (room.status !== 'waiting' || room.isWaiting != '1') {
+      // 게임 진행 중
+      // 재접속 여부 체크 후 처리
+      if (!(await this.redis.exists(REDIS_KEY.PLAYER(clientId)))) {
+        this.gameValidator.validateRoomProgress(
+          SocketEvents.JOIN_ROOM,
+          room.status,
+          room.isWaiting
+        );
+      }
+      const playerData = await this.redis.hgetall(REDIS_KEY.PLAYER(clientId));
+      if (playerData.gameId !== gameId) {
+        this.gameValidator.validateRoomProgress(
+          SocketEvents.JOIN_ROOM,
+          room.status,
+          room.isWaiting
+        );
+      }
+      // 재접속 처리
+      const players = [];
+      for (const playerId of currentPlayers) {
+        const player = await this.redis.hgetall(REDIS_KEY.PLAYER(playerId));
+        players.push({
+          playerId,
+          playerName: player.playerName,
+          playerPosition: [parseFloat(player.positionX), parseFloat(player.positionY)]
+        });
+      }
+      client.emit(SocketEvents.JOIN_ROOM, { players });
+      return;
+    }
+
     this.gameValidator.validateRoomCapacity(
       SocketEvents.JOIN_ROOM,
       currentPlayers.length,
       parseInt(room.maxPlayerCount)
     );
-    this.gameValidator.validateRoomProgress(SocketEvents.JOIN_ROOM, room.status, room.isWaiting);
 
     client.join(gameId); //validation 후에 조인해야함
 
