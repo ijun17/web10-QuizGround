@@ -48,11 +48,11 @@ export class ScoringSubscriber extends RedisSubscriber {
     });
 
     await this.updateQuizState(gameId, quiz.quizNum);
-    this.logger.verbose(`endQuizTime: ${gameId} - ${quiz.quizNum}`);
+    this.logger.verbose(`[endQuizTime] RoomId: ${gameId} | quizNum: ${quiz.quizNum}`);
   }
 
   private async updateQuizState(gameId: string, quizNum: number) {
-    await this.redis.set(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId), `${quizNum}:end`);
+    await this.redis.set(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId), `${quizNum}:end`); // timer.subscriber.ts 구독 핸들러 실행
     await this.redis.set(REDIS_KEY.ROOM_TIMER(gameId), 'timer', 'EX', '10', 'NX');
   }
 }
