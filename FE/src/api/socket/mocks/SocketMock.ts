@@ -232,7 +232,7 @@ export class SocketMock {
         .fill(null)
         .map((_, i) => ({
           playerId: String(playerCount + i + 1),
-          playerName: 'player' + playerCount + i,
+          playerName: 'player' + (playerCount + i),
           playerPosition: [this.random(), this.random()]
         }))
     );
