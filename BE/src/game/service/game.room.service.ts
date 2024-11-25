@@ -5,7 +5,6 @@ import { GameValidator } from '../validations/game.validator';
 import { CreateGameDto } from '../dto/create-game.dto';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import { generateUniquePin } from '../../common/utils/utils';
-import { JoinRoomDto } from '../dto/join-room.dto';
 import SocketEvents from '../../common/constants/socket-events';
 import { UpdateRoomOptionDto } from '../dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
@@ -39,7 +38,6 @@ export class GameRoomService {
       quizSetId: '-1', // 미설정시 기본퀴즈를 진행, -1은 기본 퀴즈셋
       quizCount: '2',
       quizSetTitle: '기본 퀴즈셋'
-      //todo : 기본 퀴즈셋 title 설정
     });
 
     await this.redis.sadd(REDIS_KEY.ACTIVE_ROOMS, roomId);
@@ -48,12 +46,12 @@ export class GameRoomService {
     return roomId;
   }
 
-  async joinRoom(client: Socket, dto: JoinRoomDto, clientId: string) {
-    const roomKey = REDIS_KEY.ROOM(dto.gameId);
+  async joinRoom(client: Socket, gameId: string, clientId: string) {
+    const roomKey = REDIS_KEY.ROOM(gameId);
     const room = await this.redis.hgetall(roomKey);
     this.gameValidator.validateRoomExists(SocketEvents.JOIN_ROOM, room);
 
-    const currentPlayers = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(dto.gameId));
+    const currentPlayers = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
     this.gameValidator.validateRoomCapacity(
       SocketEvents.JOIN_ROOM,
       currentPlayers.length,
@@ -61,7 +59,7 @@ export class GameRoomService {
     );
     this.gameValidator.validateRoomProgress(SocketEvents.JOIN_ROOM, room.status, room.isWaiting);
 
-    client.join(dto.gameId); //validation 후에 조인해야함
+    client.join(gameId); //validation 후에 조인해야함
 
     const playerKey = REDIS_KEY.PLAYER(clientId);
     const positionX = Math.random();
@@ -69,15 +67,15 @@ export class GameRoomService {
 
     await this.redis.set(`${playerKey}:Changes`, 'Join');
     await this.redis.hmset(playerKey, {
-      playerName: dto.playerName,
+      playerName: '닉네임 설정 이전',
       positionX: positionX.toString(),
       positionY: positionY.toString(),
       disconnected: '0',
-      gameId: dto.gameId
+      gameId: gameId
     });
 
-    await this.redis.zadd(REDIS_KEY.ROOM_LEADERBOARD(dto.gameId), 0, clientId);
-    await this.redis.sadd(REDIS_KEY.ROOM_PLAYERS(dto.gameId), clientId);
+    await this.redis.zadd(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, clientId);
+    await this.redis.sadd(REDIS_KEY.ROOM_PLAYERS(gameId), clientId);
 
     const players = [];
     for (const playerId of currentPlayers) {
@@ -89,7 +87,7 @@ export class GameRoomService {
       });
     }
 
-    const roomData = await this.redis.hgetall(REDIS_KEY.ROOM(dto.gameId));
+    const roomData = await this.redis.hgetall(REDIS_KEY.ROOM(gameId));
     client.emit(SocketEvents.UPDATE_ROOM_OPTION, {
       title: roomData.title,
       gameMode: roomData.gameMode,
@@ -97,9 +95,8 @@ export class GameRoomService {
       isPublic: roomData.isPublic === '1'
     });
 
-    this.logger.verbose(`게임 방 입장 완료: ${dto.gameId} - ${clientId} (${dto.playerName})`);
-
-    return players;
+    this.logger.verbose(`게임 방 입장 완료: ${gameId} - ${clientId}`);
+    client.emit(SocketEvents.JOIN_ROOM, { players });
   }
 
   async updateRoomOption(updateRoomOptionDto: UpdateRoomOptionDto, clientId: string) {

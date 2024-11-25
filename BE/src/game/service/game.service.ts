@@ -6,10 +6,12 @@ import { UpdatePositionDto } from '../dto/update-position.dto';
 import { GameValidator } from '../validations/game.validator';
 import SocketEvents from '../../common/constants/socket-events';
 import { StartGameDto } from '../dto/start-game.dto';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
 import { RedisSubscriberService } from '../redis/redis-subscriber.service';
+import { parseHeaderToObject } from '../../common/utils/utils';
+import { GameRoomService } from './game.room.service';
 
 @Injectable()
 export class GameService {
@@ -19,7 +21,8 @@ export class GameService {
     @InjectRedis() private readonly redis: Redis,
     private readonly gameValidator: GameValidator,
     private readonly quizCacheService: QuizCacheService,
-    private readonly redisSubscriberService: RedisSubscriberService
+    private readonly redisSubscriberService: RedisSubscriberService,
+    private readonly gameRoomService: GameRoomService
   ) {}
 
   async updatePosition(updatePosition: UpdatePositionDto, clientId: string) {
@@ -157,5 +160,25 @@ export class GameService {
       await this.redis.del(roomPlayersKey);
       await this.redis.del(roomLeaderboardKey);
     }
+  }
+
+  async connection(client: Socket) {
+    client.data.playerId = client.handshake.headers['playerId'];
+
+    let gameId = client.handshake.headers['gameId'] as string;
+    const createRoomData = parseHeaderToObject(client.handshake.headers['createRoom'] as string);
+    if (createRoomData) {
+      gameId = await this.gameRoomService.createRoom(
+        {
+          title: createRoomData.title as string,
+          gameMode: createRoomData.gameMode as string,
+          maxPlayerCount: createRoomData.maxPlayerCount as number,
+          isPublic: createRoomData.isPublic as boolean
+        },
+        client.data.playerId
+      );
+    }
+
+    await this.gameRoomService.joinRoom(client, gameId, client.data.playerId);
   }
 }

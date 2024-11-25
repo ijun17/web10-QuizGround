@@ -24,3 +24,37 @@ export function generateUniquePin(currentRoomPins) {
 
   return pin;
 }
+
+export function parseHeaderToObject(
+  input: string | undefined
+): Record<string, string | boolean | number> {
+  const obj: Record<string, string | boolean | number> = {};
+  if (input) {
+    input.split(';').forEach((pair) => {
+      const [key, value] = pair.split('=');
+
+      const parsedValue =
+        value === 'true'
+          ? true
+          : value === 'false'
+            ? false
+            : isNaN(Number(value))
+              ? value
+              : Number(value);
+
+      obj[key] = parsedValue;
+    });
+  }
+  return obj;
+}
+
+export function parseCookieToObject(cookieString: string | undefined) {
+  if (!cookieString) {
+    return {};
+  }
+  return cookieString.split(';').reduce((acc: Record<string, string>, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = decodeURIComponent(value);
+    return acc;
+  }, {});
+}
