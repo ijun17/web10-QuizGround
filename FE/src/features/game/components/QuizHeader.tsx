@@ -1,18 +1,18 @@
-import { useQuizeStore } from '@/store/useQuizStore';
+import { useQuizStore } from '@/features/game/data/store/useQuizStore';
 import { useEffect, useState } from 'react';
 import AnswerModal from './AnswerModal';
 import QuizState from '@/constants/quizState';
 import Lottie from 'lottie-react';
-import quizLoading from '../assets/lottie/quiz_loading.json';
-import { getServerTimestamp } from '@/utils/serverTime';
+import quizLoading from '../../../assets/lottie/quiz_loading.json';
+import { getServerTimestamp } from '@/features/game/utils/serverTime';
 
 export const QuizHeader = () => {
-  const currentQuiz = useQuizeStore((state) => state.currentQuiz);
-  const quizState = useQuizeStore((state) => state.quizState);
+  const currentQuiz = useQuizStore((state) => state.currentQuiz);
+  const quizState = useQuizStore((state) => state.quizState);
   const [seconds, setSeconds] = useState(0);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
   const [limitTime, setLimitTime] = useState(0);
-  const answer = useQuizeStore((state) => state.currentAnswer);
+  const answer = useQuizStore((state) => state.currentAnswer);
   useEffect(() => {
     if (currentQuiz) {
       setSeconds((currentQuiz.endTime - getServerTimestamp()) / 1000);

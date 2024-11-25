@@ -1,7 +1,7 @@
 import { socketService } from '@/api/socket';
 import { HeaderBar } from '@/components/HeaderBar';
 import { TextInput } from '@/components/TextInput';
-import { getRandomNickname } from '@/utils/nickname';
+import { getRandomNickname } from '@/features/game/utils/nickname';
 import { useEffect, useState } from 'react';
 
 export const PinPage = () => {

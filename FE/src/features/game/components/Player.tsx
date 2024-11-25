@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import AnswerEffect from '../assets/lottie/answer_effect.json';
-import FailEffect from '../assets/lottie/fail_effect2.json';
-import Character from '../assets/lottie/character3.json';
+import AnswerEffect from '../../../assets/lottie/answer_effect.json';
+import FailEffect from '../../../assets/lottie/fail_effect2.json';
+import Character from '../../../assets/lottie/character3.json';
 import QuizState from '@/constants/quizState';
-import { useQuizeStore } from '@/store/useQuizStore';
+import { useQuizStore } from '@/features/game/data/store/useQuizStore';
 
 import lottie from 'lottie-web';
 
@@ -18,7 +18,7 @@ type Props = {
 export const Player = ({ name, position, isCurrent, isAnswer, isAlive }: Props) => {
   const [showEffect, setShowEffect] = useState(false);
   const [effectData, setEffectData] = useState(AnswerEffect);
-  const quizState = useQuizeStore((state) => state.quizState);
+  const quizState = useQuizStore((state) => state.quizState);
   const [xPos, yPos] = position;
 
   // Lottie 요소를 렌더링할 DOM 요소에 대한 참조

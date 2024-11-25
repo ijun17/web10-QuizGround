@@ -1,4 +1,3 @@
-import { socketService } from '@/api/socket';
 import { create } from 'zustand';
 import GameState from '@/constants/gameState';
 
@@ -45,23 +44,3 @@ export const useRoomStore = create<RoomStore>((set) => ({
       gameState: GameState.WAIT
     })
 }));
-
-socketService.on('createRoom', (data) => {
-  useRoomStore.getState().updateRoom({ gameId: data.gameId });
-});
-
-socketService.on('updateRoomOption', (data) => {
-  useRoomStore.getState().updateRoom(data);
-});
-
-socketService.on('startGame', () => {
-  useRoomStore.getState().setGameState(GameState.PROGRESS);
-});
-
-socketService.on('endGame', () => {
-  useRoomStore.getState().setGameState(GameState.END);
-});
-
-socketService.on('disconnect', () => {
-  useRoomStore.getState().reset();
-});

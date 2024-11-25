@@ -1,4 +1,3 @@
-import { socketService } from '@/api/socket';
 import { create } from 'zustand';
 
 type Message = {
@@ -21,11 +20,3 @@ export const useChatStore = create<ChatStore>((set) => ({
   },
   reset: () => set({ messages: [] })
 }));
-
-socketService.on('chatMessage', (data) => {
-  useChatStore.getState().addMessage(data);
-});
-
-socketService.on('disconnect', () => {
-  useChatStore.getState().reset();
-});

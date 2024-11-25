@@ -1,20 +1,20 @@
-import Chat from '@/components/Chat';
-import ParticipantDisplay from '@/components/ParticipantDisplay';
-import { QuizOptionBoard } from '@/components/QuizOptionBoard';
+import Chat from '@/features/game/components/Chat';
+import ParticipantDisplay from '@/features/game/components/ParticipantDisplay';
+import { QuizOptionBoard } from '@/features/game/components/QuizOptionBoard';
 import { Modal } from '../components/Modal';
 import { useState, useEffect } from 'react';
-import { GameHeader } from '@/components/GameHeader';
+import { GameHeader } from '@/features/game/components/GameHeader';
 import { HeaderBar } from '@/components/HeaderBar';
 import { socketService, useSocketException } from '@/api/socket';
 import { useParams } from 'react-router-dom';
-import { useRoomStore } from '@/store/useRoomStore';
-import { QuizHeader } from '@/components/QuizHeader';
+import { useRoomStore } from '../data/store/useRoomStore';
+import { QuizHeader } from '@/features/game/components/QuizHeader';
 import GameState from '@/constants/gameState';
-import { usePlayerStore } from '@/store/usePlayerStore';
-import { ResultModal } from '@/components/ResultModal';
+import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
+import { ResultModal } from '@/features/game/components/ResultModal';
 import { ErrorModal } from '@/components/ErrorModal';
 import { useNavigate } from 'react-router-dom';
-import { getRandomNickname } from '@/utils/nickname';
+import { getRandomNickname } from '@/features/game/utils/nickname';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();

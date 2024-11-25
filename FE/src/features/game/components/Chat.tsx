@@ -1,7 +1,7 @@
 import { socketService } from '@/api/socket';
-import { useChatStore } from '@/store/useChatStore';
-import { usePlayerStore } from '@/store/usePlayerStore';
-import { useRoomStore } from '@/store/useRoomStore';
+import { useChatStore } from '@/features/game/data/store/useChatStore';
+import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
+import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import { Button } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 

@@ -12,8 +12,8 @@ import { useEffect, useState } from 'react';
 import { socketService, useSocketEvent } from '@/api/socket';
 import RoomConfig from '@/constants/roomConfig';
 import { useNavigate } from 'react-router-dom';
-import { useRoomStore } from '@/store/useRoomStore';
-import { usePlayerStore } from '@/store/usePlayerStore';
+import { useRoomStore } from '@/features/game/data/store/useRoomStore';
+import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { TextInput } from '@/components/TextInput';
 export const GameSetupPage = () => {
   const { updateRoom } = useRoomStore((state) => state);
