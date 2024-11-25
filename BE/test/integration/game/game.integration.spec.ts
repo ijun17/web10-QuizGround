@@ -9,19 +9,20 @@ describe('Game 통합테스트', () => {
   let redisMock;
   let socketHelper: SocketTestHelper;
   let client1, client2, client3;
-  const TEST_PORT = 3001;
+  let port;
 
   beforeAll(async () => {
     const setup = await setupTestingModule();
     app = setup.app;
     redisMock = setup.redisMock;
+    port = setup.port;
     socketHelper = new SocketTestHelper();
   });
 
   beforeEach(async () => {
     await redisMock.flushall();
 
-    [client1, client2, client3] = await socketHelper.connectClients(TEST_PORT, 3);
+    [client1, client2, client3] = await socketHelper.connectClients(port, 3);
   });
 
   afterEach(async () => {

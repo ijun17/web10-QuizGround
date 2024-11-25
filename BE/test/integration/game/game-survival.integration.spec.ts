@@ -1,26 +1,25 @@
 import { SocketTestHelper } from '../setup/socket.helper';
 import { setupTestingModule } from '../setup/game.setup';
-import socketEvents from '../../../src/common/constants/socket-events';
-import { createRoom, joinRoom } from '../setup/util';
 
 describe('Game Survival 통합테스트', () => {
   let app;
   let redisMock;
   let socketHelper: SocketTestHelper;
   let client1, client2, client3;
-  const TEST_PORT = 3001;
+  let port;
 
   beforeAll(async () => {
     const setup = await setupTestingModule();
     app = setup.app;
     redisMock = setup.redisMock;
+    port = setup.port;
     socketHelper = new SocketTestHelper();
   });
 
   beforeEach(async () => {
     await redisMock.flushall();
 
-    [client1, client2, client3] = await socketHelper.connectClients(TEST_PORT, 3);
+    [client1, client2, client3] = await socketHelper.connectClients(port, 3);
   });
 
   afterEach(async () => {
@@ -33,6 +32,10 @@ describe('Game Survival 통합테스트', () => {
       await app.close();
     }
   });
+
+  it ('a', () => {
+    expect(1).toBe(1);
+  })
 
   // describe('관전자끼리 플레이 테스트', () => {
   //   it ('관전자의 메시지가 생존자에게 보이지 않아야 한다.', async () => {

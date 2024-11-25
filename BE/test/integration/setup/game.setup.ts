@@ -2,8 +2,7 @@ import { Test } from '@nestjs/testing';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import RedisMock from 'ioredis-mock';
 import { AppModule } from '../../../src/app.module';
-
-export const TEST_PORT = 3001;
+import { getAvailablePort } from './util';
 
 export async function setupTestingModule() {
   const redisMock = new RedisMock();
@@ -26,7 +25,8 @@ export async function setupTestingModule() {
   const app = moduleRef.createNestApplication();
   app.useWebSocketAdapter(new IoAdapter(app));
   await app.init();
-  await app.listen(TEST_PORT);
+  const port = await getAvailablePort();
+  await app.listen(port);
 
-  return { app, moduleRef, redisMock };
+  return { app, moduleRef, redisMock, port };
 }
