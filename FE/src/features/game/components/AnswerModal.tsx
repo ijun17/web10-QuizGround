@@ -1,6 +1,6 @@
 import Lottie from 'lottie-react';
 import AnswerBg from '@/assets/lottie/answer_background.json';
-import { useEffect, useState } from 'react';
+// import { useEffect, useState } from 'react';
 
 type AnswerModalProps = {
   isOpen: boolean;
