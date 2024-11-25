@@ -123,6 +123,14 @@ type ExitRoomEvent = {
   playerId: string;
 };
 
+type KickRoomRequest = {
+  gameId: string;
+  kickPlayerId: string;
+};
+type KickRoomResponse = {
+  playerId: string;
+};
+
 // 전체 소켓 이벤트 타입 맵
 export type SocketDataMap = {
   chatMessage: {
@@ -184,6 +192,11 @@ export type SocketDataMap = {
       eventName: string;
       message: string;
     };
+  };
+
+  kickRoom: {
+    request: KickRoomRequest;
+    response: KickRoomResponse;
   };
 
   connect: { request: null; response: null };

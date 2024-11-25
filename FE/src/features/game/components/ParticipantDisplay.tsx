@@ -1,3 +1,4 @@
+import { socketService } from '@/api/socket';
 import GameState from '@/constants/gameState';
 import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
@@ -14,6 +15,11 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
   const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
   const isHost = usePlayerStore((state) => state.isHost);
   const gameMode = useRoomStore((state) => state.gameMode);
+  const gameId = useRoomStore((state) => state.gameId);
+
+  const handleKick = (playerId: string) => {
+    socketService.kickRoom(gameId, playerId);
+  };
 
   // 대기 모드일 때 참가자 목록 표시
   const renderWaitingMode = () => (
@@ -25,7 +31,12 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
         >
           <div>{i + 1 + '. ' + player.playerName}</div>
           {isHost && currentPlayerId !== player.playerId && (
-            <button className="bg-main rounded-lg text-white w-8 h-6 text-r">강퇴</button>
+            <button
+              className="bg-main rounded-lg text-white w-8 h-6 text-r"
+              onClick={() => handleKick(player.playerId)}
+            >
+              강퇴
+            </button>
           )}
         </div>
       ))}
