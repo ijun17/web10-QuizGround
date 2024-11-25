@@ -45,6 +45,7 @@ export const QuizHeader = () => {
         {Math.ceil((currentQuiz.startTime - getServerTimestamp()) / 1000)}
       </div>
     );
+
   return (
     <div className="border border-default component-popup h-[280px] w-[1000px] p-8 flex flex-col">
       <div className="flex flex-row-reverse w-[100%] h-8 bg-surface-alt">
@@ -58,7 +59,8 @@ export const QuizHeader = () => {
           <div
             className="bg-black h-[100%]"
             style={{
-              width: (seconds / limitTime) * 100 + '%',
+              transform: `scale(${seconds / limitTime}, 1)`,
+              transformOrigin: 'left center',
               background: seconds / limitTime > 0.2 ? 'green' : 'brown'
             }}
           ></div>
@@ -69,7 +71,7 @@ export const QuizHeader = () => {
       </div>
       <AnswerModal
         isOpen={isAnswerVisible}
-        onClose={() => setIsAnswerVisible(false)}
+        // onClose={() => setIsAnswerVisible(false)}
         answer={answer}
       />
     </div>
