@@ -137,10 +137,12 @@ export class GameGateway {
   initialHeaders(headers, request) {
     if (!request.headers.cookie) {
       request.headers['playerId'] = this.setNewPlayerIdToCookie(headers);
+      return;
     }
     const cookies = parse(request.headers.cookie);
     if (!cookies.playerId) {
       request.headers['playerId'] = this.setNewPlayerIdToCookie(headers);
+      return;
     }
     request.headers['playerId'] = cookies.playerId;
   }
