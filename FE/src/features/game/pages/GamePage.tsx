@@ -98,7 +98,6 @@ export const GamePage = () => {
             title="플레이어 이름 설정"
             placeholder="이름을 입력하세요"
             initialValue={getRandomNickname()}
-            onClose={() => setIsModalOpen(false)}
             onSubmit={handleNameSubmit}
           />
 

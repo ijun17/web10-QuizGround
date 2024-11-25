@@ -5,7 +5,6 @@ type ModalProps = {
   title: string;
   placeholder?: string;
   initialValue?: string;
-  onClose: () => void;
   onSubmit: (value: string) => void;
 };
 
@@ -14,7 +13,6 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   placeholder,
   initialValue = '',
-  onClose,
   onSubmit
 }) => {
   const [inputValue, setInputValue] = useState(initialValue);
@@ -47,13 +45,6 @@ export const Modal: React.FC<ModalProps> = ({
             className="bg-blue-500 text-white rounded-md px-4 py-2 mr-2 hover:bg-blue-600"
           >
             등록
-          </button>
-          {/* 닉네임 등록 모달에서 취소버튼은 없어야할것같은데 일단 넣어둠 */}
-          <button
-            onClick={onClose}
-            className="bg-gray-300 text-gray-700 rounded-md px-4 py-2 hover:bg-gray-400"
-          >
-            취소
           </button>
         </div>
       </div>
