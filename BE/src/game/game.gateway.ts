@@ -21,6 +21,7 @@ import { GameRoomService } from './service/game.room.service';
 import { GameActivityInterceptor } from './interceptor/gameActivity.interceptor';
 import { parse, serialize } from 'cookie';
 import { v4 as uuidv4 } from 'uuid';
+import { SetPlayerNameDto } from './dto/set-player-name.dto';
 
 @UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
@@ -109,6 +110,15 @@ export class GameGateway {
     @ConnectedSocket() client: Socket
   ) {
     await this.gameService.startGame(startGameDto, client.data.playerId);
+  }
+
+  @SubscribeMessage(SocketEvents.SET_PLAYER_NAME)
+  @UsePipes(new GameValidationPipe(SocketEvents.SET_PLAYER_NAME))
+  async handleSetPlayerName(
+    @MessageBody() setPlayerNameDto: SetPlayerNameDto,
+    @ConnectedSocket() client: Socket
+  ) {
+    await this.gameService.setPlayerName(setPlayerNameDto, client.data.playerId);
   }
 
   afterInit() {

@@ -12,6 +12,7 @@ import { QuizCacheService } from './quiz.cache.service';
 import { RedisSubscriberService } from '../redis/redis-subscriber.service';
 import { parseHeaderToObject } from '../../common/utils/utils';
 import { GameRoomService } from './game.room.service';
+import { SetPlayerNameDto } from '../dto/set-player-name.dto';
 
 @Injectable()
 export class GameService {
@@ -125,6 +126,15 @@ export class GameService {
     await this.redis.set(REDIS_KEY.ROOM_TIMER(gameId), 'timer', 'EX', 3);
 
     this.logger.verbose(`게임 시작: ${gameId}`);
+  }
+
+  async setPlayerName(setPlayerNameDto: SetPlayerNameDto, clientId: string) {
+    const { playerName } = setPlayerNameDto;
+
+    await this.redis.set(`${REDIS_KEY.PLAYER(clientId)}:Changes`, 'Name');
+    await this.redis.hmset(REDIS_KEY.PLAYER(clientId), {
+      playerName: playerName
+    });
   }
 
   async subscribeRedisEvent(server: Server) {

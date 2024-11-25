@@ -50,6 +50,10 @@ export class PlayerSubscriber extends RedisSubscriber {
       case 'Disconnect':
         await this.handlePlayerDisconnect(playerId, playerData, server);
         break;
+
+      case 'Name':
+        await this.handlePlayerName(playerId, playerData, server);
+        break;
     }
   }
 
@@ -79,5 +83,15 @@ export class PlayerSubscriber extends RedisSubscriber {
       playerId
     });
     this.logger.verbose(`Player disconnected: ${playerId} from game: ${playerData.gameId}`);
+  }
+
+  private async handlePlayerName(playerId: string, playerData: any, server: Server) {
+    server.to(playerData.gameId).emit(SocketEvents.SET_PLAYER_NAME, {
+      playerId,
+      playerName: playerData.playerName
+    });
+    this.logger.verbose(
+      `Player Name Change: ${playerData.playerName} ${playerId} from game: ${playerData.gameId}`
+    );
   }
 }
