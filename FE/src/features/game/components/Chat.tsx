@@ -4,11 +4,10 @@ import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import { Button } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { shallow } from 'zustand/shallow';
 
 const Chat = () => {
   const gameId = useRoomStore((state) => state.gameId);
-  const currentPlayerId = usePlayerStore((state) => state.currentPlayerId, shallow);
+  const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
   const messages = useChatStore((state) => state.messages);
   const [inputValue, setInputValue] = useState('');
 
