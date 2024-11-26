@@ -173,10 +173,10 @@ export class GameService {
   }
 
   async connection(client: Socket) {
-    client.data.playerId = client.handshake.headers['playerId'];
+    client.data.playerId = client.handshake.headers['player-id'];
 
-    let gameId = client.handshake.headers['gameId'] as string;
-    const createRoomData = parseHeaderToObject(client.handshake.headers['createRoom'] as string);
+    let gameId = client.handshake.headers['game-id'] as string;
+    const createRoomData = parseHeaderToObject(client.handshake.headers['create-room'] as string);
     if (createRoomData) {
       gameId = await this.gameRoomService.createRoom(
         {

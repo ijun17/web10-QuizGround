@@ -5,7 +5,7 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Socket, Namespace } from 'socket.io';
 import { Logger, UseFilters, UseInterceptors, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import SocketEvents from '../common/constants/socket-events';
@@ -35,7 +35,7 @@ import { KickRoomDto } from './dto/kick-room.dto';
 })
 export class GameGateway {
   @WebSocketServer()
-  server: Server;
+  server: Namespace;
   private logger = new Logger('GameGateway');
 
   constructor(
@@ -131,27 +131,29 @@ export class GameGateway {
   afterInit() {
     this.logger.verbose('WebSocket 서버 초기화 완료했어요!');
 
-    this.gameService.subscribeRedisEvent(this.server).then(() => {
+    this.gameService.subscribeRedisEvent(this.server.server).then(() => {
       this.logger.verbose('Redis 이벤트 등록 완료했어요!');
     });
-    this.gameChatService.subscribeChatEvent(this.server).then(() => {
+    this.gameChatService.subscribeChatEvent(this.server.server).then(() => {
       this.logger.verbose('Redis Chat 이벤트 등록 완료했어요!');
     });
 
-    this.server.engine['initial_headers'] = this.initialHeaders.bind(this);
+    this.server.server.engine.on('initial_headers', (headers, request) =>
+      this.initialHeaders(headers, request)
+    );
   }
 
   initialHeaders(headers, request) {
     if (!request.headers.cookie) {
-      request.headers['playerId'] = this.setNewPlayerIdToCookie(headers);
+      request.headers['player-id'] = this.setNewPlayerIdToCookie(headers);
       return;
     }
     const cookies = parse(request.headers.cookie);
     if (!cookies.playerId) {
-      request.headers['playerId'] = this.setNewPlayerIdToCookie(headers);
+      request.headers['player-id'] = this.setNewPlayerIdToCookie(headers);
       return;
     }
-    request.headers['playerId'] = cookies.playerId;
+    request.headers['player-id'] = cookies.playerId;
   }
 
   setNewPlayerIdToCookie(headers) {
