@@ -95,9 +95,15 @@ export class GameRoomService {
       parseInt(room.maxPlayerCount)
     );
 
+    const playerKey = REDIS_KEY.PLAYER(clientId);
+    const playerData = await this.redis.hgetall(playerKey);
+    if (playerData && playerData?.gameId) {
+      await this.handlePlayerExit(clientId);
+      client.leave(playerData.gameId);
+    }
+
     client.join(gameId); //validation 후에 조인해야함
 
-    const playerKey = REDIS_KEY.PLAYER(clientId);
     const positionX = Math.random();
     const positionY = Math.random();
 
