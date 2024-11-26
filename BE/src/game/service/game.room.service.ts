@@ -175,6 +175,12 @@ export class GameRoomService {
     const playerKey = REDIS_KEY.PLAYER(clientId);
     const player = await this.redis.hgetall(playerKey);
     const roomId = player.gameId;
+    const roomKey = REDIS_KEY.ROOM(roomId);
+
+    const room = await this.redis.hgetall(roomKey);
+    if (room.status !== 'waiting' || room.isWaiting != '1') {
+      return;
+    }
 
     const pipeline = this.redis.pipeline();
 
@@ -195,7 +201,6 @@ export class GameRoomService {
     await pipeline.exec();
 
     // 호스트가 방을 나갔을 시
-    const roomKey = REDIS_KEY.ROOM(roomId);
     const host = await this.redis.hget(roomKey, 'host');
     const players = await this.redis.smembers(roomPlayersKey);
     if (host === clientId && players.length > 0) {
