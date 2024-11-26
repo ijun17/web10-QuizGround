@@ -179,19 +179,33 @@ export class GameRoomService {
     const pipeline = this.redis.pipeline();
 
     // 플레이어 제거
-    pipeline.srem(REDIS_KEY.ROOM_PLAYERS(roomId), clientId);
+    const roomPlayersKey = REDIS_KEY.ROOM_PLAYERS(roomId);
+    const roomLeaderboardKey = REDIS_KEY.ROOM_LEADERBOARD(roomId);
+    pipeline.srem(roomPlayersKey, clientId);
+    pipeline.zrem(roomLeaderboardKey, clientId);
+
     // 1. 플레이어 상태를 'disconnected'로 변경하고 TTL 설정
+    pipeline.set(`${playerKey}:Changes`, 'Disconnect', 'EX', 600); // 해당플레이어의 변화정보 10분 후에 삭제
     pipeline.hset(REDIS_KEY.PLAYER(clientId), {
       disconnected: '1',
       disconnectedAt: Date.now().toString()
     });
     pipeline.expire(REDIS_KEY.PLAYER(clientId), this.PLAYER_GRACE_PERIOD);
 
-    // 남은 플레이어 수 확인
-    pipeline.scard(REDIS_KEY.ROOM_PLAYERS(roomId));
+    await pipeline.exec();
 
-    const results = await pipeline.exec();
-    const remainingPlayers = results[3][1] as number;
+    // 호스트가 방을 나갔을 시
+    const roomKey = REDIS_KEY.ROOM(roomId);
+    const host = await this.redis.hget(roomKey, 'host');
+    const players = await this.redis.smembers(roomPlayersKey);
+    if (host === clientId && players.length > 0) {
+      const newHost = await this.redis.srandmember(roomPlayersKey);
+      await this.redis.hset(roomKey, {
+        host: newHost
+      });
+    }
+
+    const remainingPlayers = await this.redis.scard(roomPlayersKey);
 
     // 4. 플레이어 관련 모든 키에 TTL 설정
     await this.setTTLForPlayerKeys(clientId);

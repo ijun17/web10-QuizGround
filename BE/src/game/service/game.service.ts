@@ -141,37 +141,6 @@ export class GameService {
     await this.redisSubscriberService.initializeSubscribers(server);
   }
 
-  async disconnect(clientId: string) {
-    const playerKey = REDIS_KEY.PLAYER(clientId);
-    const playerData = await this.redis.hgetall(playerKey);
-
-    const roomPlayersKey = REDIS_KEY.ROOM_PLAYERS(playerData.gameId);
-    await this.redis.srem(roomPlayersKey, clientId);
-
-    const roomLeaderboardKey = REDIS_KEY.ROOM_LEADERBOARD(playerData.gameId);
-    await this.redis.zrem(roomLeaderboardKey, clientId);
-
-    const roomKey = REDIS_KEY.ROOM(playerData.gameId);
-    const host = await this.redis.hget(roomKey, 'host');
-    const players = await this.redis.smembers(roomPlayersKey);
-    if (host === clientId && players.length > 0) {
-      const newHost = await this.redis.srandmember(REDIS_KEY.ROOM_PLAYERS(playerData.gameId));
-      await this.redis.hset(roomKey, {
-        host: newHost
-      });
-    }
-    await this.redis.set(`${playerKey}:Changes`, 'Disconnect', 'EX', 600); // 해당플레이어의 변화정보 10분 후에 삭제
-    await this.redis.hset(playerKey, {
-      disconnected: '1'
-    });
-
-    if (players.length === 0) {
-      await this.redis.del(roomKey);
-      await this.redis.del(roomPlayersKey);
-      await this.redis.del(roomLeaderboardKey);
-    }
-  }
-
   async connection(client: Socket) {
     client.data.playerId = client.handshake.headers['player-id'];
 
