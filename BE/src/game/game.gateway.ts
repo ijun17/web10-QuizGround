@@ -138,9 +138,9 @@ export class GameGateway {
       this.logger.verbose('Redis Chat 이벤트 등록 완료했어요!');
     });
 
-    this.server.server.engine.on('initial_headers', (headers, request) =>
-      this.initialHeaders(headers, request)
-    );
+    this.server.server.engine.on('headers', (headers, request) => {
+      this.initialHeaders(headers, request);
+    });
   }
 
   initialHeaders(headers, request) {
