@@ -3,13 +3,13 @@ import Card from '@mui/material/Card';
 import { QuizPreview } from '../../../components/QuizPreview';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { QuizSettingModal } from './QuizSettingModal';
 import { socketService } from '@/api/socket';
 import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { useQuizStore } from '@/features/game/data/store/useQuizStore';
 
-export const GameHeader = () => {
+export const GameHeader = React.memo(() => {
   const { gameId } = useParams<{ gameId: string }>();
   const isHost = usePlayerStore((state) => state.isHost);
   const gameTitle = useRoomStore((state) => state.title);
@@ -52,4 +52,4 @@ export const GameHeader = () => {
       <QuizSettingModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} />
     </Card>
   );
-};
+});

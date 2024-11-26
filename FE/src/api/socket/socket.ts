@@ -118,6 +118,10 @@ class SocketService {
     this.socket.emit(SocketEvents.JOIN_ROOM, { gameId, playerName });
   }
 
+  kickRoom(gameId: string, kickPlayerId: string) {
+    this.socket.emit(SocketEvents.KICK_ROOM, { gameId, kickPlayerId });
+  }
+
   chatMessage(gameId: string, message: string) {
     this.socket.emit(SocketEvents.CHAT_MESSAGE, { gameId, message });
   }

@@ -9,7 +9,8 @@ const SocketEvents = {
   STOP_GAME: 'stopGame',
   END_QUIZ_TIME: 'endQuizTime',
   START_QUIZ_TIME: 'startQuizTime',
-  UPDATE_SCORE: 'updateScore'
+  UPDATE_SCORE: 'updateScore',
+  KICK_ROOM: 'kickRoom'
 } as const;
 
 export default SocketEvents;

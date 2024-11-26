@@ -127,6 +127,11 @@ socketService.on('endGame', () => {
   useRoomStore.getState().setGameState(GameState.END);
 });
 
+socketService.on('kickRoom', () => {
+  alert('강퇴당하였습니다.');
+  // 메인페이지 or 로비로 이동시키기?
+});
+
 socketService.on('disconnect', () => {
   useRoomStore.getState().reset();
 });
