@@ -5,7 +5,7 @@ import { GameValidator } from '../validations/game.validator';
 import { ChatMessageDto } from '../dto/chat-message.dto';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import SocketEvents from '../../common/constants/socket-events';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 
 @Injectable()
 export class GameChatService {
@@ -43,7 +43,7 @@ export class GameChatService {
     );
   }
 
-  async subscribeChatEvent(server: Server) {
+  async subscribeChatEvent(server: Namespace) {
     const chatSubscriber = this.redis.duplicate();
     chatSubscriber.psubscribe('chat:*');
 
@@ -61,14 +61,16 @@ export class GameChatService {
 
       // 죽은 사람의 채팅은 죽은 사람끼리만 볼 수 있도록 처리
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-      await Promise.all(players.map(async (playerId) => {
-        const playerKey = REDIS_KEY.PLAYER(playerId);
-        const isAlive = await this.redis.hget(playerKey, 'isAlive');
+      await Promise.all(
+        players.map(async (playerId) => {
+          const playerKey = REDIS_KEY.PLAYER(playerId);
+          const isAlive = await this.redis.hget(playerKey, 'isAlive');
 
-        if (isAlive === '0') {
-          server.to(playerId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
-        }
-      }));
+          if (isAlive === '0') {
+            server.to(playerId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+          }
+        })
+      );
     });
   }
 }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class RoomSubscriber extends RedisSubscriber {
     super(redis);
   }
 
-  async subscribe(server: Server): Promise<void> {
+  async subscribe(server: Namespace): Promise<void> {
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe('__keyspace@0__:Room:*');
 
@@ -31,7 +31,7 @@ export class RoomSubscriber extends RedisSubscriber {
     return splitKey.length === 2 ? splitKey[1] : null;
   }
 
-  private async handleRoomChanges(key: string, gameId: string, server: Server) {
+  private async handleRoomChanges(key: string, gameId: string, server: Namespace) {
     const changes = await this.redis.get(`${key}:Changes`);
     const roomData = await this.redis.hgetall(key);
 

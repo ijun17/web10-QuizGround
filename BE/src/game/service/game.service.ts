@@ -6,7 +6,7 @@ import { UpdatePositionDto } from '../dto/update-position.dto';
 import { GameValidator } from '../validations/game.validator';
 import SocketEvents from '../../common/constants/socket-events';
 import { StartGameDto } from '../dto/start-game.dto';
-import { Server, Socket } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
 import { RedisSubscriberService } from '../redis/redis-subscriber.service';
@@ -137,7 +137,7 @@ export class GameService {
     });
   }
 
-  async subscribeRedisEvent(server: Server) {
+  async subscribeRedisEvent(server: Namespace) {
     await this.redisSubscriberService.initializeSubscribers(server);
   }
 
@@ -156,6 +156,7 @@ export class GameService {
         },
         client.data.playerId
       );
+      client.emit(SocketEvents.CREATE_ROOM, { gameId });
     }
 
     await this.gameRoomService.joinRoom(client, gameId, client.data.playerId);

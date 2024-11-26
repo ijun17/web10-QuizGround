@@ -81,6 +81,7 @@ export class GameRoomService {
           playerPosition: [parseFloat(player.positionX), parseFloat(player.positionY)]
         });
       }
+      client.join(gameId);
       client.emit(SocketEvents.JOIN_ROOM, { players });
       return;
     }

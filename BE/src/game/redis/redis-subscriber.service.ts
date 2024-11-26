@@ -6,7 +6,7 @@ import { RedisSubscriber } from './subscribers/base.subscriber';
 import { TimerSubscriber } from './subscribers/timer.subscriber';
 import { RoomSubscriber } from './subscribers/room.subscriber';
 import { PlayerSubscriber } from './subscribers/player.subscriber';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import { RoomCleanupSubscriber } from './subscribers/room.cleanup.subscriber';
 
 @Injectable()
@@ -31,7 +31,7 @@ export class RedisSubscriberService {
     ];
   }
 
-  async initializeSubscribers(server: Server) {
+  async initializeSubscribers(server: Namespace) {
     // Redis Keyspace Notification 설정
     await this.redis.config('SET', 'notify-keyspace-events', 'KEhx');
 

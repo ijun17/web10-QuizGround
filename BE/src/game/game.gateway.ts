@@ -131,10 +131,10 @@ export class GameGateway {
   afterInit() {
     this.logger.verbose('WebSocket 서버 초기화 완료했어요!');
 
-    this.gameService.subscribeRedisEvent(this.server.server).then(() => {
+    this.gameService.subscribeRedisEvent(this.server).then(() => {
       this.logger.verbose('Redis 이벤트 등록 완료했어요!');
     });
-    this.gameChatService.subscribeChatEvent(this.server.server).then(() => {
+    this.gameChatService.subscribeChatEvent(this.server).then(() => {
       this.logger.verbose('Redis Chat 이벤트 등록 완료했어요!');
     });
 
