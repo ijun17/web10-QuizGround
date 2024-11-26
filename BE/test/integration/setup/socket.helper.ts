@@ -1,42 +1,72 @@
 import { io, Socket } from 'socket.io-client';
+import socketEvents from '../../../src/common/constants/socket-events';
+
+type ConnectClientsResponse = {
+  clients: Map<string, Socket>;
+  gameId: string;
+};
 
 export class SocketTestHelper {
-  private clients: Socket[] = [];
+  private clients: Map<string, Socket> = new Map();
+  private gameId: string;
 
-  async connectClients(port: number, count: number): Promise<Socket[]> {
+  async connectClients(port: number, count: number): Promise<ConnectClientsResponse> {
     await this.disconnectAll(); // 기존 연결이 있다면 정리
 
-    return new Promise<Socket[]>((resolve) => {
+    if (count === 0) {
+      return;
+    }
+
+    return new Promise<ConnectClientsResponse>((resolve) => {
       let connectedClients = 0;
-      const onConnect = () => {
+
+      const createClient = io(`http://localhost:${port}/game`, {
+        transports: ['websocket'],
+        forceNew: true,
+        extraHeaders: {
+          'create-room': 'title=Test Room;gameMode=RANKING;maxPlayerCount=5;isPublic=true'
+        }
+      });
+      createClient.once(socketEvents.GET_SELF_ID, (data) => {
+        this.clients.set(data.playerId, createClient);
         connectedClients++;
         if (connectedClients === count) {
-          resolve(this.clients);
+          resolve({ clients: this.clients, gameId: this.gameId });
         }
-      };
-
-      for (let i = 0; i < count; i++) {
-        const client = io(`http://localhost:${port}/game`, {
-          transports: ['websocket'],
-          forceNew: true
-        });
-        client.on('connect', onConnect);
-        this.clients.push(client);
-      }
+      });
+      createClient.once(socketEvents.CREATE_ROOM, (data) => {
+        this.gameId = data.gameId;
+        for (let i = 1; i < count; i++) {
+          const client = io(`http://localhost:${port}/game`, {
+            transports: ['websocket'],
+            forceNew: true,
+            extraHeaders: {
+              'game-id': this.gameId
+            }
+          });
+          client.once(socketEvents.GET_SELF_ID, (data) => {
+            this.clients.set(data.playerId, client);
+            connectedClients++;
+            if (connectedClients === count) {
+              resolve({ clients: this.clients, gameId: this.gameId });
+            }
+          });
+        }
+      });
     });
   }
 
   async disconnectAll() {
-    for (const client of this.clients) {
+    for (const client of this.clients.values()) {
       if (client && client.connected) {
         client.disconnect();
       }
     }
-    this.clients = [];
+    this.clients = new Map();
   }
 
   getClient(index: number): Socket {
-    if (index < 0 || index >= this.clients.length) {
+    if (index < 0 || index >= this.clients.size) {
       throw new Error(`Invalid client index: ${index}`);
     }
     return this.clients[index];
