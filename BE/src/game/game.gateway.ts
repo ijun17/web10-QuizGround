@@ -23,7 +23,9 @@ import { parse, serialize } from 'cookie';
 import { v4 as uuidv4 } from 'uuid';
 import { SetPlayerNameDto } from './dto/set-player-name.dto';
 import { KickRoomDto } from './dto/kick-room.dto';
+import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventLoggerInterceptor';
 
+@UseInterceptors(SocketEventLoggerInterceptor)
 @UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
@@ -43,6 +45,15 @@ export class GameGateway {
     private readonly gameChatService: GameChatService,
     private readonly gameRoomService: GameRoomService
   ) {}
+
+  @SubscribeMessage('slowEvent')
+  async handleSlowEvent(@ConnectedSocket() client: Socket): Promise<void> {
+    // 의도적으로 지연 발생시키는 테스트 코드
+    await this.gameService.longBusinessLogic();
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // 실제 로직
+    // ...
+  }
 
   // @SubscribeMessage(SocketEvents.CREATE_ROOM)
   // @UsePipes(new GameValidationPipe(SocketEvents.CREATE_ROOM))

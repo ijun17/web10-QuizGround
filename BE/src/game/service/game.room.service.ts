@@ -11,7 +11,9 @@ import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Socket } from 'socket.io';
 import { KickRoomDto } from '../dto/kick-room.dto';
+import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class GameRoomService {
   private readonly logger = new Logger(GameRoomService.name);

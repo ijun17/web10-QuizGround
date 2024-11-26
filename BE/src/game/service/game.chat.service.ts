@@ -6,7 +6,9 @@ import { ChatMessageDto } from '../dto/chat-message.dto';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import SocketEvents from '../../common/constants/socket-events';
 import { Namespace } from 'socket.io';
+import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class GameChatService {
   private readonly logger = new Logger(GameChatService.name);

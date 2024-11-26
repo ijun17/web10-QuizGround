@@ -13,7 +13,9 @@ import { RedisSubscriberService } from '../redis/redis-subscriber.service';
 import { parseHeaderToObject } from '../../common/utils/utils';
 import { GameRoomService } from './game.room.service';
 import { SetPlayerNameDto } from '../dto/set-player-name.dto';
+import { Trace, TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class GameService {
   private readonly logger = new Logger(GameService.name);
@@ -160,5 +162,12 @@ export class GameService {
     }
 
     await this.gameRoomService.joinRoom(client, gameId, client.data.playerId);
+  }
+
+  @Trace()
+  async longBusinessLogic() {
+    this.logger.verbose('longBusinessLogic start');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    this.logger.verbose('longBusinessLogic end');
   }
 }
