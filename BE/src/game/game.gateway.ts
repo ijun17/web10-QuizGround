@@ -22,6 +22,7 @@ import { GameChatService } from './service/game.chat.service';
 import { GameRoomService } from './service/game.room.service';
 import { WsJwtAuthGuard } from '../auth/guard/ws-jwt-auth.guard';
 import { GameActivityInterceptor } from './interceptor/gameActivity.interceptor';
+import { KickRoomDto } from './dto/kick-room.dto';
 
 @UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
@@ -109,6 +110,12 @@ export class GameGateway {
     @ConnectedSocket() client: Socket
   ) {
     await this.gameService.startGame(startGameDto, client.id);
+  }
+
+  @SubscribeMessage(SocketEvents.KICK_ROOM)
+  @UsePipes(new GameValidationPipe(SocketEvents.KICK_ROOM))
+  async handleKickRoom(@MessageBody() kickRoomDto: KickRoomDto, @ConnectedSocket() client: Socket) {
+    await this.gameRoomService.kickRoom(kickRoomDto, client.id);
   }
 
   afterInit() {

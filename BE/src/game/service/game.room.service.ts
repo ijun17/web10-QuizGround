@@ -11,6 +11,7 @@ import { UpdateRoomOptionDto } from '../dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Socket } from 'socket.io';
+import { KickRoomDto } from '../dto/kick-room.dto';
 
 @Injectable()
 export class GameRoomService {
@@ -150,7 +151,6 @@ export class GameRoomService {
 
     // 플레이어 제거
     pipeline.srem(REDIS_KEY.ROOM_PLAYERS(roomId), clientId);
-    // pipeline.del(REDIS_KEY.PLAYER(clientId));
     // 1. 플레이어 상태를 'disconnected'로 변경하고 TTL 설정
     pipeline.hmset(REDIS_KEY.PLAYER(clientId), {
       disconnected: '1',
@@ -226,5 +226,21 @@ export class GameRoomService {
     } while (cursor !== '0');
 
     await pipeline.exec();
+  }
+
+  async kickRoom(kickRoomDto: KickRoomDto, clientId: string) {
+    const { gameId, kickPlayerId } = kickRoomDto;
+
+    const roomKey = REDIS_KEY.ROOM(gameId);
+    const room = await this.redis.hgetall(roomKey);
+    this.gameValidator.validateRoomExists(SocketEvents.KICK_ROOM, room);
+    this.gameValidator.validatePlayerIsHost(SocketEvents.KICK_ROOM, room, clientId);
+
+    const targetPlayerKey = REDIS_KEY.PLAYER(kickPlayerId);
+    const targetPlayer = await this.redis.hgetall(targetPlayerKey);
+    this.gameValidator.validatePlayerExists(SocketEvents.KICK_ROOM, targetPlayer);
+    await this.redis.set(`${targetPlayerKey}:Changes`, 'Kicked', 'EX', 6000); // 해당플레이어의 변화정보 10분 후에 삭제
+
+    await this.handlePlayerExit(kickPlayerId);
   }
 }

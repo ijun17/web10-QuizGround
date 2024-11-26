@@ -39,4 +39,10 @@ export class GameValidator {
       throw new GameWsException(eventName, ExceptionMessage.GAME_ALREADY_STARTED);
     }
   }
+
+  validatePlayerExists(eventName: string, targetPlayer: any) {
+    if (!targetPlayer) {
+      throw new GameWsException(eventName, ExceptionMessage.PLAYER_NOT_FOUND);
+    }
+  }
 }
