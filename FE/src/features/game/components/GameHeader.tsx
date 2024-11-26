@@ -1,5 +1,4 @@
 import { ClipboardCopy } from '../../../components/ClipboardCopy';
-import Card from '@mui/material/Card';
 import { QuizPreview } from '../../../components/QuizPreview';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
@@ -23,7 +22,7 @@ export const GameHeader = React.memo(() => {
   };
   // 예시
   return (
-    <Card className="p-4 border border-blue-600 shadow-xl rounded-md h-[280px] w-[1000px] bg-gradient-to-b from-blue-500 to-blue-700 text-white component-popup">
+    <div className="p-4 h-[100%] w-[100%]  component-popup">
       <div className="flex justify-center mb-4">
         <ClipboardCopy valueToCopy={pinNum} message={`PIN: ${pinNum} 복사`} />
         <ClipboardCopy valueToCopy={linkURL} message="공유 링크 복사" />
@@ -31,9 +30,13 @@ export const GameHeader = React.memo(() => {
       <div className="flex flex-col items-center justify-center text-center space-y-2">
         <span className="text-xl font-semibold">{gameTitle}</span>
       </div>
-      <QuizPreview title={quizSetTitle} description={quizSetCategory} />
+      <div className="flex justify-center">
+        <div className="max-w-[500px] w-[100%]">
+          <QuizPreview title={quizSetTitle} description={quizSetCategory} />
+        </div>
+      </div>
       {isHost && (
-        <div className="flex space-x-4 justify-center">
+        <div className="flex space-x-4 justify-center mt-4">
           <button
             className="bg-yellow-400 text-black font-bold py-2 px-4 rounded-md shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl active:translate-y-1 active:shadow-sm transition"
             onClick={() => setIsQuizModalOpen(true)}
@@ -50,6 +53,6 @@ export const GameHeader = React.memo(() => {
       )}
 
       <QuizSettingModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} />
-    </Card>
+    </div>
   );
 });
