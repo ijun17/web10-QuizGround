@@ -23,12 +23,12 @@ type UpdatePositionResponse = {
 };
 
 // 게임방 생성 타입
-type CreateRoomRequest = {
-  title: string;
-  gameMode: 'RANKING' | 'SURVIVAL';
-  maxPlayerCount: number;
-  isPublic: boolean;
-};
+// type CreateRoomRequest = {
+//   title: string;
+//   gameMode: 'RANKING' | 'SURVIVAL';
+//   maxPlayerCount: number;
+//   isPublic: boolean;
+// };
 
 type CreateRoomResponse = {
   gameId: string; // PIN
@@ -63,10 +63,10 @@ type UpdateRoomQuizsetResponse = {
 };
 
 // 게임방 입장 타입
-type JoinRoomRequest = {
-  gameId: string;
-  playerName: string;
-};
+// type JoinRoomRequest = {
+//   gameId: string;
+//   playerName: string;
+// };
 
 type JoinRoomResponse = {
   players: Array<{
@@ -76,6 +76,19 @@ type JoinRoomResponse = {
   }>;
 };
 
+type getSelfIdResponse = {
+  playerId: string;
+};
+
+type setPlayerNameRequest = {
+  playerName: string;
+};
+
+type setPlayerNameResponse = {
+  playerId: string;
+  playerName: string;
+};
+
 // 게임 시작 타입
 type StartGameRequest = {
   gameId: string;
@@ -83,14 +96,14 @@ type StartGameRequest = {
 
 type StartGameResponse = Record<string, never>; // 빈 객체
 
-// 게임 정지 타입
-type StopGameRequest = {
-  gameId: string;
-};
+// // 게임 정지 타입
+// type StopGameRequest = {
+//   gameId: string;
+// };
 
-type StopGameResponse = {
-  status: string;
-};
+// type StopGameResponse = {
+//   status: string;
+// };
 
 type EndGameRequest = {
   gameId: string;
@@ -114,9 +127,9 @@ type StartQuizTimeEvent = {
 };
 
 // 게임 점수 업데이트 타입
-type UpdateScoreEvent = {
-  scores: Map<string, number>; // Map<playerId, score>
-};
+// type UpdateScoreEvent = {
+//   scores: Map<string, number>; // Map<playerId, score>
+// };
 
 // 게임방 퇴장 타입
 type ExitRoomEvent = {
@@ -127,6 +140,7 @@ type KickRoomRequest = {
   gameId: string;
   kickPlayerId: string;
 };
+
 type KickRoomResponse = {
   playerId: string;
 };
@@ -142,7 +156,7 @@ export type SocketDataMap = {
     response: UpdatePositionResponse;
   };
   createRoom: {
-    request: CreateRoomRequest;
+    request: null;
     response: CreateRoomResponse;
   };
   updateRoomOption: {
@@ -154,17 +168,25 @@ export type SocketDataMap = {
     response: UpdateRoomQuizsetResponse;
   };
   joinRoom: {
-    request: JoinRoomRequest;
+    request: null;
     response: JoinRoomResponse;
+  };
+  selfId: {
+    request: null;
+    response: getSelfIdResponse;
+  };
+  setPlayerName: {
+    request: setPlayerNameRequest;
+    response: setPlayerNameResponse;
   };
   startGame: {
     request: StartGameRequest;
     response: StartGameResponse;
   };
-  stopGame: {
-    request: StopGameRequest;
-    response: StopGameResponse;
-  };
+  // stopGame: {
+  //   request: StopGameRequest;
+  //   response: StopGameResponse;
+  // };
   endQuizTime: {
     request: null;
     response: EndQuizTimeEvent;
@@ -173,10 +195,10 @@ export type SocketDataMap = {
     request: null;
     response: StartQuizTimeEvent;
   };
-  updateScore: {
-    request: null;
-    response: UpdateScoreEvent;
-  };
+  // updateScore: {
+  //   request: null;
+  //   response: UpdateScoreEvent;
+  // };
   exitRoom: {
     request: null;
     response: ExitRoomEvent;
