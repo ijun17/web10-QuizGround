@@ -39,10 +39,9 @@ export const PinPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-300 to-indigo-500">
-      {/* Header */}
       <header className="absolute top-5 left-5">
         <h1
-          className="text-white text-3xl font-bold cursor-pointer hover:scale-105 transition-transform duration-300"
+          className="text-white text-3xl font-bold cursor-pointer transition-all hover:text-purple-500"
           onClick={() => navigate('/')}
         >
           QuizGround

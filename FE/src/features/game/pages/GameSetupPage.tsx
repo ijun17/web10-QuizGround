@@ -51,15 +51,15 @@ export const GameSetupPage = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-sky-200 to-indigo-400 min-h-screen flex flex-col items-center justify-center">
-      <div className="flex p-6 max-w-screen-xl mx-auto">
+    <div className="bg-gradient-to-r from-sky-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
+      <header className="absolute top-5 left-5">
         <h1
           className="text-white text-3xl font-bold cursor-pointer transition-all hover:text-purple-500"
           onClick={() => navigate('/')}
         >
           QuizGround
         </h1>
-      </div>
+      </header>
       <div className="w-full max-w-lg p-8 bg-white shadow-lg rounded-xl border-4 border-blue-400">
         {/* 뒤로가기 버튼 */}
         <div className="mb-6">
