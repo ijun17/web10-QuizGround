@@ -10,6 +10,7 @@ import { Server } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
 import { RedisSubscriberService } from '../redis/redis-subscriber.service';
+import { Trace } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
 @Injectable()
 export class GameService {
@@ -159,6 +160,7 @@ export class GameService {
     }
   }
 
+  @Trace()
   async longBusinessLogic() {
     this.logger.verbose('longBusinessLogic start');
     await new Promise((resolve) => setTimeout(resolve, 1000));
