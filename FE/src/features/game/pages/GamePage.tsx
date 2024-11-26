@@ -1,7 +1,7 @@
 import Chat from '@/features/game/components/Chat';
 import ParticipantDisplay from '@/features/game/components/ParticipantDisplay';
 import { QuizOptionBoard } from '@/features/game/components/QuizOptionBoard';
-import { Modal } from '../components/Modal';
+import { NicknameModal } from '../components/NicknameModal';
 import { useState, useEffect } from 'react';
 import { GameHeader } from '@/features/game/components/GameHeader';
 import { HeaderBar } from '@/components/HeaderBar';
@@ -15,16 +15,17 @@ import { ResultModal } from '@/features/game/components/ResultModal';
 import { ErrorModal } from '@/components/ErrorModal';
 import { useNavigate } from 'react-router-dom';
 import { getRandomNickname } from '@/features/game/utils/nickname';
+import { resetEmojiPool } from '../utils/emoji';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const updateRoom = useRoomStore((state) => state.updateRoom);
   const gameState = useRoomStore((state) => state.gameState);
   const currentPlayerName = usePlayerStore((state) => state.currentPlayerName);
-  const setCurrentPlayerName = usePlayerStore((state) => state.setCurrentPlayerName);
+  // const setCurrentPlayerName = usePlayerStore((state) => state.setCurrentPlayerName);
   const setGameState = useRoomStore((state) => state.setGameState);
   const resetScore = usePlayerStore((state) => state.resetScore);
-  const [isModalOpen, setIsModalOpen] = useState(true);
+  // const [isModalOpen, setIsModalOpen] = useState(true);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
@@ -40,14 +41,16 @@ export const GamePage = () => {
   // }, []);
 
   useEffect(() => {
-    updateRoom({ gameId });
-  }, [gameId, updateRoom]);
+    if (gameId) resetEmojiPool(gameId);
+  }, [gameId]);
 
   useEffect(() => {
-    if (gameId && currentPlayerName) {
-      socketService.joinRoom(gameId, currentPlayerName);
-    }
-  }, [gameId, currentPlayerName]);
+    if (gameId) socketService.joinRoom(gameId);
+  }, [gameId]);
+
+  useEffect(() => {
+    updateRoom({ gameId });
+  }, [gameId, updateRoom]);
 
   useEffect(() => {
     if (gameState === GameState.END) setIsResultOpen(true);
@@ -58,25 +61,24 @@ export const GamePage = () => {
     setIsErrorModalOpen(true);
   });
 
-  const handleNameSubmit = (name: string) => {
-    setCurrentPlayerName(name);
-    setIsModalOpen(false); // 이름이 설정되면 모달 닫기
-  };
-
   const handleEndGame = () => {
     setGameState(GameState.WAIT);
     resetScore();
     setIsResultOpen(false);
   };
 
+  const handleSubmitNickname = (name: string) => {
+    socketService.emit('setPlayerName', { playerName: name });
+  };
+
   return (
     <>
       <HeaderBar />
       <div className="bg-surface-alt h-[calc(100vh-100px)] overflow-hidden">
-        <div className="center p-4">
+        <div className="center p-4 pb-0 h-[30%]">
           {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
         </div>
-        <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[calc(100%-320px)] p-4">
+        <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[70%] p-4">
           <div className="hidden lg:block lg:col-span-1">
             <Chat />
           </div>
@@ -93,12 +95,12 @@ export const GamePage = () => {
             onClose={handleEndGame}
             currentPlayerName={currentPlayerName}
           />
-          <Modal
-            isOpen={isModalOpen && !currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
+          <NicknameModal
+            isOpen={!currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
             title="플레이어 이름 설정"
             placeholder="이름을 입력하세요"
             initialValue={getRandomNickname()}
-            onSubmit={handleNameSubmit}
+            onSubmit={handleSubmitNickname}
           />
 
           <ErrorModal
