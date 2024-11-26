@@ -82,6 +82,7 @@ export class GameRoomService {
         });
       }
       client.join(gameId);
+      client.emit(SocketEvents.GET_SELF_ID, { playerId: clientId });
       client.emit(SocketEvents.JOIN_ROOM, { players });
       return;
     }
@@ -130,6 +131,7 @@ export class GameRoomService {
     });
 
     this.logger.verbose(`게임 방 입장 완료: ${gameId} - ${clientId}`);
+    client.emit(SocketEvents.GET_SELF_ID, { playerId: clientId });
     client.emit(SocketEvents.JOIN_ROOM, { players });
   }
 
