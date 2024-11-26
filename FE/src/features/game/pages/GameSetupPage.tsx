@@ -51,7 +51,7 @@ export const GameSetupPage = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-sky-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
+    <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
       <header className="absolute top-5 left-5">
         <h1
           className="text-white text-3xl font-bold cursor-pointer transition-all hover:text-purple-500"
