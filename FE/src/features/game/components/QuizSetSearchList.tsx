@@ -65,8 +65,22 @@ const QuizSetSearchList = ({ onClick, search }: Params) => {
     return () => observer.disconnect();
   }, [onIntersect]);
 
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>Error fetching data.</p>;
+  if (isLoading) return;
+  <div className="flex justify-center items-center h-full">
+    <p>Loading...</p>
+  </div>;
+  if (isError)
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p>Error fetching data.</p>
+      </div>
+    );
+  if (data?.pages[0].data.length === 0)
+    return (
+      <div className="flex justify-center items-center h-full">
+        <span className="font-bold">{search}</span>와(과) 일치하는 검색결과가 없습니다
+      </div>
+    );
 
   return (
     <>
