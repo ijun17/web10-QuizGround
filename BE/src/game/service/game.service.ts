@@ -158,4 +158,10 @@ export class GameService {
       await this.redis.del(roomLeaderboardKey);
     }
   }
+
+  async longBusinessLogic() {
+    this.logger.verbose('longBusinessLogic start');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    this.logger.verbose('longBusinessLogic end');
+  }
 }
