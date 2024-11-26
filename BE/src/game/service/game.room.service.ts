@@ -12,8 +12,9 @@ import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Socket } from 'socket.io';
 import { KickRoomDto } from '../dto/kick-room.dto';
-import { Trace } from '../../common/interceptor/SocketEventLoggerInterceptor';
+import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class GameRoomService {
   private readonly logger = new Logger(GameRoomService.name);
@@ -25,7 +26,6 @@ export class GameRoomService {
     private readonly gameValidator: GameValidator
   ) {}
 
-  @Trace()
   async createRoom(gameConfig: CreateGameDto, clientId: string): Promise<string> {
     const currentRoomPins = await this.redis.smembers(REDIS_KEY.ACTIVE_ROOMS);
     const roomId = generateUniquePin(currentRoomPins);
@@ -51,7 +51,6 @@ export class GameRoomService {
     return roomId;
   }
 
-  @Trace()
   async joinRoom(client: Socket, dto: JoinRoomDto, clientId: string) {
     const roomKey = REDIS_KEY.ROOM(dto.gameId);
     const room = await this.redis.hgetall(roomKey);

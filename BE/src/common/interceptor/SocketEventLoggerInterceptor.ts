@@ -43,7 +43,7 @@ class TraceContext {
 }
 
 // 전역 AsyncLocalStorage 인스턴스
-export const traceStore = new AsyncLocalStorage<TraceContext>();
+// export const traceStore = new AsyncLocalStorage<TraceContext>();
 
 /**
  * @class SocketEventLoggerInterceptor
@@ -160,52 +160,63 @@ export function Trace() {
  * @function TraceClass
  * @description 클래스의 모든 메서드에 추적을 적용하는 데코레이터
  */
-export function TraceClass() {
-  return function <T extends { new (...args: any[]): {} }>(constructor: T) {
-    // 프로토타입의 모든 메서드를 가져옴
-    const methods = Object.getOwnPropertyNames(constructor.prototype);
+/**
+ * @class TraceClass
+ * @description 클래스의 모든 메서드에 추적을 적용하는 데코레이터
+ */
+export function TraceClass(
+  options: Partial<{ excludeMethods: string[]; includePrivateMethods: boolean }> = {}
+) {
+  return function classDecorator<T extends { new (...args: any[]): {} }>(constructor: T) {
+    const originalPrototype = constructor.prototype;
 
-    methods.forEach((methodName) => {
-      // constructor와 private/protected 메서드 제외
-      if (methodName === 'constructor' || methodName.startsWith('_')) {
+    Object.getOwnPropertyNames(originalPrototype).forEach((methodName) => {
+      // 제외할 메서드 체크
+      if (
+        methodName === 'constructor' ||
+        (!options.includePrivateMethods && methodName.startsWith('_')) ||
+        options.excludeMethods?.includes(methodName)
+      ) {
         return;
       }
 
-      const descriptor = Object.getOwnPropertyDescriptor(constructor.prototype, methodName);
-
-      if (descriptor && typeof descriptor.value === 'function') {
-        const originalMethod = descriptor.value;
-
-        descriptor.value = async function (...args: any[]) {
-          const traceContext = traceStore.getStore();
-          if (!traceContext) {
-            return originalMethod.apply(this, args);
-          }
-
-          const startTime = Date.now();
-          const className = constructor.name;
-
-          traceContext.increaseDepth();
-          traceContext.addLog(`[${className}.${methodName}] Started`);
-
-          try {
-            const result = await originalMethod.apply(this, args);
-            const executionTime = Date.now() - startTime;
-            traceContext.addLog(`[${className}.${methodName}] Completed (${executionTime}ms)`);
-            traceContext.decreaseDepth();
-            return result;
-          } catch (error) {
-            const executionTime = Date.now() - startTime;
-            traceContext.addLog(
-              `[${className}.${methodName}] Failed (${executionTime}ms): ${error.message}`
-            );
-            traceContext.decreaseDepth();
-            throw error;
-          }
-        };
-
-        Object.defineProperty(constructor.prototype, methodName, descriptor);
+      const descriptor = Object.getOwnPropertyDescriptor(originalPrototype, methodName);
+      if (!descriptor || typeof descriptor.value !== 'function') {
+        return;
       }
+
+      const originalMethod = descriptor.value;
+
+      descriptor.value = async function (...args: any[]) {
+        const traceContext = TraceStore.getStore().getStore();
+        if (!traceContext) {
+          return originalMethod.apply(this, args);
+        }
+
+        const startTime = Date.now();
+
+        traceContext.increaseDepth();
+        traceContext.addLog(`[${constructor.name}.${methodName}] Started`);
+
+        try {
+          const result = await originalMethod.apply(this, args);
+          const executionTime = Date.now() - startTime;
+
+          traceContext.addLog(`[${constructor.name}.${methodName}] Completed (${executionTime}ms)`);
+          traceContext.decreaseDepth();
+
+          return result;
+        } catch (error) {
+          const executionTime = Date.now() - startTime;
+          traceContext.addLog(
+            `[${constructor.name}.${methodName}] Failed (${executionTime}ms): ${error.message}`
+          );
+          traceContext.decreaseDepth();
+          throw error;
+        }
+      };
+
+      Object.defineProperty(originalPrototype, methodName, descriptor);
     });
 
     return constructor;

@@ -5,7 +5,9 @@ import { Redis } from 'ioredis';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import { QuizSetService } from '../../quiz-set/service/quiz-set.service';
+import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class QuizCacheService {
   private readonly quizCache = new Map<string, any>();

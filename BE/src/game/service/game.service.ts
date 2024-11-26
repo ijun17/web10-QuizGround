@@ -10,8 +10,9 @@ import { Server } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
 import { RedisSubscriberService } from '../redis/redis-subscriber.service';
-import { Trace } from '../../common/interceptor/SocketEventLoggerInterceptor';
+import { Trace, TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class GameService {
   private readonly logger = new Logger(GameService.name);
