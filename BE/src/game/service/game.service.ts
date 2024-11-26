@@ -10,7 +10,9 @@ import { Server } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
 import { RedisSubscriberService } from '../redis/redis-subscriber.service';
+import { Trace, TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class GameService {
   private readonly logger = new Logger(GameService.name);
@@ -157,5 +159,12 @@ export class GameService {
       await this.redis.del(roomPlayersKey);
       await this.redis.del(roomLeaderboardKey);
     }
+  }
+
+  @Trace()
+  async longBusinessLogic() {
+    this.logger.verbose('longBusinessLogic start');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    this.logger.verbose('longBusinessLogic end');
   }
 }
