@@ -121,6 +121,11 @@ export class TimerSubscriber extends RedisSubscriber {
         'WITHSCORES'
       );
 
+      this.redis.hset(REDIS_KEY.ROOM(gameId), {
+        status: 'waiting',
+        isWaiting: '1'
+      });
+
       server.to(gameId).emit(SocketEvents.END_GAME, {
         host: leaderboard[0]
       });
