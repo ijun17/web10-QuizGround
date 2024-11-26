@@ -22,14 +22,6 @@ type UpdatePositionResponse = {
   playerPosition: [number, number];
 };
 
-// 게임방 생성 타입
-// type CreateRoomRequest = {
-//   title: string;
-//   gameMode: 'RANKING' | 'SURVIVAL';
-//   maxPlayerCount: number;
-//   isPublic: boolean;
-// };
-
 type CreateRoomResponse = {
   gameId: string; // PIN
 };
@@ -62,12 +54,6 @@ type UpdateRoomQuizsetResponse = {
   quizCount: number;
 };
 
-// 게임방 입장 타입
-// type JoinRoomRequest = {
-//   gameId: string;
-//   playerName: string;
-// };
-
 type JoinRoomResponse = {
   players: Array<{
     playerId: string; // socketId
@@ -96,15 +82,6 @@ type StartGameRequest = {
 
 type StartGameResponse = Record<string, never>; // 빈 객체
 
-// // 게임 정지 타입
-// type StopGameRequest = {
-//   gameId: string;
-// };
-
-// type StopGameResponse = {
-//   status: string;
-// };
-
 type EndGameRequest = {
   gameId: string;
 };
@@ -125,11 +102,6 @@ type StartQuizTimeEvent = {
   endTime: number; //timestamp
   startTime: number; //timestamp
 };
-
-// 게임 점수 업데이트 타입
-// type UpdateScoreEvent = {
-//   scores: Map<string, number>; // Map<playerId, score>
-// };
 
 // 게임방 퇴장 타입
 type ExitRoomEvent = {
@@ -183,10 +155,6 @@ export type SocketDataMap = {
     request: StartGameRequest;
     response: StartGameResponse;
   };
-  // stopGame: {
-  //   request: StopGameRequest;
-  //   response: StopGameResponse;
-  // };
   endQuizTime: {
     request: null;
     response: EndQuizTimeEvent;
@@ -195,10 +163,6 @@ export type SocketDataMap = {
     request: null;
     response: StartQuizTimeEvent;
   };
-  // updateScore: {
-  //   request: null;
-  //   response: UpdateScoreEvent;
-  // };
   exitRoom: {
     request: null;
     response: ExitRoomEvent;
