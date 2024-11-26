@@ -22,6 +22,7 @@ import { GameActivityInterceptor } from './interceptor/gameActivity.interceptor'
 import { parse, serialize } from 'cookie';
 import { v4 as uuidv4 } from 'uuid';
 import { SetPlayerNameDto } from './dto/set-player-name.dto';
+import { KickRoomDto } from './dto/kick-room.dto';
 
 @UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
@@ -119,6 +120,12 @@ export class GameGateway {
     @ConnectedSocket() client: Socket
   ) {
     await this.gameService.setPlayerName(setPlayerNameDto, client.data.playerId);
+  }
+
+  @SubscribeMessage(SocketEvents.KICK_ROOM)
+  @UsePipes(new GameValidationPipe(SocketEvents.KICK_ROOM))
+  async handleKickRoom(@MessageBody() kickRoomDto: KickRoomDto, @ConnectedSocket() client: Socket) {
+    await this.gameRoomService.kickRoom(kickRoomDto, client.id);
   }
 
   afterInit() {

@@ -1,6 +1,7 @@
 import { IsIn, IsInt, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { WsException } from '@nestjs/websockets';
+import { GameMode } from '../../common/constants/game-mode';
 
 export class UpdateRoomOptionDto {
   @IsString()
@@ -8,7 +9,7 @@ export class UpdateRoomOptionDto {
   gameId: string;
 
   @IsString()
-  @IsIn(['RANKING', 'SURVIVAL'])
+  @IsIn([GameMode.RANKING, GameMode.SURVIVAL])
   gameMode: string;
 
   @IsString()

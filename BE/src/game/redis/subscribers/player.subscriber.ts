@@ -54,6 +54,10 @@ export class PlayerSubscriber extends RedisSubscriber {
       case 'Name':
         await this.handlePlayerName(playerId, playerData, server);
         break;
+
+      case 'Kicked':
+        await this.handlePlayerKicked(playerId, playerData, server);
+        break;
     }
   }
 
@@ -71,11 +75,33 @@ export class PlayerSubscriber extends RedisSubscriber {
   }
 
   private async handlePlayerPosition(playerId: string, playerData: any, server: Server) {
-    server.to(playerData.gameId).emit(SocketEvents.UPDATE_POSITION, {
-      playerId,
-      playerPosition: [parseFloat(playerData.positionX), parseFloat(playerData.positionY)]
-    });
-    this.logger.verbose(`Player position updated: ${playerId}`);
+    const { gameId, positionX, positionY } = playerData;
+    const playerPosition = [parseFloat(positionX), parseFloat(positionY)];
+    const updateData = { playerId, playerPosition };
+
+    const isAlivePlayer = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
+
+    if (isAlivePlayer === '1') {
+      server.to(gameId).emit(SocketEvents.UPDATE_POSITION, updateData);
+    } else if (isAlivePlayer === '0') {
+      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+      const deadPlayers = await Promise.all(
+        players.map(async (id) => {
+          const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive');
+          return { id, isAlive };
+        })
+      );
+
+      deadPlayers
+        .filter(player => player.isAlive === '0')
+        .forEach(player => {
+          server.to(player.id).emit(SocketEvents.UPDATE_POSITION, updateData);
+        });
+    }
+
+    this.logger.verbose(
+      `[updatePosition] RoomId: ${gameId} | playerId: ${playerId} | isAlive: ${isAlivePlayer === '1' ? '생존자' : '관전자'} | position: [${positionX}, ${positionY}]`
+    );
   }
 
   private async handlePlayerDisconnect(playerId: string, playerData: any, server: Server) {
@@ -93,5 +119,14 @@ export class PlayerSubscriber extends RedisSubscriber {
     this.logger.verbose(
       `Player Name Change: ${playerData.playerName} ${playerId} from game: ${playerData.gameId}`
     );
+  }
+
+  private async handlePlayerKicked(playerId: string, playerData: any, server: Server) {
+    server.to(playerData.gameId).emit(SocketEvents.KICK_ROOM, {
+      playerId
+    });
+    this.logger.verbose(`Player kicked: ${playerId} from game: ${playerData.gameId}`);
+    //클라에서 exitRoom도 주기를 원함
+    await this.handlePlayerDisconnect(playerId, playerData, server);
   }
 }

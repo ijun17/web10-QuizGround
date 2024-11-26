@@ -10,6 +10,7 @@ import { UpdateRoomOptionDto } from '../dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Socket } from 'socket.io';
+import { KickRoomDto } from '../dto/kick-room.dto';
 
 @Injectable()
 export class GameRoomService {
@@ -26,7 +27,7 @@ export class GameRoomService {
     const currentRoomPins = await this.redis.smembers(REDIS_KEY.ACTIVE_ROOMS);
     const roomId = generateUniquePin(currentRoomPins);
 
-    await this.redis.hmset(REDIS_KEY.ROOM(roomId), {
+    await this.redis.hset(REDIS_KEY.ROOM(roomId), {
       host: clientId,
       status: 'waiting',
       title: gameConfig.title,
@@ -97,12 +98,13 @@ export class GameRoomService {
     const positionY = Math.random();
 
     await this.redis.set(`${playerKey}:Changes`, 'Join');
-    await this.redis.hmset(playerKey, {
+    await this.redis.hset(playerKey, {
       playerName: '닉네임 설정 이전',
       positionX: positionX.toString(),
       positionY: positionY.toString(),
       disconnected: '0',
-      gameId: gameId
+      gameId: gameId,
+      isAlive: '1'
     });
 
     await this.redis.zadd(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, clientId);
@@ -140,7 +142,7 @@ export class GameRoomService {
     this.gameValidator.validatePlayerIsHost(SocketEvents.UPDATE_ROOM_OPTION, room, clientId);
 
     await this.redis.set(`${roomKey}:Changes`, 'Option');
-    await this.redis.hmset(roomKey, {
+    await this.redis.hset(roomKey, {
       title: title,
       gameMode: gameMode,
       maxPlayerCount: maxPlayerCount.toString(),
@@ -159,7 +161,7 @@ export class GameRoomService {
     this.gameValidator.validatePlayerIsHost(SocketEvents.UPDATE_ROOM_QUIZSET, room, clientId);
 
     await this.redis.set(`${roomKey}:Changes`, 'Quizset');
-    await this.redis.hmset(roomKey, {
+    await this.redis.hset(roomKey, {
       quizSetId: quizSetId.toString(),
       quizCount: quizCount.toString()
     });
@@ -178,9 +180,8 @@ export class GameRoomService {
 
     // 플레이어 제거
     pipeline.srem(REDIS_KEY.ROOM_PLAYERS(roomId), clientId);
-    // pipeline.del(REDIS_KEY.PLAYER(clientId));
     // 1. 플레이어 상태를 'disconnected'로 변경하고 TTL 설정
-    pipeline.hmset(REDIS_KEY.PLAYER(clientId), {
+    pipeline.hset(REDIS_KEY.PLAYER(clientId), {
       disconnected: '1',
       disconnectedAt: Date.now().toString()
     });
@@ -254,5 +255,21 @@ export class GameRoomService {
     } while (cursor !== '0');
 
     await pipeline.exec();
+  }
+
+  async kickRoom(kickRoomDto: KickRoomDto, clientId: string) {
+    const { gameId, kickPlayerId } = kickRoomDto;
+
+    const roomKey = REDIS_KEY.ROOM(gameId);
+    const room = await this.redis.hgetall(roomKey);
+    this.gameValidator.validateRoomExists(SocketEvents.KICK_ROOM, room);
+    this.gameValidator.validatePlayerIsHost(SocketEvents.KICK_ROOM, room, clientId);
+
+    const targetPlayerKey = REDIS_KEY.PLAYER(kickPlayerId);
+    const targetPlayer = await this.redis.hgetall(targetPlayerKey);
+    this.gameValidator.validatePlayerExists(SocketEvents.KICK_ROOM, targetPlayer);
+    await this.redis.set(`${targetPlayerKey}:Changes`, 'Kicked', 'EX', 6000); // 해당플레이어의 변화정보 10분 후에 삭제
+
+    await this.handlePlayerExit(kickPlayerId);
   }
 }

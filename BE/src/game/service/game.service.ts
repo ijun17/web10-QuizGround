@@ -35,7 +35,7 @@ export class GameService {
     this.gameValidator.validatePlayerInRoom(SocketEvents.UPDATE_POSITION, gameId, player);
 
     await this.redis.set(`${playerKey}:Changes`, 'Position');
-    await this.redis.hmset(playerKey, {
+    await this.redis.hset(playerKey, {
       positionX: newPosition[0].toString(),
       positionY: newPosition[1].toString()
     });
@@ -91,13 +91,13 @@ export class GameService {
       ...selectedQuizList.map((quiz) => quiz.id)
     );
     for (const quiz of selectedQuizList) {
-      await this.redis.hmset(REDIS_KEY.ROOM_QUIZ(gameId, quiz.id), {
+      await this.redis.hset(REDIS_KEY.ROOM_QUIZ(gameId, quiz.id), {
         quiz: quiz.quiz,
         answer: quiz.choiceList.find((choice) => choice.isAnswer).order,
         limitTime: quiz.limitTime.toString(),
         choiceCount: quiz.choiceList.length.toString()
       });
-      await this.redis.hmset(
+      await this.redis.hset(
         REDIS_KEY.ROOM_QUIZ_CHOICES(gameId, quiz.id),
         quiz.choiceList.reduce(
           (acc, choice) => {
@@ -117,7 +117,7 @@ export class GameService {
 
     // 게임이 시작되었음을 알림
     await this.redis.set(`${roomKey}:Changes`, 'Start');
-    await this.redis.hmset(roomKey, {
+    await this.redis.hset(roomKey, {
       status: 'playing'
     });
 
@@ -125,7 +125,7 @@ export class GameService {
     await this.redis.set(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId), '-1:end'); // 0:start, 0:end, 1:start, 1:end
     await this.redis.set(REDIS_KEY.ROOM_TIMER(gameId), 'timer', 'EX', 3);
 
-    this.logger.verbose(`게임 시작: ${gameId}`);
+    this.logger.verbose(`게임 시작 (gameId: ${gameId}) (gameMode: ${room.gameMode})`);
   }
 
   async setPlayerName(setPlayerNameDto: SetPlayerNameDto, clientId: string) {
@@ -156,12 +156,12 @@ export class GameService {
     const players = await this.redis.smembers(roomPlayersKey);
     if (host === clientId && players.length > 0) {
       const newHost = await this.redis.srandmember(REDIS_KEY.ROOM_PLAYERS(playerData.gameId));
-      await this.redis.hmset(roomKey, {
+      await this.redis.hset(roomKey, {
         host: newHost
       });
     }
     await this.redis.set(`${playerKey}:Changes`, 'Disconnect', 'EX', 600); // 해당플레이어의 변화정보 10분 후에 삭제
-    await this.redis.hmset(playerKey, {
+    await this.redis.hset(playerKey, {
       disconnected: '1'
     });
 
