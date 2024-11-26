@@ -1,18 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QuizPreview } from '../../../components/QuizPreview';
 import { socketService, useSocketEvent } from '@/api/socket';
 import QuizSetSearchList from './QuizSetSearchList';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
-
-// type Quiz = {
-//   id: string;
-//   quiz: string;
-//   limitTime: number;
-//   choiceList: {
-//     content: string;
-//     order: number;
-//   }[];
-// };
 
 type QuizSet = {
   id: string;
@@ -33,15 +23,22 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
   const [searchParam, setSearchParam] = useState('');
   const [quizCount, setQuizCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const searchTimeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
 
-  const handleSearch: React.FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
+  // 타이핑 시 0.3초 뒤에 검색
+  useEffect(() => {
     const trimedInputValue = inputValue.trim();
-    if (trimedInputValue !== searchParam) {
-      setSearchParam(trimedInputValue);
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }
-  };
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      if (trimedInputValue !== searchParam) {
+        setSearchParam(trimedInputValue);
+        if (scrollRef.current) scrollRef.current.scrollTop = 0;
+      }
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  });
 
   useSocketEvent('updateRoomQuizset', () => {
     onClose();
@@ -69,7 +66,10 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
       <div className="component-popup max-w-[90vw] w-[40rem]">
         <div>
           <div className="flex justify-between p-5 h-20">
-            <form className="relative flex-grow flex items-center" onSubmit={handleSearch}>
+            <form
+              className="relative flex-grow flex items-center"
+              onSubmit={(e) => e.preventDefault()}
+            >
               <input
                 className="absolute pl-8 bg-gray-100 border border-gray-200 rounded-xl h-[100%] w-[100%]"
                 type="text"

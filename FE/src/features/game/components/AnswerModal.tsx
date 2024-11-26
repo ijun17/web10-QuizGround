@@ -1,31 +1,31 @@
 import Lottie from 'lottie-react';
 import AnswerBg from '@/assets/lottie/answer_background.json';
-import { useEffect, useState } from 'react';
+// import { useEffect, useState } from 'react';
 
 type AnswerModalProps = {
   isOpen: boolean;
-  onClose: () => void;
+  // onClose: () => void;
   answer: number;
 };
 
-const AnswerModal: React.FC<AnswerModalProps> = ({ isOpen, onClose, answer }) => {
-  const [countdown, setCountdown] = useState(3);
+const AnswerModal: React.FC<AnswerModalProps> = ({ isOpen, answer }) => {
+  // const [countdown, setCountdown] = useState(3);
 
-  useEffect(() => {
-    if (isOpen) {
-      setCountdown(3); // 모달이 열릴 때 카운트다운을 초기화
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === 1) {
-            clearInterval(interval);
-            onClose(); // 0에 도달하면 모달 닫기
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval); // 모달이 닫히거나 언마운트될 때 타이머 정리
-    }
-  }, [isOpen, onClose]);
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     setCountdown(3); // 모달이 열릴 때 카운트다운을 초기화
+  //     const interval = setInterval(() => {
+  //       setCountdown((prev) => {
+  //         if (prev === 1) {
+  //           clearInterval(interval);
+  //           onClose(); // 0에 도달하면 모달 닫기
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //     return () => clearInterval(interval); // 모달이 닫히거나 언마운트될 때 타이머 정리
+  //   }
+  // }, [isOpen, onClose]);
 
   if (!isOpen) return null;
   return (
@@ -46,12 +46,12 @@ const AnswerModal: React.FC<AnswerModalProps> = ({ isOpen, onClose, answer }) =>
         <p className="text-2xl text-black" style={{ marginBottom: '4rem' }}>
           {answer}
         </p>
-        <button
+        {/* <button
           onClick={onClose}
           className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition"
         >
           닫기 ({countdown})
-        </button>
+        </button> */}
       </div>
     </div>
   );

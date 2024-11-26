@@ -29,18 +29,6 @@ export const QuizOptionBoard = () => {
   const quizAnswer = useQuizStore((state) => state.currentAnswer);
   const [selectedOption, setSelectedOption] = useState(currentQuiz?.choiceList.length);
   const [choiceListVisible, setChoiceListVisible] = useState(false);
-
-  const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    const { pageX, pageY } = e;
-    const { width, height, top, left } = e.currentTarget.getBoundingClientRect();
-    const x = (pageX - left - window.scrollX) / width;
-    const y = (pageY - top - window.scrollY) / height;
-    if (x > 1 || y > 1) return;
-    socketService.emit('updatePosition', { gameId, newPosition: [y, x] });
-    const option = Math.round(x) + Math.floor(y * Math.ceil(choiceList.length / 2)) * 2;
-    setSelectedOption(option);
-  };
-
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [boardRect, setBoardRect] = useState<null | DOMRect>(null);
 
@@ -73,28 +61,48 @@ export const QuizOptionBoard = () => {
     return () => clearInterval(interval);
   }, [choiceListVisible, currentQuiz]);
 
+  const handleMove = (pageX: number, pageY: number) => {
+    const currentPlayer = players.get(currentPlayerId);
+    if (!currentPlayer || !currentPlayer.isAlive) return;
+    if (!boardRect) return;
+    const { width, height, top, left } = boardRect;
+    const x = (pageX - left - window.scrollX) / width;
+    const y = (pageY - top - window.scrollY) / height;
+    if (x > 1 || y > 1) return;
+    socketService.emit('updatePosition', { gameId, newPosition: [y, x] });
+    const option = Math.round(x) + Math.floor(y * Math.ceil(choiceList.length / 2)) * 2;
+    setSelectedOption(option);
+  };
+
+  const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    const { pageX, pageY } = e;
+    handleMove(pageX, pageY);
+  };
+
+  const handleTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    e.preventDefault();
+    const { pageX, pageY } = e.changedTouches[0];
+    handleMove(pageX, pageY);
+  };
+
   return (
     <div
       className="relative component-default h-[100%] select-none"
       onClick={handleClick}
+      onTouchEnd={handleTouchEnd}
       ref={boardRef}
     >
       <div className="absolute h-[100%] w-[100%]">
         {boardRect
-          ? players
-              .filter((player) => player.isAlive || player.playerId === currentPlayerId)
-              .map((player) => {
+          ? Array.from(players)
+              .filter(([, player]) => player.isAlive)
+              .map(([, player]) => {
                 return (
                   <Player
                     key={player.playerId}
-                    name={player.playerName}
-                    position={[
-                      player.playerPosition[1] * boardRect.width,
-                      player.playerPosition[0] * boardRect.height
-                    ]}
+                    playerId={player.playerId}
+                    boardSize={[boardRect.width, boardRect.height]}
                     isCurrent={player.playerId === currentPlayerId}
-                    isAnswer={player.isAnswer ?? false}
-                    isAlive={player.isAlive}
                   />
                 );
               })
@@ -121,9 +129,7 @@ export const QuizOptionBoard = () => {
                 textShadow: '-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white'
               }}
             >
-              <div className="z-10 font-bold text-lg text-black">
-                {i + 1 + '. ' + option.content}
-              </div>
+              <div className="z-10 font-bold text-3xl text-black">{option.content}</div>
             </div>
           ))}
       </div>

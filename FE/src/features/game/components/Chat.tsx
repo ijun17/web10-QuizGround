@@ -3,14 +3,14 @@ import { useChatStore } from '@/features/game/data/store/useChatStore';
 import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import { Button } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 
 const Chat = () => {
   const gameId = useRoomStore((state) => state.gameId);
   const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
   const messages = useChatStore((state) => state.messages);
   const [inputValue, setInputValue] = useState('');
-
+  const players = usePlayerStore((state) => state.players);
   const [myMessages, setMyMessages] = useState<typeof messages>([]);
 
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
@@ -18,6 +18,7 @@ const Chat = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessage, setNewMessage] = useState(false);
   const [prevMessageCount, setPrevMessageCount] = useState(messages.length);
+  const [chatList, setChatList] = useState<ReactElement[]>([]);
 
   const scrollToBottom = () => {
     if (chatBottomRef.current) {
@@ -86,12 +87,28 @@ const Chat = () => {
     if (messages.length > prevMessageCount) {
       setNewMessage(true); // 새로운 메시지가 도착한 것으로 판단
       setPrevMessageCount(messages.length);
+      setChatList([
+        ...chatList,
+        ...messages.slice(prevMessageCount).map((e, i) => (
+          <div
+            className="break-words leading-5 mt-3"
+            key={prevMessageCount + i}
+            style={{
+              opacity: players.has(e.playerId) && !players.get(e.playerId)!.isAlive ? '0.5' : '1',
+              color: e.playerId === currentPlayerId ? 'cornflowerblue' : 'inherit'
+            }}
+          >
+            <span className="font-bold mr-2">{e.playerName}</span>
+            <span>{e.message}</span>
+          </div>
+        ))
+      ]);
     }
 
     if (isAtBottom) {
       requestAnimationFrame(() => scrollToBottom());
     }
-  }, [messages, isAtBottom, prevMessageCount]);
+  }, [messages, isAtBottom, prevMessageCount, chatList, players, currentPlayerId]);
 
   return (
     <div className="component-default h-[100%]">
@@ -105,12 +122,13 @@ const Chat = () => {
           <div className="flex justify-center mb-4" key="1">
             🎉 QuizGround에 오신 것을 환영합니다 🎉
           </div>
-          {messages.map((e, i) => (
+          {/* {messages.map((e, i) => (
             <div className="break-words leading-5 mt-3" key={i}>
               <span className="font-bold mr-2">{e.playerName}</span>
               <span>{e.message}</span>
             </div>
-          ))}
+          ))} */}
+          {chatList}
           {myMessages.map((e, i) => (
             <div className="break-words leading-5 mt-3" key={-i - 1}>
               <div className="inline-block mr-2">

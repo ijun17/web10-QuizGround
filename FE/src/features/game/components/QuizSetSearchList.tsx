@@ -3,16 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { QuizPreview } from '@/components/QuizPreview';
 import { getQuizSetList } from '@/api/rest/quizApi';
 
-// type Quiz = {
-//   id: string;
-//   quiz: string;
-//   limitTime: number;
-//   choiceList: {
-//     content: string;
-//     order: number;
-//   }[];
-// };
-
 type QuizSet = {
   id: string;
   title: string;

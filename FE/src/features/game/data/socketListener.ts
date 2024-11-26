@@ -42,7 +42,7 @@ socketService.on('endQuizTime', (data) => {
 
   setPlayers(
     data.players.map((p) => {
-      const _p = players.find((e) => e.playerId === p.playerId);
+      const _p = players.get(p.playerId);
       return {
         playerId: String(p.playerId),
         playerName: _p?.playerName || '',
@@ -60,7 +60,7 @@ socketService.on('endQuizTime', (data) => {
       const { players, setPlayers } = usePlayerStore.getState();
 
       setPlayers(
-        players.map((p) => {
+        Array.from(players, ([, p]) => {
           return {
             ...p,
             isAlive: p.isAlive && p?.isAnswer

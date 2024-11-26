@@ -10,7 +10,7 @@ type ParticipantDisplayProps = {
 
 const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) => {
   const players = usePlayerStore((state) => state.players);
-  const playerCount = usePlayerStore((state) => state.players.length);
+  const playerCount = usePlayerStore((state) => state.players.size);
   const maxPlayerCount = useRoomStore((state) => state.maxPlayerCount);
   const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
   const isHost = usePlayerStore((state) => state.isHost);
@@ -24,7 +24,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
   // 대기 모드일 때 참가자 목록 표시
   const renderWaitingMode = () => (
     <div className="p-3 h-[calc(100%-2.5rem)] overflow-y-scroll">
-      {players.map((player, i) => (
+      {Array.from(players).map(([, player], i) => (
         <div
           className="flex justify-between mt-2 pb-2 border-b border-default"
           key={player.playerId}
@@ -46,9 +46,9 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
   // 진행 모드일 때 랭킹 현황 표시
   const renderProgressRankingMode = () => (
     <div className="p-3 h-[calc(100%-2.5rem)] overflow-y-scroll">
-      {players
-        .sort((a, b) => b.playerScore - a.playerScore) // 점수 내림차순
-        .map((player, i) => (
+      {Array.from(players)
+        .sort(([, a], [, b]) => b.playerScore - a.playerScore) // 점수 내림차순
+        .map(([, player], i) => (
           <motion.div
             className="flex justify-between mt-2 pb-2 border-b border-default"
             key={player.playerId}
@@ -78,9 +78,9 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
   // 진행 모드일 때 생존자 표시
   const renderProgressSurvivalMode = () => (
     <div className="p-3 h-[calc(100%-2.5rem)] overflow-y-scroll">
-      {players
-        .filter((player) => player.isAlive)
-        .map((player, i) => (
+      {Array.from(players)
+        .filter(([, player]) => player.isAlive)
+        .map(([, player], i) => (
           <motion.div
             className="flex justify-between mt-2 pb-2 border-b border-default"
             key={player.playerId}

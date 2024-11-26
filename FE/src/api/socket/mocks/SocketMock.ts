@@ -159,7 +159,10 @@ export class SocketMock {
    * calculate()
    * progressQuiz()
    * updatePlayerPosition()
-   * chatMessage
+   * chatMessage()
+   * createDummyPlayer()
+   * chatRandom()
+   * moveRandom()
    */
   getPlayer(id: string) {
     return this.players[id];
@@ -219,6 +222,49 @@ export class SocketMock {
       playerName: player.playerName,
       message,
       timestamp: 0
+    });
+  }
+
+  createDummyPlayer(count: number) {
+    const playerCount = Object.keys(this.players).length;
+    this.addPlayers(
+      Array(count)
+        .fill(null)
+        .map((_, i) => ({
+          playerId: String(playerCount + i + 1),
+          playerName: 'player' + (playerCount + i),
+          playerPosition: [this.random(), this.random()]
+        }))
+    );
+  }
+
+  async chatRandom(testSec: number, chatPerSecPerPlyaer: number = 1) {
+    const playerCount = this.getPlayerList().length;
+    for (let j = 0; j < testSec; j++) {
+      for (const player of this.getPlayerList()) {
+        if (player.playerId === this.id) continue;
+        await this.delay(1 / playerCount / chatPerSecPerPlyaer);
+        this.chatMessage(player.playerId, 'message' + player.playerId);
+      }
+    }
+  }
+
+  async moveRandom(testSec: number, movePerSecPerPlyaer: number = 1) {
+    const playerCount = this.getPlayerList().length;
+    for (let j = 0; j < testSec; j++) {
+      for (const player of this.getPlayerList()) {
+        if (player.playerId === this.id) continue;
+        await this.delay(1 / playerCount / movePerSecPerPlyaer);
+        this.updatePlayerPosition(player.playerId, [this.random(), this.random()]);
+      }
+    }
+  }
+
+  async performenceTest(fnList: unknown[]) {
+    const start = performance.now();
+    Promise.all(fnList).then(() => {
+      const end = performance.now();
+      this.log(`PERFORMENCE: ${((end - start) / 1000).toFixed(2)}s`);
     });
   }
 }
