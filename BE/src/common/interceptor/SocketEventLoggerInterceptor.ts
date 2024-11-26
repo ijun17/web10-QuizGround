@@ -104,7 +104,7 @@ export class SocketEventLoggerInterceptor implements NestInterceptor {
                 '\nRedis Connections:\n' +
                 `Connected Clients: ${metrics.redis.connectedClients}, ` +
                 `Used Memory: ${metrics.redis.usedMemoryMB}MB\n` +
-                `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
+                // `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
                 // `현재 처리중인 명령어 수 : ${metrics.redis.cmdstat}\n` +
                 '============================='
             );
@@ -146,7 +146,7 @@ export class SocketEventLoggerInterceptor implements NestInterceptor {
               '\nRedis Connections:\n' +
               `Connected Clients: ${metrics.redis.connectedClients}, ` +
               `Used Memory: ${metrics.redis.usedMemoryMB}MB\n` +
-              `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
+              // `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
               // `현재 처리중인 명령어 수 : ${metrics.redis.cmdstat}\n` +
               '============================='
           );
