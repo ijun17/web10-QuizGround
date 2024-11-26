@@ -45,8 +45,11 @@ export class TimerSubscriber extends RedisSubscriber {
     const quizList = await this.redis.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
     const quiz = await this.redis.hgetall(REDIS_KEY.ROOM_QUIZ(gameId, quizList[quizNum]));
 
-    const sockets = await server.in(gameId).fetchSockets();
-    const clients = sockets.map((socket) => socket.id);
+    if ((await this.redis.set(REDIS_KEY.ROOM_SCORING_STATUS(gameId), 'START', 'NX')) !== 'OK') {
+      return;
+    }
+
+    const clients = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
 
     const correctPlayers = [];
     const inCorrectPlayers = [];
@@ -91,6 +94,8 @@ export class TimerSubscriber extends RedisSubscriber {
     }
 
     await this.redis.publish(`scoring:${gameId}`, clients.length.toString());
+
+    await this.redis.del(REDIS_KEY.ROOM_SCORING_STATUS(gameId));
 
     this.logger.verbose(
       `[Quiz] Room: ${gameId} | gameMode: ${gameMode === GameMode.SURVIVAL ? '서바이벌' : '랭킹'} | totalPlayers: ${clients.length} | ${gameMode === GameMode.SURVIVAL ? `생존자: ${correctPlayers.length}명` : `정답자: ${correctPlayers.length}명`}`
