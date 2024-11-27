@@ -74,7 +74,7 @@ socketService.on('exitRoom', (data) => {
   usePlayerStore.getState().removePlayer(data.playerId);
 });
 
-socketService.on('selfId', (data) => {
+socketService.on('getSelfId', (data) => {
   const playerName = usePlayerStore.getState().players.get(data.playerId);
   usePlayerStore.getState().setCurrentPlayerId(data.playerId);
   usePlayerStore.getState().setCurrentPlayerName(String(playerName));

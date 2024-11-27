@@ -143,7 +143,7 @@ export type SocketDataMap = {
     request: null;
     response: JoinRoomResponse;
   };
-  selfId: {
+  getSelfId: {
     request: null;
     response: getSelfIdResponse;
   };

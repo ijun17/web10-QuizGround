@@ -22,7 +22,7 @@ export class SocketMock {
       };
       this.emitServer('joinRoom', { players: [currentPlayer] });
       this.addPlayers([currentPlayer]);
-      this.emitServer('selfId', { playerId: this.id });
+      this.emitServer('getSelfId', { playerId: this.id });
       this.emitServer('setPlayerName', { playerId: this.id, playerName: 'Me' });
     });
 
