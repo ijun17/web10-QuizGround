@@ -20,32 +20,42 @@ export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
     navigate(`/game/${gameId}`);
   };
   return (
-    <div className="flex flex-col items-center p-4">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-blue-600">대기실 목록</h1>
+    <div className="flex flex-col items-center px-4 py-6 w-full max-w-7xl">
+      <header className="mb-8">
+        <h1 className="text-3xl font-extrabold text-white">게임 대기실 목록</h1>
       </header>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-7xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 w-full">
         {rooms.map((room) => (
           <div
             key={room.gameId}
-            className="bg-white rounded-lg shadow-lg p-4 flex flex-col items-center text-center border border-gray-200 hover:shadow-xl transition"
+            className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center border border-blue-300 hover:shadow-lg hover:scale-105 transition-transform duration-300"
           >
             <h2 className="text-lg font-semibold text-gray-800">{room.title}</h2>
-            <p className="text-sm text-gray-500 mt-2">{room.gameMode}</p>
-            <p className="text-sm text-gray-500">
-              {room.currentPlayerCount}/{room.maxPlayerCount} Players
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Quiz: <span className="text-gray-800 font-medium">{room.quizSetTitle}</span>
-            </p>
+
+            <div className="text-sm text-gray-600 mt-2">
+              <p>
+                게임 모드: <span className="text-gray-800">{room.gameMode}</span>
+              </p>
+              <p>
+                인원: {room.currentPlayerCount} / {room.maxPlayerCount}
+              </p>
+              <p className="mt-1">
+                퀴즈 세트: <span className="font-medium text-blue-600">{room.quizSetTitle}</span>
+              </p>
+            </div>
             <button
-              className="mt-4 bg-blue-500 text-white py-1 px-4 rounded-lg hover:bg-blue-600 transition"
+              className="mt-4 bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg shadow hover:bg-blue-600 hover:shadow-lg active:bg-blue-700 transition-colors"
               onClick={() => handleJoinRoom(room.gameId)}
             >
-              Join Room
+              방 입장하기
             </button>
           </div>
         ))}
+        {!rooms.length && (
+          <div className="text-white col-span-full text-center text-lg">
+            현재 표시할 방이 없습니다.
+          </div>
+        )}
       </div>
     </div>
   );

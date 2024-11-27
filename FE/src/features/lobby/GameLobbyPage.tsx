@@ -45,7 +45,7 @@ export const GameLobbyPage = () => {
         setIsLoading(false);
       }
     },
-    [isLoading]
+    [isLoading, paging]
   );
 
   useEffect(() => {

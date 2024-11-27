@@ -1,3 +1,4 @@
+
 import { socketService, useSocketEvent } from '@/api/socket';
 import { HeaderBar } from '@/components/HeaderBar';
 import { TextInput } from '@/components/TextInput';
@@ -30,12 +31,18 @@ export const PinPage = () => {
   };
 
   return (
-    <>
-      <HeaderBar />
-      <div className="flex items-center justify-center h-[calc(100vh-100px)] bg-surface-alt">
-        <div className="component-default max-w-[90vw] w-[40rem] p-10 flex flex-col gap-5">
-          <h1>방 들어가기</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-300 to-indigo-500">
+      <header className="absolute top-5 left-5">
+        <h1
+          className="text-white text-3xl font-bold cursor-pointer transition-all hover:text-purple-500"
+          onClick={() => navigate('/')}
+        >
+          QuizGround
+        </h1>
+      </header>
 
+      <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg border-4 border-blue-400">
+        <h2 className="text-2xl font-bold text-center text-blue-500 mb-6">PIN 번호로 입장</h2>
           <TextInput
             label="핀번호"
             value={pin}
@@ -45,15 +52,13 @@ export const PinPage = () => {
             }}
             error={errors.pin}
           />
-
-          <button
-            className="h-10 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 hover:shadow-lg active:bg-blue-700 active:shadow-sm transition-all duration-300 ease-in-out"
-            onClick={handleJoin}
-          >
-            들어가기
-          </button>
-        </div>
+        <button
+          className="mt-6 w-full h-12 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 hover:shadow-lg active:bg-blue-700 active:shadow-sm transition-all duration-300 ease-in-out"
+          onClick={handleJoin}
+        >
+          들어가기
+        </button>
       </div>
-    </>
+    </div>
   );
 };

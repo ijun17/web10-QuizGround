@@ -57,76 +57,125 @@ export const GameSetupPage = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-[url('https://ideogram.ai/assets/progressive-image/balanced/response/0cBdPh08SZeUCMBKoMs9Aw')] bg-cover bg-center">
-      <div className="w-full max-w-lg p-8 bg-white shadow-lg rounded-lg border-4 border-blue-400">
-        <Button
-          variant="outlined"
+    <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
+      <header className="absolute top-5 left-5">
+        <h1
+          className="text-white text-3xl font-bold cursor-pointer transition-all hover:text-purple-500"
           onClick={() => navigate('/')}
-          className="mb-4 text-blue-500 border-blue-500 hover:bg-blue-500 hover:text-white transition-all"
         >
-          {'<'} 뒤로가기
-        </Button>
+          QuizGround
+        </h1>
+      </header>
+      <div className="w-full max-w-lg p-8 bg-white shadow-lg rounded-xl border-4 border-blue-400">
+        {/* 뒤로가기 버튼 */}
+        <div className="mb-6">
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/')}
+            className="text-blue-500 border-blue-500 hover:bg-blue-500 hover:text-white transition-all"
+          >
+            {'<'} 뒤로가기
+          </Button>
+        </div>
+
         <TextInput
           value={title}
           label="게임방 제목"
           onChange={handleTitleChange}
           error={titleError}
         />
-        <div className="mt-4 mb-4 flex items-center justify-between">
-          <span className="text-blue-500">최대인원</span>
-          <span className="text-blue-500 font-bold">{maxPlayerCount}</span>
+
+        <div className="mt-6">
+          <span className="text-blue-500">최대 인원</span>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-gray-700">{RoomConfig.MIN_PLAYERS}</span>
+            <Slider
+              min={RoomConfig.MIN_PLAYERS}
+              max={RoomConfig.MAX_PLAYERS}
+              step={1}
+              value={maxPlayerCount}
+              onChange={(_, newValue) => setMaxPlayerCount(newValue as number)}
+              className="flex-1 mx-4"
+              sx={{
+                '& .MuiSlider-thumb': {
+                  backgroundColor: '#1E40AF' // 파란색 슬라이더 thumb
+                }
+              }}
+            />
+            <span className="text-gray-700">{RoomConfig.MAX_PLAYERS}</span>
+          </div>
+          <div className="flex justify-end items-center mt-2">
+            <label htmlFor="max-player-input" className="text-blue-500 font-bold mr-2">
+              설정 인원:
+            </label>
+            <input
+              id="max-player-input"
+              type="number"
+              value={maxPlayerCount}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (value >= RoomConfig.MIN_PLAYERS && value <= RoomConfig.MAX_PLAYERS) {
+                  setMaxPlayerCount(value);
+                }
+              }}
+              className="w-16 text-right border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
-        <Slider
-          min={RoomConfig.MIN_PLAYERS}
-          max={RoomConfig.MAX_PLAYERS}
-          step={1}
-          value={maxPlayerCount}
-          onChange={(_, newValue) => setMaxPlayerCount(newValue as number)}
-          className="w-full mb-4"
-          sx={{
-            '& .MuiSlider-thumb': {
-              backgroundColor: '#1E40AF' // 파란색 슬라이더 thumb
-            }
-          }}
-        />
-        <FormControl component="fieldset" className="mb-4">
-          <FormLabel component="legend" className="text-blue-500">
-            게임 모드 선택
-          </FormLabel>
-          <RadioGroup
-            aria-labelledby="game-mode-radio-group"
-            value={gameMode}
-            onChange={handleModeChange}
-            name="game-mode-radio-group"
+
+        <div className="mt-6">
+          <fieldset className="mb-6">
+            <legend className="text-blue-500 mb-2">게임 모드 선택</legend>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="SURVIVAL"
+                  checked={gameMode === 'SURVIVAL'}
+                  onChange={handleModeChange}
+                  className="text-blue-500 focus:ring-blue-500"
+                />
+                서바이벌
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="RANKING"
+                  checked={gameMode === 'RANKING'}
+                  onChange={handleModeChange}
+                  className="text-blue-500 focus:ring-blue-500"
+                />
+                랭킹
+              </label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend className="text-blue-500 mb-2">방 공개 여부</legend>
+            <Switch
+              checked={roomPublic}
+              onChange={(_, newValue) => setRoomPublic(newValue)}
+              sx={{
+                '& .MuiSwitch-switchBase.Mui-checked': {
+                  color: '#1E40AF' // 파란색 스위치
+                },
+                '& .MuiSwitch-track': {
+                  backgroundColor: '#1E40AF'
+                }
+              }}
+            />
+          </fieldset>
+        </div>
+
+        <div className="mt-6">
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+            className="w-full bg-blue-500 text-white hover:bg-blue-600 transition-all"
           >
-            <FormControlLabel value="SURVIVAL" control={<Radio />} label="서바이벌" />
-            <FormControlLabel value="RANKING" control={<Radio />} label="랭킹" />
-          </RadioGroup>
-          <FormLabel component="legend" className="text-blue-500">
-            방 공개 여부
-          </FormLabel>
-          <Switch
-            checked={roomPublic}
-            onChange={(_, newValue) => setRoomPublic(newValue)}
-            defaultChecked
-            sx={{
-              '& .MuiSwitch-switchBase.Mui-checked': {
-                color: '#1E40AF' // 파란색 스위치
-              },
-              '& .MuiSwitch-track': {
-                backgroundColor: '#1E40AF'
-              }
-            }}
-          />
-        </FormControl>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSubmit}
-          className="w-full bg-blue-500 text-white hover:bg-blue-600 transition-all"
-        >
-          방 만들기
-        </Button>
+            방 만들기
+          </Button>
+        </div>
       </div>
     </div>
   );
