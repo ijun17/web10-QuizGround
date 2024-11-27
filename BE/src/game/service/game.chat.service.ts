@@ -5,7 +5,7 @@ import { GameValidator } from '../validations/game.validator';
 import { ChatMessageDto } from '../dto/chat-message.dto';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import SocketEvents from '../../common/constants/socket-events';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
 @TraceClass()
@@ -45,7 +45,7 @@ export class GameChatService {
     );
   }
 
-  async subscribeChatEvent(server: Server) {
+  async subscribeChatEvent(server: Namespace) {
     const chatSubscriber = this.redis.duplicate();
     chatSubscriber.psubscribe('chat:*');
 

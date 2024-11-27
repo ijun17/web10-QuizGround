@@ -1,5 +1,4 @@
 import socketEvents from '../../../src/common/constants/socket-events';
-import { createRoom, joinRoom } from '../setup/util';
 import { REDIS_KEY } from '../../../src/common/constants/redis-key.constant';
 import { SocketTestHelper } from '../setup/socket.helper';
 import { setupTestingModule } from '../setup/game.setup';
@@ -8,8 +7,10 @@ describe('Game 통합테스트', () => {
   let app;
   let redisMock;
   let socketHelper: SocketTestHelper;
+  let client1Id, client2Id, client3Id;
   let client1, client2, client3;
   let port;
+  let gameId;
 
   beforeAll(async () => {
     const setup = await setupTestingModule();
@@ -22,7 +23,12 @@ describe('Game 통합테스트', () => {
   beforeEach(async () => {
     await redisMock.flushall();
 
-    [client1, client2, client3] = await socketHelper.connectClients(port, 3);
+    const result = await socketHelper.connectClients(port, 3);
+    gameId = result.gameId;
+    const clientsEntries = Array.from(result.clients.entries());
+    [client1Id, client1] = clientsEntries[0];
+    [client2Id, client2] = clientsEntries[1];
+    [client3Id, client3] = clientsEntries[2];
   });
 
   afterEach(async () => {
@@ -38,25 +44,25 @@ describe('Game 통합테스트', () => {
 
   describe('updatePosition 이벤트 테스트', () => {
     it('위치 업데이트 성공', async () => {
-      const createResponse = await createRoom(client1);
-      const joinResponse = await joinRoom(client1, createResponse.gameId);
-      const joinResponse2 = await joinRoom(client2, createResponse.gameId);
-      const joinResponse3 = await joinRoom(client3, createResponse.gameId);
+      // const createResponse = await createRoom(client1);
+      // const joinResponse = await joinRoom(client1, createResponse.gameId);
+      // const joinResponse2 = await joinRoom(client2, createResponse.gameId);
+      // const joinResponse3 = await joinRoom(client3, createResponse.gameId);
 
       const newPosition = [0.2, 0.5];
 
       const updateResponse = await new Promise<any>((resolve) => {
         client1.once(socketEvents.UPDATE_POSITION, resolve);
         client1.emit(socketEvents.UPDATE_POSITION, {
-          gameId: createResponse.gameId,
+          gameId: gameId,
           newPosition
         });
       });
-      
+
       expect(updateResponse.playerPosition).toEqual(newPosition);
 
       // Redis에서 위치 정보 확인
-      const playerData = await redisMock.hgetall(`Player:${client1.id}`);
+      const playerData = await redisMock.hgetall(`Player:${client1Id}`);
       expect(parseFloat(playerData.positionX)).toBe(newPosition[0]);
       expect(parseFloat(playerData.positionY)).toBe(newPosition[1]);
     });
@@ -64,26 +70,22 @@ describe('Game 통합테스트', () => {
 
   describe('startGame 이벤트 테스트', () => {
     it('게임 시작할 때 초기 설정 성공', async () => {
-      const createResponse = await createRoom(client1);
-      const joinResponse = await joinRoom(client1, createResponse.gameId);
-      const joinResponse2 = await joinRoom(client2, createResponse.gameId);
-      const joinResponse3 = await joinRoom(client3, createResponse.gameId);
+      // const createResponse = await createRoom(client1);
+      // const joinResponse = await joinRoom(client1, createResponse.gameId);
+      // const joinResponse2 = await joinRoom(client2, createResponse.gameId);
+      // const joinResponse3 = await joinRoom(client3, createResponse.gameId);
 
       client1.emit(socketEvents.START_GAME, {
-        gameId: createResponse.gameId
+        gameId: gameId
       });
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Redis 검증
-      const quizSetIds = await redisMock.smembers(REDIS_KEY.ROOM_QUIZ_SET(createResponse.gameId));
-      const leaderboard = await redisMock.zrevrange(
-        REDIS_KEY.ROOM_LEADERBOARD(createResponse.gameId),
-        0,
-        -1
-      );
+      const quizSetIds = await redisMock.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
+      const leaderboard = await redisMock.zrevrange(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, -1);
 
-      const room = await redisMock.hgetall(`Room:${createResponse.gameId}`);
+      const room = await redisMock.hgetall(`Room:${gameId}`);
 
       expect(quizSetIds.length).toBeGreaterThan(0);
       expect(leaderboard).toBeDefined();

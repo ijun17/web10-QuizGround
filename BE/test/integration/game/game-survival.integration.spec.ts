@@ -5,8 +5,10 @@ describe('Game Survival 통합테스트', () => {
   let app;
   let redisMock;
   let socketHelper: SocketTestHelper;
+  let client1Id, client2Id, client3Id;
   let client1, client2, client3;
   let port;
+  let gameId;
 
   beforeAll(async () => {
     const setup = await setupTestingModule();
@@ -19,7 +21,12 @@ describe('Game Survival 통합테스트', () => {
   beforeEach(async () => {
     await redisMock.flushall();
 
-    [client1, client2, client3] = await socketHelper.connectClients(port, 3);
+    const result = await socketHelper.connectClients(port, 3);
+    gameId = result.gameId;
+    const clientsEntries = Array.from(result.clients.entries());
+    [client1Id, client1] = clientsEntries[0];
+    [client2Id, client2] = clientsEntries[1];
+    [client3Id, client3] = clientsEntries[2];
   });
 
   afterEach(async () => {
@@ -33,9 +40,9 @@ describe('Game Survival 통합테스트', () => {
     }
   });
 
-  it ('a', () => {
+  it('a', () => {
     expect(1).toBe(1);
-  })
+  });
 
   // describe('관전자끼리 플레이 테스트', () => {
   //   it ('관전자의 메시지가 생존자에게 보이지 않아야 한다.', async () => {
