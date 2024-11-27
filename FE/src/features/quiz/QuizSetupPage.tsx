@@ -1,17 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  TextField,
-  Button,
-  Select,
-  MenuItem,
-  Box,
-  Typography,
-  SelectChangeEvent
-} from '@mui/material';
-import { HeaderBar } from '@/components/HeaderBar';
+import { TextField, Select, MenuItem, Box, Typography, SelectChangeEvent } from '@mui/material';
 import { TextInput } from '@/components/TextInput';
 import { createQuizSet } from '@/api/rest/quizApi';
 import { CreateQuizSetPayload } from '@/api/rest/quizTypes';
+import { Header } from '@/components/Header';
+import CustomButton from '../../components/CustomButton';
 /*
 {
  title: string,              // 퀴즈셋의 제목
@@ -53,7 +46,6 @@ export const QuizSetupPage: React.FC = () => {
   const [quizErrorIndex, setQuizErrorIndex] = useState<null | number>(null);
   const [choiceErrorIndex, setChoiceErrorIndex] = useState<null | [number, number]>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // 빌드가 되기 위해 변수 사용
   console.log(isSubmitting);
 
@@ -79,7 +71,7 @@ export const QuizSetupPage: React.FC = () => {
     const updatedQuizSet = [...quizSet];
     let newLimitTime = parseInt(value, 10);
     if (newLimitTime > 99) newLimitTime %= 10;
-    updatedQuizSet[index].limitTime = Math.min(60, Math.max(1, newLimitTime));
+    updatedQuizSet[index].limitTime = Math.min(60, Math.max(3, newLimitTime));
     setQuizSet(updatedQuizSet);
   };
 
@@ -117,7 +109,10 @@ export const QuizSetupPage: React.FC = () => {
       {
         quiz: '',
         limitTime: 10,
-        choiceList: [{ choiceContent: '', choiceOrder: 1, isAnswer: true }]
+        choiceList: [
+          { choiceContent: '', choiceOrder: 1, isAnswer: true },
+          { choiceContent: '', choiceOrder: 2, isAnswer: false }
+        ]
       }
     ]);
   }, [quizSet]);
@@ -207,15 +202,20 @@ export const QuizSetupPage: React.FC = () => {
   }, [quizSet, addQuiz]);
 
   return (
-    <>
-      <HeaderBar />
-      <Box className="p-8 max-w-3xl mx-auto bg-white shadow-xl rounded-lg">
-        <Typography variant="h4" className="mb-6 font-semibold text-gray-800 pb-4 text-center">
+    <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
+      <Header />
+      <div className="w-full max-w-lg p-8 bg-white shadow-lg rounded-xl border-4 border-blue-400">
+        <div className="mb-6 font-bold text-gray-800 text-center pb-4 text-4xl">
           퀴즈셋 생성하기
-        </Typography>
+        </div>
 
-        <TextInput label="제목" value={title} onChange={handleTitleChange} error={titleError} />
-
+        <TextInput
+          label="제목"
+          value={title}
+          onChange={handleTitleChange}
+          error={titleError}
+          className="mb-6"
+        />
         <Select
           value={category}
           onChange={handleCategoryChange}
@@ -231,86 +231,98 @@ export const QuizSetupPage: React.FC = () => {
           <MenuItem value="science">과학</MenuItem>
         </Select>
 
+        {/* 퀴즈 리스트 */}
         {quizSet.map((quiz, quizIndex) => (
-          <Box key={quizIndex} className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm ">
-            <div className="flex justify-between">
-              <Typography variant="h6" className="mb-4 p-2 font-semibold">
+          <Box
+            key={quizIndex}
+            className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm bg-gray-50 relative"
+          >
+            {/* 퀴즈 헤더 */}
+            <div className="flex justify-between items-center mb-4">
+              <Typography variant="h6" className="font-semibold text-blue-600">
                 퀴즈 {quizIndex + 1}
               </Typography>
               {quizSet.length > 1 && (
-                <button className="text-red-500" onClick={() => removeQuiz(quizIndex)}>
+                <button
+                  className="text-red-500 hover:text-red-700 transition-all"
+                  onClick={() => removeQuiz(quizIndex)}
+                >
                   삭제
                 </button>
               )}
             </div>
 
+            {/* 퀴즈 입력 */}
             <TextInput
-              label="퀴즈"
+              label="퀴즈 내용"
               value={quiz.quiz}
               onChange={(e) => handleQuizChange(quizIndex, e.target.value)}
-              error={quizErrorIndex === quizIndex ? '퀴즈를 입력해주세요' : ''}
+              error={quizErrorIndex === quizIndex ? '퀴즈를 입력해주세요.' : ''}
+              className="mb-4"
             />
+
+            {/* 제한 시간 */}
             <TextField
               label="제한 시간 (초)"
               type="number"
               variant="outlined"
-              fullWidth
-              className="mb-6"
               value={quiz.limitTime || 10}
               onChange={(e) => handleLimitTimeChange(quizIndex, e.target.value)}
+              className="mb-6 w-full"
             />
-            <Box className="m-2">
+            {/* 선택지 추가 버튼 */}
+            <div className="flex justify-between items-center mb-2 mt-4">
+              <span className="text-lg font-medium text-blue-500">선택지</span>
+              <CustomButton
+                text="선택지 추가"
+                onClick={() => addChoice(quizIndex)}
+                size="third"
+                color="green"
+              />
+            </div>
+            {/* 선택지 입력 */}
+            <Box className="space-y-4 max-h-60 overflow-y-auto">
               {quiz.choiceList.map((choice, choiceIndex) => (
-                <TextInput
-                  key={choiceIndex}
-                  label={`선택지 ${choiceIndex + 1}`}
-                  value={choice.choiceContent}
-                  onChange={(e) =>
-                    handleChoiceChange(quizIndex, choiceIndex, 'choiceContent', e.target.value)
-                  }
-                  error={
-                    choiceErrorIndex &&
-                    quizIndex === choiceErrorIndex[0] &&
-                    choiceIndex === choiceErrorIndex[1]
-                      ? '선택지를 입력해주세요'
-                      : ''
-                  }
-                >
+                <Box key={choiceIndex} className="flex items-center gap-4 mt-2">
+                  <TextInput
+                    label={`선택지 ${choiceIndex + 1}`}
+                    value={choice.choiceContent}
+                    onChange={(e) =>
+                      handleChoiceChange(quizIndex, choiceIndex, 'choiceContent', e.target.value)
+                    }
+                    error={
+                      choiceErrorIndex &&
+                      quizIndex === choiceErrorIndex[0] &&
+                      choiceIndex === choiceErrorIndex[1]
+                        ? '선택지를 입력해주세요.'
+                        : ''
+                    }
+                    className="flex-1"
+                  />
                   <button
-                    className="text-[2rem] transition transform duration-100 ease-in-out active:scale-75"
+                    className={`p-2 text-2xl ${choice.isAnswer ? 'text-green-500' : 'text-gray-400'}`}
                     onClick={() => handleChoiceChange(quizIndex, choiceIndex, 'isAnswer', 'true')}
                   >
-                    {choice.isAnswer ? '✅' : '⬜'}
+                    {choice.isAnswer ? '✔' : '✖'}
                   </button>
-                  <button
-                    className={'text-[2rem] w-12 center text-red-500'}
-                    style={{ visibility: choice.isAnswer ? 'hidden' : 'visible' }}
-                    onClick={() => removeChoice(quizIndex, choiceIndex)}
-                  >
-                    ✕
-                  </button>
-                </TextInput>
+                  {quiz.choiceList.length > 2 && (
+                    <button
+                      className="p-2 text-red-500 hover:text-red-700 transition-all"
+                      onClick={() => removeChoice(quizIndex, choiceIndex)}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </Box>
               ))}
             </Box>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => addChoice(quizIndex)}
-              className="w-full mb-4"
-              style={{ display: quiz.choiceList.length > 5 ? 'none' : 'block' }}
-            >
-              선택지 추가
-            </Button>
           </Box>
         ))}
 
-        <Button variant="outlined" color="secondary" onClick={addQuiz} className="w-full mb-6">
-          퀴즈 추가
-        </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit} className="w-full">
-          퀴즈 데이터 제출
-        </Button>
-      </Box>
-    </>
+        {/* 퀴즈 추가/제출 버튼 */}
+        <CustomButton text="퀴즈 추가" onClick={addQuiz} className="w-full" color="yellow" />
+        <CustomButton text="퀴즈셋 생성하기" onClick={handleSubmit} className="w-full" />
+      </div>
+    </div>
   );
 };
