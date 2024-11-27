@@ -5,9 +5,9 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from '@nestjs/websockets';
-import { Namespace, Server, Socket } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
-import { Logger, UseFilters, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Logger, UseFilters, UseInterceptors, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import SocketEvents from '../common/constants/socket-events';
 import { ChatMessageDto } from './dto/chat-message.dto';
@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { SetPlayerNameDto } from './dto/set-player-name.dto';
 import { KickRoomDto } from './dto/kick-room.dto';
 import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventLoggerInterceptor';
+import { ExceptionMessage } from '../common/constants/exception-message';
 
 @UseInterceptors(SocketEventLoggerInterceptor)
 @UseInterceptors(GameActivityInterceptor)
@@ -145,7 +146,7 @@ export class GameGateway {
       auth: false,
       mode: 'development'
     });
-    this.logger.verbose('Socket.IO Admin UI initialized');
+    this.logger.verbose('Socket.IO Admin UI 초기화 완료했어요!');
     this.logger.verbose('WebSocket 서버 초기화 완료했어요!');
 
     this.gameService.subscribeRedisEvent(this.server).then(() => {
@@ -160,6 +161,7 @@ export class GameGateway {
     });
   }
 
+  @UsePipes(new GameValidationPipe(SocketEvents.CHAT_MESSAGE))
   initialHeaders(headers, request) {
     if (!request.headers.cookie) {
       request.headers['player-id'] = this.setNewPlayerIdToCookie(headers);
@@ -180,9 +182,25 @@ export class GameGateway {
   }
 
   async handleConnection(client: Socket) {
-    await this.gameService.connection(client);
+    try {
+      await this.gameService.connection(client);
+      this.logger.verbose(`클라이언트가 연결되었어요!: ${client.data.playerId}`);
+    } catch (error) {
+      // 1. 에러 로깅
+      this.logger.error(`Connection error: ${error.message + ExceptionMessage.CONNECTION_ERROR}`);
 
-    this.logger.verbose(`클라이언트가 연결되었어요!: ${client.data.playerId}`);
+      // 2. 클라이언트에게 에러 전송
+      client.emit('exception', {
+        event: 'connection',
+        message: error.message + ExceptionMessage.CONNECTION_ERROR
+      });
+
+      // 3. 연결 종료
+      client.disconnect(true);
+
+      // 4. 에러를 던지지 않고 처리 완료
+      return;
+    }
   }
 
   async handleDisconnect(client: Socket) {
