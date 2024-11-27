@@ -42,20 +42,20 @@ class SocketService {
     this.handlers = [];
   }
 
-  async connect() {
+  async connect(header: { 'create-room'?: string; 'game-id'?: string }) {
     if (this.isActive()) return;
-    this.socket = io(this.url) as SocketInterface;
-    await new Promise<void>((resolve, reject) => {
-      this.socket.on('connect', () => resolve());
-      this.socket.on('error', () => reject());
-    });
-    this.initHandler();
-    return;
-  }
-
-  async connectMock(gameId: keyof typeof mockMap) {
-    if (this.isActive()) return;
-    this.socket = new mockMap[gameId]() as SocketInterface;
+    const gameId = header['game-id'];
+    if (gameId && gameId in mockMap) {
+      // mock과 연결
+      this.socket = new mockMap[gameId as keyof typeof mockMap]() as SocketInterface;
+    } else {
+      // 소켓 연결
+      this.socket = io(this.url, { query: header }) as SocketInterface;
+      await new Promise<void>((resolve, reject) => {
+        this.socket.on('connect', () => resolve());
+        this.socket.on('error', () => reject());
+      });
+    }
     this.initHandler();
   }
 
@@ -70,25 +70,11 @@ class SocketService {
   }
 
   disconnect() {
-    this.socket.disconnect();
+    if (this.isActive()) this.socket.disconnect();
   }
 
   isActive() {
     return this.socket && this.socket.connected;
-  }
-
-  getSocketId() {
-    return this.socket.id;
-  }
-
-  // deprecated
-  onPermanently<T extends SocketEvent>(
-    event: T,
-    callback: (data: SocketDataMap[T]['response']) => void
-  ) {
-    const handler = () => this.socket.on(event, callback);
-    this.handlers.push(handler);
-    if (this.isActive()) handler();
   }
 
   on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
@@ -107,15 +93,22 @@ class SocketService {
     this.socket.emit(event, data);
   }
 
-  async createRoom(payload: SocketDataMap['createRoom']['request']) {
-    await this.connect();
-    this.socket.emit(SocketEvents.CREATE_ROOM, payload);
+  async createRoom(option: {
+    title: string;
+    gameMode: 'RANKING' | 'SURVIVAL';
+    maxPlayerCount: number;
+    isPublic: boolean;
+  }) {
+    this.disconnect();
+    await this.connect({
+      'create-room': Object.entries(option)
+        .map(([key, value]) => key + '=' + value)
+        .join(';')
+    });
   }
 
-  async joinRoom(gameId: string, playerName: string) {
-    if (gameId in mockMap) this.connectMock(gameId as keyof typeof mockMap);
-    else if (!this.isActive()) await this.connect();
-    this.socket.emit(SocketEvents.JOIN_ROOM, { gameId, playerName });
+  async joinRoom(gameId: string) {
+    await this.connect({ 'game-id': gameId });
   }
 
   kickRoom(gameId: string, kickPlayerId: string) {

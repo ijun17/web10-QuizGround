@@ -8,13 +8,14 @@ import {
   FormControlLabel,
   Radio
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { socketService, useSocketEvent } from '@/api/socket';
 import RoomConfig from '@/constants/roomConfig';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { TextInput } from '@/components/TextInput';
+
 export const GameSetupPage = () => {
   const { updateRoom } = useRoomStore((state) => state);
   const setIsHost = usePlayerStore((state) => state.setIsHost);
@@ -28,10 +29,6 @@ export const GameSetupPage = () => {
   useSocketEvent('createRoom', (data) => {
     navigate(`/game/${data.gameId}`);
   });
-
-  useEffect(() => {
-    socketService.disconnect();
-  }, []);
 
   const handleTitleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     setTitle(e.target.value);

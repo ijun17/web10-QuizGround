@@ -47,7 +47,7 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
                   ) : (
                     <span className="text-red-700 font-medium">탈락</span>
                   )}{' '}
-                  {player.playerName}
+                  {player.emoji + ' ' + player.playerName}
                 </span>
                 {gameMode === 'RANKING' && (
                   <span className="text-red-500">{player.playerScore}점</span>

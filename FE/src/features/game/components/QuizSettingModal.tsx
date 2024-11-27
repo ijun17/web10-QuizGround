@@ -84,10 +84,8 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
               ✕
             </button>
           </div>
-          <div className="flex flex-col pl-2 pr-2 max-h-[30vh] overflow-y-auto" ref={scrollRef}>
-            {searchParam && (
-              <QuizSetSearchList search={searchParam} onClick={handleSelectQuizSet} />
-            )}
+          <div className="flex flex-col pl-2 pr-2 h-[30vh] overflow-y-auto" ref={scrollRef}>
+            <QuizSetSearchList search={searchParam} onClick={handleSelectQuizSet} />
           </div>
         </div>
         <div className="border-t border-default">

@@ -8,7 +8,7 @@ type ModalProps = {
   onSubmit: (value: string) => void;
 };
 
-export const Modal: React.FC<ModalProps> = ({
+export const NicknameModal: React.FC<ModalProps> = ({
   isOpen,
   title,
   placeholder,

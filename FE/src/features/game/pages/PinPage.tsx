@@ -1,26 +1,21 @@
-import { socketService } from '@/api/socket';
+import { socketService, useSocketEvent } from '@/api/socket';
 import { HeaderBar } from '@/components/HeaderBar';
 import { TextInput } from '@/components/TextInput';
-import { getRandomNickname } from '@/features/game/utils/nickname';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export const PinPage = () => {
-  const [nickname, setNickname] = useState('');
   const [pin, setPin] = useState('');
   const [errors, setErrors] = useState({ nickname: '', pin: '' });
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    setNickname(getRandomNickname());
-  }, []);
+  useSocketEvent('joinRoom', () => {
+    navigate(`/game/${pin}`);
+  });
 
   const handleJoin = () => {
     const newErrors = { nickname: '', pin: '' };
     let hasError = false;
-
-    if (!nickname.trim()) {
-      newErrors.nickname = '닉네임을 입력해주세요';
-      hasError = true;
-    }
 
     if (!pin.trim()) {
       newErrors.pin = '핀번호를 입력해주세요';
@@ -31,7 +26,7 @@ export const PinPage = () => {
 
     if (hasError) return;
 
-    socketService.joinRoom(pin, nickname);
+    socketService.joinRoom(pin);
   };
 
   return (
@@ -40,16 +35,6 @@ export const PinPage = () => {
       <div className="flex items-center justify-center h-[calc(100vh-100px)] bg-surface-alt">
         <div className="component-default max-w-[90vw] w-[40rem] p-10 flex flex-col gap-5">
           <h1>방 들어가기</h1>
-
-          <TextInput
-            label="닉네임"
-            value={nickname}
-            onChange={(e) => {
-              setNickname(e.target.value);
-              if (errors.nickname) setErrors((prev) => ({ ...prev, nickname: '' }));
-            }}
-            error={errors.nickname}
-          />
 
           <TextInput
             label="핀번호"
