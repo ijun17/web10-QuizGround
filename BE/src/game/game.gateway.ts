@@ -161,7 +161,6 @@ export class GameGateway {
     });
   }
 
-  @UsePipes(new GameValidationPipe(SocketEvents.CHAT_MESSAGE))
   initialHeaders(headers, request) {
     if (!request.headers.cookie) {
       request.headers['player-id'] = this.setNewPlayerIdToCookie(headers);
