@@ -29,17 +29,15 @@ type SocketInterface = {
 };
 
 class SocketService {
-  private socket: SocketInterface;
+  private socket: SocketInterface | null;
   private url: string;
-  private handlers: (() => void)[];
   private handlerMap: Partial<
     Record<SocketEvent, ((data: SocketDataMap[SocketEvent]['response']) => void)[]>
   > = {};
 
   constructor(url: string) {
-    this.socket = io() as SocketInterface;
+    this.socket = null;
     this.url = url;
-    this.handlers = [];
   }
 
   async connect(header: { 'create-room'?: string; 'game-id'?: string }) {
@@ -52,6 +50,7 @@ class SocketService {
       // 소켓 연결
       this.socket = io(this.url, { query: header }) as SocketInterface;
       await new Promise<void>((resolve, reject) => {
+        if (!this.socket) return;
         this.socket.on('connect', () => resolve());
         this.socket.on('error', () => reject());
       });
@@ -60,9 +59,10 @@ class SocketService {
   }
 
   initHandler() {
-    this.handlers.forEach((h) => h());
+    if (!this.socket) return;
+    const socket = this.socket;
     Object.entries(this.handlerMap).forEach(([event, handlers]) =>
-      handlers.forEach((h) => this.socket.on(event, h))
+      handlers.forEach((h) => socket.on(event, h))
     );
     this.socket.onAny((eventName, ...args) => {
       console.log(`SOCKET[${eventName}]`, ...args);
@@ -70,7 +70,7 @@ class SocketService {
   }
 
   disconnect() {
-    if (this.isActive()) this.socket.disconnect();
+    if (this.socket && this.isActive()) this.socket.disconnect();
   }
 
   isActive() {
@@ -78,18 +78,19 @@ class SocketService {
   }
 
   on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
-    if (this.isActive()) this.socket.on(event, callback);
+    if (this.socket && this.isActive()) this.socket.on(event, callback);
     if (!this.handlerMap[event]) this.handlerMap[event] = [];
     this.handlerMap[event].push(callback);
   }
 
   off<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
     if (!this.handlerMap[event]) return;
-    if (this.isActive()) this.socket.off(event, callback);
+    if (this.socket && this.isActive()) this.socket.off(event, callback);
     this.handlerMap[event] = this.handlerMap[event].filter((e) => e !== callback);
   }
 
   emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
+    if (!this.socket) return;
     this.socket.emit(event, data);
   }
 
@@ -112,10 +113,12 @@ class SocketService {
   }
 
   kickRoom(gameId: string, kickPlayerId: string) {
+    if (!this.socket) return;
     this.socket.emit(SocketEvents.KICK_ROOM, { gameId, kickPlayerId });
   }
 
   chatMessage(gameId: string, message: string) {
+    if (!this.socket) return;
     this.socket.emit(SocketEvents.CHAT_MESSAGE, { gameId, message });
   }
 }
