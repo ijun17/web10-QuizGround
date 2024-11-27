@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import SocketEvents from '../../../common/constants/socket-events';
 
@@ -12,7 +12,7 @@ export class ScoringSubscriber extends RedisSubscriber {
     super(redis);
   }
 
-  async subscribe(server: Server): Promise<void> {
+  async subscribe(server: Namespace): Promise<void> {
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe('scoring:*');
 
@@ -22,7 +22,7 @@ export class ScoringSubscriber extends RedisSubscriber {
     });
   }
 
-  private async handleScoring(gameId: string, completeClientsCount: number, server: Server) {
+  private async handleScoring(gameId: string, completeClientsCount: number, server: Namespace) {
     const scoringKey = REDIS_KEY.ROOM_SCORING_COUNT(gameId);
 
     if (!this.redis.exists(scoringKey)) {
@@ -39,7 +39,7 @@ export class ScoringSubscriber extends RedisSubscriber {
     }
   }
 
-  private async completeScoring(gameId: string, server: Server) {
+  private async completeScoring(gameId: string, server: Namespace) {
     const { quiz, players } = await this.getQuizResults(gameId);
 
     server.to(gameId).emit(SocketEvents.END_QUIZ_TIME, {

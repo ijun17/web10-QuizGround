@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import SocketEvents from '../../../common/constants/socket-events';
 import { GameMode } from '../../../common/constants/game-mode';
@@ -15,7 +15,7 @@ export class TimerSubscriber extends RedisSubscriber {
     super(redis);
   }
 
-  async subscribe(server: Server): Promise<void> {
+  async subscribe(server: Namespace): Promise<void> {
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe(`__keyspace@0__:${REDIS_KEY.ROOM_TIMER('*')}`);
 
@@ -41,12 +41,15 @@ export class TimerSubscriber extends RedisSubscriber {
     return splitKey.length === 3 ? splitKey[1] : null;
   }
 
-  private async handleQuizScoring(gameId: string, quizNum: number, server: Server) {
+  private async handleQuizScoring(gameId: string, quizNum: number, server: Namespace) {
     const quizList = await this.redis.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
     const quiz = await this.redis.hgetall(REDIS_KEY.ROOM_QUIZ(gameId, quizList[quizNum]));
 
-    const sockets = await server.in(gameId).fetchSockets();
-    const clients = sockets.map((socket) => socket.id);
+    if ((await this.redis.set(REDIS_KEY.ROOM_SCORING_STATUS(gameId), 'START', 'NX')) !== 'OK') {
+      return;
+    }
+
+    const clients = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
 
     const correctPlayers = [];
     const inCorrectPlayers = [];
@@ -77,14 +80,14 @@ export class TimerSubscriber extends RedisSubscriber {
 
     if (gameMode === GameMode.RANKING) {
       const score = 1000 / correctPlayers.length;
-      correctPlayers.forEach(clientId => {
+      correctPlayers.forEach((clientId) => {
         this.redis.zincrby(leaderboardKey, score, clientId);
       });
     } else if (gameMode === GameMode.SURVIVAL) {
-      correctPlayers.forEach(clientId => {
+      correctPlayers.forEach((clientId) => {
         this.redis.zadd(leaderboardKey, 1, clientId);
       });
-      inCorrectPlayers.forEach(clientId => {
+      inCorrectPlayers.forEach((clientId) => {
         this.redis.zadd(leaderboardKey, 0, clientId);
         this.redis.hset(REDIS_KEY.PLAYER(clientId), { isAlive: '0' });
       });
@@ -92,12 +95,14 @@ export class TimerSubscriber extends RedisSubscriber {
 
     await this.redis.publish(`scoring:${gameId}`, clients.length.toString());
 
+    await this.redis.del(REDIS_KEY.ROOM_SCORING_STATUS(gameId));
+
     this.logger.verbose(
       `[Quiz] Room: ${gameId} | gameMode: ${gameMode === GameMode.SURVIVAL ? '서바이벌' : '랭킹'} | totalPlayers: ${clients.length} | ${gameMode === GameMode.SURVIVAL ? `생존자: ${correctPlayers.length}명` : `정답자: ${correctPlayers.length}명`}`
     );
   }
 
-  private async handleNextQuiz(gameId: string, currentQuizNum: number, server: Server) {
+  private async handleNextQuiz(gameId: string, currentQuizNum: number, server: Namespace) {
     const newQuizNum = currentQuizNum + 1;
     const quizList = await this.redis.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));
 
@@ -115,6 +120,11 @@ export class TimerSubscriber extends RedisSubscriber {
         -1,
         'WITHSCORES'
       );
+
+      this.redis.hset(REDIS_KEY.ROOM(gameId), {
+        status: 'waiting',
+        isWaiting: '1'
+      });
 
       server.to(gameId).emit(SocketEvents.END_GAME, {
         host: leaderboard[0]

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 
@@ -12,7 +12,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     super(redis);
   }
 
-  async subscribe(server: Server): Promise<void> {
+  async subscribe(server: Namespace): Promise<void> {
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe('__keyspace@0__:Player:*');
 
@@ -33,7 +33,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     return splitKey.length === 2 ? splitKey[1] : null;
   }
 
-  private async handlePlayerChanges(key: string, playerId: string, server: Server) {
+  private async handlePlayerChanges(key: string, playerId: string, server: Namespace) {
     const changes = await this.redis.get(`${key}:Changes`);
     const playerKey = REDIS_KEY.PLAYER(playerId);
     const playerData = await this.redis.hgetall(playerKey);
@@ -50,13 +50,18 @@ export class PlayerSubscriber extends RedisSubscriber {
       case 'Disconnect':
         await this.handlePlayerDisconnect(playerId, playerData, server);
         break;
+
+      case 'Name':
+        await this.handlePlayerName(playerId, playerData, server);
+        break;
+
       case 'Kicked':
         await this.handlePlayerKicked(playerId, playerData, server);
         break;
     }
   }
 
-  private async handlePlayerJoin(playerId: string, playerData: any, server: Server) {
+  private async handlePlayerJoin(playerId: string, playerData: any, server: Namespace) {
     const newPlayer = {
       playerId,
       playerName: playerData.playerName,
@@ -69,7 +74,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     this.logger.verbose(`Player joined: ${playerId} to game: ${playerData.gameId}`);
   }
 
-  private async handlePlayerPosition(playerId: string, playerData: any, server: Server) {
+  private async handlePlayerPosition(playerId: string, playerData: any, server: Namespace) {
     const { gameId, positionX, positionY } = playerData;
     const playerPosition = [parseFloat(positionX), parseFloat(positionY)];
     const updateData = { playerId, playerPosition };
@@ -88,8 +93,8 @@ export class PlayerSubscriber extends RedisSubscriber {
       );
 
       deadPlayers
-        .filter(player => player.isAlive === '0')
-        .forEach(player => {
+        .filter((player) => player.isAlive === '0')
+        .forEach((player) => {
           server.to(player.id).emit(SocketEvents.UPDATE_POSITION, updateData);
         });
     }
@@ -99,14 +104,24 @@ export class PlayerSubscriber extends RedisSubscriber {
     );
   }
 
-  private async handlePlayerDisconnect(playerId: string, playerData: any, server: Server) {
+  private async handlePlayerDisconnect(playerId: string, playerData: any, server: Namespace) {
     server.to(playerData.gameId).emit(SocketEvents.EXIT_ROOM, {
       playerId
     });
     this.logger.verbose(`Player disconnected: ${playerId} from game: ${playerData.gameId}`);
   }
 
-  private async handlePlayerKicked(playerId: string, playerData: any, server: Server) {
+  private async handlePlayerName(playerId: string, playerData: any, server: Namespace) {
+    server.to(playerData.gameId).emit(SocketEvents.SET_PLAYER_NAME, {
+      playerId,
+      playerName: playerData.playerName
+    });
+    this.logger.verbose(
+      `Player Name Change: ${playerData.playerName} ${playerId} from game: ${playerData.gameId}`
+    );
+  }
+
+  private async handlePlayerKicked(playerId: string, playerData: any, server: Namespace) {
     server.to(playerData.gameId).emit(SocketEvents.KICK_ROOM, {
       playerId
     });

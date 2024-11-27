@@ -6,10 +6,13 @@ import { UpdatePositionDto } from '../dto/update-position.dto';
 import { GameValidator } from '../validations/game.validator';
 import SocketEvents from '../../common/constants/socket-events';
 import { StartGameDto } from '../dto/start-game.dto';
-import { Server } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
 import { mockQuizData } from '../../../test/mocks/quiz-data.mock';
 import { QuizCacheService } from './quiz.cache.service';
 import { RedisSubscriberService } from '../redis/redis-subscriber.service';
+import { parseHeaderToObject } from '../../common/utils/utils';
+import { GameRoomService } from './game.room.service';
+import { SetPlayerNameDto } from '../dto/set-player-name.dto';
 import { Trace, TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
 @TraceClass()
@@ -21,7 +24,8 @@ export class GameService {
     @InjectRedis() private readonly redis: Redis,
     private readonly gameValidator: GameValidator,
     private readonly quizCacheService: QuizCacheService,
-    private readonly redisSubscriberService: RedisSubscriberService
+    private readonly redisSubscriberService: RedisSubscriberService,
+    private readonly gameRoomService: GameRoomService
   ) {}
 
   async updatePosition(updatePosition: UpdatePositionDto, clientId: string) {
@@ -126,39 +130,38 @@ export class GameService {
     this.logger.verbose(`게임 시작 (gameId: ${gameId}) (gameMode: ${room.gameMode})`);
   }
 
-  async subscribeRedisEvent(server: Server) {
+  async setPlayerName(setPlayerNameDto: SetPlayerNameDto, clientId: string) {
+    const { playerName } = setPlayerNameDto;
+
+    await this.redis.set(`${REDIS_KEY.PLAYER(clientId)}:Changes`, 'Name');
+    await this.redis.hmset(REDIS_KEY.PLAYER(clientId), {
+      playerName: playerName
+    });
+  }
+
+  async subscribeRedisEvent(server: Namespace) {
     await this.redisSubscriberService.initializeSubscribers(server);
   }
 
-  async disconnect(clientId: string) {
-    const playerKey = REDIS_KEY.PLAYER(clientId);
-    const playerData = await this.redis.hgetall(playerKey);
+  async connection(client: Socket) {
+    client.data.playerId = client.handshake.headers['player-id'];
 
-    const roomPlayersKey = REDIS_KEY.ROOM_PLAYERS(playerData.gameId);
-    await this.redis.srem(roomPlayersKey, clientId);
-
-    const roomLeaderboardKey = REDIS_KEY.ROOM_LEADERBOARD(playerData.gameId);
-    await this.redis.zrem(roomLeaderboardKey, clientId);
-
-    const roomKey = REDIS_KEY.ROOM(playerData.gameId);
-    const host = await this.redis.hget(roomKey, 'host');
-    const players = await this.redis.smembers(roomPlayersKey);
-    if (host === clientId && players.length > 0) {
-      const newHost = await this.redis.srandmember(REDIS_KEY.ROOM_PLAYERS(playerData.gameId));
-      await this.redis.hset(roomKey, {
-        host: newHost
-      });
+    let gameId = client.handshake.query['game-id'] as string;
+    const createRoomData = parseHeaderToObject(client.handshake.query['create-room'] as string);
+    if (createRoomData) {
+      gameId = await this.gameRoomService.createRoom(
+        {
+          title: createRoomData.title as string,
+          gameMode: createRoomData.gameMode as string,
+          maxPlayerCount: createRoomData.maxPlayerCount as number,
+          isPublic: createRoomData.isPublic as boolean
+        },
+        client.data.playerId
+      );
+      client.emit(SocketEvents.CREATE_ROOM, { gameId });
     }
-    await this.redis.set(`${playerKey}:Changes`, 'Disconnect', 'EX', 600); // 해당플레이어의 변화정보 10분 후에 삭제
-    await this.redis.hset(playerKey, {
-      disconnected: '1'
-    });
 
-    if (players.length === 0) {
-      await this.redis.del(roomKey);
-      await this.redis.del(roomPlayersKey);
-      await this.redis.del(roomLeaderboardKey);
-    }
+    await this.gameRoomService.joinRoom(client, gameId, client.data.playerId);
   }
 
   @Trace()

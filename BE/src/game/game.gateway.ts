@@ -5,12 +5,10 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { Logger, UseFilters, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Socket, Namespace } from 'socket.io';
+import { Logger, UseFilters, UseInterceptors, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import SocketEvents from '../common/constants/socket-events';
-import { CreateGameDto } from './dto/create-game.dto';
-import { JoinRoomDto } from './dto/join-room.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
 import { GameService } from './service/game.service';
 import { UpdatePositionDto } from './dto/update-position.dto';
@@ -20,8 +18,10 @@ import { UpdateRoomOptionDto } from './dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from './dto/update-room-quizset.dto';
 import { GameChatService } from './service/game.chat.service';
 import { GameRoomService } from './service/game.room.service';
-import { WsJwtAuthGuard } from '../auth/guard/ws-jwt-auth.guard';
 import { GameActivityInterceptor } from './interceptor/gameActivity.interceptor';
+import { parse, serialize } from 'cookie';
+import { v4 as uuidv4 } from 'uuid';
+import { SetPlayerNameDto } from './dto/set-player-name.dto';
 import { KickRoomDto } from './dto/kick-room.dto';
 import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventLoggerInterceptor';
 
@@ -30,13 +30,14 @@ import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventL
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
   cors: {
-    origin: '*'
+    origin: '*',
+    credentials: true
   },
   namespace: '/game'
 })
 export class GameGateway {
   @WebSocketServer()
-  server: Server;
+  server: Namespace;
   private logger = new Logger('GameGateway');
 
   constructor(
@@ -54,29 +55,29 @@ export class GameGateway {
     // ...
   }
 
-  @SubscribeMessage(SocketEvents.CREATE_ROOM)
-  @UsePipes(new GameValidationPipe(SocketEvents.CREATE_ROOM))
-  async handleCreateRoom(
-    @MessageBody() gameConfig: CreateGameDto,
-    @ConnectedSocket() client: Socket
-  ): Promise<void> {
-    const roomId = await this.gameRoomService.createRoom(gameConfig, client.id);
-    client.emit(SocketEvents.CREATE_ROOM, { gameId: roomId });
-  }
+  // @SubscribeMessage(SocketEvents.CREATE_ROOM)
+  // @UsePipes(new GameValidationPipe(SocketEvents.CREATE_ROOM))
+  // async handleCreateRoom(
+  //   @MessageBody() gameConfig: CreateGameDto,
+  //   @ConnectedSocket() client: Socket
+  // ): Promise<void> {
+  //   const roomId = await this.gameRoomService.createRoom(gameConfig, client.data.playerId);
+  //   client.emit(SocketEvents.CREATE_ROOM, { gameId: roomId });
+  // }
 
-  @SubscribeMessage(SocketEvents.JOIN_ROOM)
-  @UsePipes(new GameValidationPipe(SocketEvents.JOIN_ROOM))
-  @UseGuards(WsJwtAuthGuard)
-  async handleJoinRoom(
-    @MessageBody() dto: JoinRoomDto,
-    @ConnectedSocket() client: Socket
-  ): Promise<void> {
-    if (client.data.user) {
-      dto.playerName = client.data.user.nickname;
-    }
-    const players = await this.gameRoomService.joinRoom(client, dto, client.id);
-    client.emit(SocketEvents.JOIN_ROOM, { players });
-  }
+  // @SubscribeMessage(SocketEvents.JOIN_ROOM)
+  // @UsePipes(new GameValidationPipe(SocketEvents.JOIN_ROOM))
+  // @UseGuards(WsJwtAuthGuard)
+  // async handleJoinRoom(
+  //   @MessageBody() dto: JoinRoomDto,
+  //   @ConnectedSocket() client: Socket
+  // ): Promise<void> {
+  //   if (client.data.user) {
+  //     dto.playerName = client.data.user.nickname;
+  //   }
+  //   const players = await this.gameRoomService.joinRoom(client, dto, client.data.playerId);
+  //   client.emit(SocketEvents.JOIN_ROOM, { players });
+  // }
 
   @SubscribeMessage(SocketEvents.UPDATE_POSITION)
   @UsePipes(new GameValidationPipe(SocketEvents.UPDATE_POSITION))
@@ -84,7 +85,7 @@ export class GameGateway {
     @MessageBody() updatePosition: UpdatePositionDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    await this.gameService.updatePosition(updatePosition, client.id);
+    await this.gameService.updatePosition(updatePosition, client.data.playerId);
   }
 
   @SubscribeMessage(SocketEvents.CHAT_MESSAGE)
@@ -93,7 +94,7 @@ export class GameGateway {
     @MessageBody() chatMessage: ChatMessageDto,
     @ConnectedSocket() client: Socket
   ): Promise<void> {
-    await this.gameChatService.chatMessage(chatMessage, client.id);
+    await this.gameChatService.chatMessage(chatMessage, client.data.playerId);
   }
 
   @SubscribeMessage(SocketEvents.UPDATE_ROOM_OPTION)
@@ -102,7 +103,7 @@ export class GameGateway {
     @MessageBody() updateRoomOptionDto: UpdateRoomOptionDto,
     @ConnectedSocket() client: Socket
   ) {
-    await this.gameRoomService.updateRoomOption(updateRoomOptionDto, client.id);
+    await this.gameRoomService.updateRoomOption(updateRoomOptionDto, client.data.playerId);
   }
 
   @SubscribeMessage(SocketEvents.UPDATE_ROOM_QUIZSET)
@@ -111,7 +112,7 @@ export class GameGateway {
     @MessageBody() updateRoomQuizsetDto: UpdateRoomQuizsetDto,
     @ConnectedSocket() client: Socket
   ) {
-    await this.gameRoomService.updateRoomQuizset(updateRoomQuizsetDto, client.id);
+    await this.gameRoomService.updateRoomQuizset(updateRoomQuizsetDto, client.data.playerId);
   }
 
   @SubscribeMessage(SocketEvents.START_GAME)
@@ -120,7 +121,16 @@ export class GameGateway {
     @MessageBody() startGameDto: StartGameDto,
     @ConnectedSocket() client: Socket
   ) {
-    await this.gameService.startGame(startGameDto, client.id);
+    await this.gameService.startGame(startGameDto, client.data.playerId);
+  }
+
+  @SubscribeMessage(SocketEvents.SET_PLAYER_NAME)
+  @UsePipes(new GameValidationPipe(SocketEvents.SET_PLAYER_NAME))
+  async handleSetPlayerName(
+    @MessageBody() setPlayerNameDto: SetPlayerNameDto,
+    @ConnectedSocket() client: Socket
+  ) {
+    await this.gameService.setPlayerName(setPlayerNameDto, client.data.playerId);
   }
 
   @SubscribeMessage(SocketEvents.KICK_ROOM)
@@ -138,16 +148,40 @@ export class GameGateway {
     this.gameChatService.subscribeChatEvent(this.server).then(() => {
       this.logger.verbose('Redis Chat 이벤트 등록 완료했어요!');
     });
+
+    this.server.server.engine.on('headers', (headers, request) => {
+      this.initialHeaders(headers, request);
+    });
   }
 
-  handleConnection(client: Socket) {
-    this.logger.verbose(`클라이언트가 연결되었어요!: ${client.id}`);
+  initialHeaders(headers, request) {
+    if (!request.headers.cookie) {
+      request.headers['player-id'] = this.setNewPlayerIdToCookie(headers);
+      return;
+    }
+    const cookies = parse(request.headers.cookie);
+    if (!cookies.playerId) {
+      request.headers['player-id'] = this.setNewPlayerIdToCookie(headers);
+      return;
+    }
+    request.headers['player-id'] = cookies.playerId;
+  }
+
+  setNewPlayerIdToCookie(headers) {
+    const playerId = uuidv4();
+    headers['Set-Cookie'] = serialize('playerId', playerId);
+    return playerId;
+  }
+
+  async handleConnection(client: Socket) {
+    await this.gameService.connection(client);
+
+    this.logger.verbose(`클라이언트가 연결되었어요!: ${client.data.playerId}`);
   }
 
   async handleDisconnect(client: Socket) {
-    this.logger.verbose(`클라이언트가 연결 해제되었어요!: ${client.id}`);
+    this.logger.verbose(`클라이언트가 연결 해제되었어요!: ${client.data.playerId}`);
 
-    await this.gameService.disconnect(client.id);
-    await this.gameRoomService.handlePlayerExit(client.id);
+    await this.gameRoomService.handlePlayerExit(client.data.playerId);
   }
 }
