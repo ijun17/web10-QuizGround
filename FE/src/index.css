@@ -1,9 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
 @font-face {
   font-family: 'NPSfontBold';
   src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2310@1.0/NPSfontBold.woff2')
     format('woff2');
   font-weight: 700;
+  font-style: bold;
+}
+
+@font-face {
+  font-family: 'NPSfontBold';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2310@1.0/NPSfontRegular.woff2')
+    format('woff2');
+  font-weight: 400;
   font-style: normal;
+}
+
+@font-face {
+  font-family: 'DNFBitBitv2';
+  font-style: normal;
+  font-weight: 400;
+  src: url('//cdn.df.nexon.com/img/common/font/DNFBitBitv2.otf') format('opentype');
 }
 
 @tailwind base;
@@ -12,7 +28,7 @@
 
 @layer base {
   html {
-    font-family: 'NPSfontBold', ui-sans-serif, system-ui;
+    font-family: 'NPSfontBold', 'Noto Color Emoji', ui-sans-serif, system-ui;
     box-sizing: border-box;
     color: #5f6e76;
   }
@@ -44,4 +60,8 @@
 ::-webkit-scrollbar-track {
   box-shadow: none;
   background-color: transparent;
+}
+
+.font-logo {
+  font-family: 'DNFBitBitv2';
 }
