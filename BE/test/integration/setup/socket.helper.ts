@@ -23,7 +23,7 @@ export class SocketTestHelper {
       const createClient = io(`http://localhost:${port}/game`, {
         transports: ['websocket'],
         forceNew: true,
-        extraHeaders: {
+        query: {
           'create-room': 'title=Test Room;gameMode=RANKING;maxPlayerCount=5;isPublic=true'
         }
       });
@@ -40,7 +40,7 @@ export class SocketTestHelper {
           const client = io(`http://localhost:${port}/game`, {
             transports: ['websocket'],
             forceNew: true,
-            extraHeaders: {
+            query: {
               'game-id': this.gameId
             }
           });

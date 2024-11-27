@@ -5,9 +5,9 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from '@nestjs/websockets';
-import { Namespace, Server, Socket } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
-import { Logger, UseFilters, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Logger, UseFilters, UseInterceptors, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import SocketEvents from '../common/constants/socket-events';
 import { ChatMessageDto } from './dto/chat-message.dto';

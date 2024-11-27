@@ -7,6 +7,7 @@ import { getAvailablePort } from './util';
 export async function setupTestingModule() {
   const redisMock = new RedisMock();
   jest.spyOn(redisMock, 'config').mockImplementation(() => Promise.resolve('OK'));
+  jest.spyOn(redisMock, 'client').mockImplementation(() => Promise.resolve('OK' as const));
 
   const originalHset = redisMock.hset.bind(redisMock);
   redisMock.hset = async function (key: string, ...args: any[]) {
@@ -16,7 +17,7 @@ export async function setupTestingModule() {
   };
 
   const moduleRef = await Test.createTestingModule({
-    imports: [AppModule],
+    imports: [AppModule]
   })
     .overrideProvider('default_IORedisModuleConnectionToken')
     .useValue(redisMock)
