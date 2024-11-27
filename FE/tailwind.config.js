@@ -34,8 +34,21 @@ export default {
         s: '0.5rem'
       },
       boxShadow: {
-        default: '0 4px 2px rgba(20, 33, 43, 0.02)'
-      }
+        default: '0 4px 4px rgba(20, 33, 43, 0.04)'
+      },
+      cursor: {
+        gameCursor: "url('/cursor.png') 32 32, auto", // 마우스 커서
+        clickCursor: "url('/cursor.png') 32 32, auto" // 클릭 시 커서
+      },
+      keyframes: {
+        popup: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        popup: 'popup 0.5s ease-out',
+      },
     }
   },
   plugins: [
@@ -56,10 +69,11 @@ export default {
           display: 'flex',
           justifyContent: 'center',
 
-          alignItems: 'center',
+          alignItems: 'center'
         },
         '.text-shadow': {
-          'text-shadow': '0 -3px 0 #333, 0 6px 8px rgba(0,0,0,.4), 0 9px 10px rgba(0,0,0,.15), 0 30px 10px rgba(0,0,0,.18), 0 15px 10px rgba(0,0,0,.21)',
+          'text-shadow':
+            '0 -3px 0 #333, 0 6px 8px rgba(0,0,0,.4), 0 9px 10px rgba(0,0,0,.15), 0 30px 10px rgba(0,0,0,.18), 0 15px 10px rgba(0,0,0,.21)'
         }
       };
       addUtilities(newUtilities, ['responsive', 'hover']);
