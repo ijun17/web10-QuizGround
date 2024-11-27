@@ -1,4 +1,10 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css');
+@font-face {
+  font-family: 'NPSfontBold';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2310@1.0/NPSfontBold.woff2')
+    format('woff2');
+  font-weight: 700;
+  font-style: normal;
+}
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +12,7 @@
 
 @layer base {
   html {
-    font-family: 'Pretendard', ui-sans-serif, system-ui;
+    font-family: 'NPSfontBold', ui-sans-serif, system-ui;
     box-sizing: border-box;
     color: #5f6e76;
   }

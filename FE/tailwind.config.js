@@ -33,7 +33,7 @@ export default {
         m: '1rem',
         s: '0.5rem'
       },
-      dropShadow: {
+      boxShadow: {
         default: '0 4px 2px rgba(20, 33, 43, 0.02)'
       }
     }
@@ -50,7 +50,7 @@ export default {
         '.component-popup': {
           borderRadius: theme('borderRadius.m'),
           backgroundColor: theme('backgroundColor.surface.default'),
-          dropShadow: theme('dropShadow.default')
+          boxShadow: theme('boxShadow.default')
         },
         '.center': {
           display: 'flex',

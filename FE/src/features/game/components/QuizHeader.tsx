@@ -33,7 +33,7 @@ export const QuizHeader = () => {
 
   if (!currentQuiz)
     return (
-      <div className="border border-default component-popup flex justify-center items-center h-[280px] w-[1000px] text-gray-400">
+      <div className="border border-default component-popup flex justify-center items-center h-[100%] w-[100%] text-gray-400">
         <Lottie animationData={quizLoading} loop={true} className="w-[150px] h-[150px] mr-4" />
         <div>곧 퀴즈가 시작됩니다</div>
       </div>
@@ -41,13 +41,13 @@ export const QuizHeader = () => {
 
   if (currentQuiz.startTime > getServerTimestamp())
     return (
-      <div className="border border-default component-popup flex justify-center items-center h-[280px] w-[1000px] text-orange-300 font-bold text-7xl">
+      <div className="border border-default component-popup flex justify-center items-center h-[100%] w-[100%]  text-orange-300 font-bold text-7xl">
         {Math.ceil((currentQuiz.startTime - getServerTimestamp()) / 1000)}
       </div>
     );
 
   return (
-    <div className="border border-default component-popup h-[280px] w-[1000px] p-8 flex flex-col">
+    <div className="border border-default component-popup h-[100%] w-[100%] p-8 flex flex-col">
       <div className="flex flex-row-reverse w-[100%] h-8 bg-surface-alt">
         <div
           className="flex justify-center items-center w-20 h-8 text-lg absolute tabular-nums"
@@ -56,14 +56,16 @@ export const QuizHeader = () => {
           {seconds <= 0 ? '종료' : seconds.toFixed(2)}
         </div>
         <div className="w-[100%] h-[100%]">
-          <div
-            className="bg-black h-[100%]"
-            style={{
-              transform: `scale(${seconds / limitTime}, 1)`,
-              transformOrigin: 'left center',
-              background: seconds / limitTime > 0.2 ? 'green' : 'brown'
-            }}
-          ></div>
+          {seconds > 0 && (
+            <div
+              className="h-[100%]"
+              style={{
+                transform: `scale(${seconds / limitTime}, 1)`,
+                transformOrigin: 'left center',
+                background: seconds / limitTime > 0.2 ? 'green' : 'brown'
+              }}
+            ></div>
+          )}
         </div>
       </div>
       <div className="flex justify-center items-center font-bold text-2xl flex-grow">

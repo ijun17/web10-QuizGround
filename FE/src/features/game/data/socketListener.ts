@@ -6,30 +6,24 @@ import { useRoomStore } from './store/useRoomStore';
 import GameState from '@/constants/gameState';
 import QuizState from '@/constants/quizState';
 import { getQuizSetDetail } from '@/api/rest/quizApi';
+import { getEmoji } from '../utils/emoji';
 
 // chat
 socketService.on('chatMessage', (data) => {
   useChatStore.getState().addMessage(data);
 });
 
-socketService.on('disconnect', () => {
-  useChatStore.getState().reset();
-});
-
 // player
 socketService.on('joinRoom', (data) => {
-  const { addPlayers, setCurrentPlayerId } = usePlayerStore.getState();
+  const { addPlayers } = usePlayerStore.getState();
   const newPlayers = data.players.map((player) => ({
     ...player,
     playerScore: 0,
     isAlive: true,
-    isAnswer: true
+    isAnswer: true,
+    emoji: getEmoji()
   }));
   addPlayers(newPlayers);
-  const socketId = socketService.getSocketId();
-  if (newPlayers.length > 0 && newPlayers[0].playerId === socketId) {
-    setCurrentPlayerId(socketId);
-  }
 });
 
 socketService.on('updatePosition', (data) => {
@@ -49,7 +43,8 @@ socketService.on('endQuizTime', (data) => {
         playerPosition: _p?.playerPosition || [0, 0],
         playerScore: p.score,
         isAnswer: p.isAnswer,
-        isAlive: _p?.isAlive || false
+        isAlive: _p?.isAlive || false,
+        emoji: _p?.emoji || 'o'
       };
     })
   );
@@ -72,15 +67,24 @@ socketService.on('endQuizTime', (data) => {
 });
 
 socketService.on('endGame', (data) => {
-  usePlayerStore.getState().setIsHost(data.hostId === socketService.getSocketId());
+  usePlayerStore.getState().setIsHost(data.hostId === usePlayerStore.getState().currentPlayerId);
 });
 
 socketService.on('exitRoom', (data) => {
   usePlayerStore.getState().removePlayer(data.playerId);
 });
 
-socketService.on('disconnect', () => {
-  usePlayerStore.getState().reset();
+socketService.on('getSelfId', (data) => {
+  const playerName = usePlayerStore.getState().players.get(data.playerId);
+  usePlayerStore.getState().setCurrentPlayerId(data.playerId);
+  usePlayerStore.getState().setCurrentPlayerName(String(playerName));
+});
+
+socketService.on('setPlayerName', (data) => {
+  usePlayerStore.getState().setPlayerName(data.playerId, data.playerName);
+  if (data.playerId === usePlayerStore.getState().currentPlayerId) {
+    usePlayerStore.getState().setCurrentPlayerName(data.playerName);
+  }
 });
 
 // Quiz
@@ -103,10 +107,6 @@ socketService.on('endGame', () => {
 socketService.on('updateRoomQuizset', async (data) => {
   const res = await getQuizSetDetail(String(data.quizSetId));
   useQuizStore.getState().setQuizSet(String(res?.title), String(res?.category));
-});
-
-socketService.on('disconnect', () => {
-  useQuizStore.getState().reset();
 });
 
 // Room
@@ -132,6 +132,11 @@ socketService.on('kickRoom', () => {
   // 메인페이지 or 로비로 이동시키기?
 });
 
+// 소켓 연결 해제시 초기화
+
 socketService.on('disconnect', () => {
   useRoomStore.getState().reset();
+  usePlayerStore.getState().reset();
+  useChatStore.getState().reset();
+  useQuizStore.getState().reset();
 });

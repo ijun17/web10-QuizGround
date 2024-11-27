@@ -89,7 +89,13 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
       }}
       onClick={(e) => e.preventDefault()}
     >
-      <div className="flex flex-col items-center justify-center relative">
+      <div
+        className="flex flex-col items-center justify-center relative transition-all duration-[3000ms]"
+        style={{
+          transform: quizState === 'end' && !player.isAnswer ? 'translateY(-40px)' : 'none',
+          opacity: quizState === 'end' && !player.isAnswer ? '0' : '1'
+        }}
+      >
         {/* 정답 시 정답 이펙트 5초 켜졌다가 사라짐 */}
         {showEffect && (
           <div
@@ -106,11 +112,14 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
           />
         )}
         {/* <div ref={characterRef} style={{ width: '40px', height: '40px' }} /> */}
-        <div className="text-xl">{quizState === 'end' && !player.isAnswer ? '😭' : '😃'}</div>
+        <div className="text-2xl">
+          {quizState === 'end' && !player.isAnswer ? '👻' : player.emoji}
+        </div>
         <div
           className="mt-2 text-[0.625rem]"
           style={{
             color: isCurrent ? 'lightgreen' : 'inherit',
+            opacity: isCurrent ? '1' : '0.2',
             zIndex: 1
           }}
         >

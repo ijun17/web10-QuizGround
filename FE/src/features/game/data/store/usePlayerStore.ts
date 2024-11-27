@@ -7,6 +7,7 @@ type Player = {
   playerScore: number;
   isAnswer: boolean;
   isAlive: boolean;
+  emoji: string;
 };
 
 type PlayerStore = {
@@ -22,6 +23,7 @@ type PlayerStore = {
   setIsHost: (isHost: boolean) => void;
   setPlayers: (players: Player[]) => void;
   resetScore: () => void;
+  setPlayerName: (playerId: string, playerName: string) => void;
   reset: () => void;
 };
 
@@ -80,6 +82,14 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
         state.players.set(key, { ...value, playerScore: 0, isAlive: true, isAnswer: true });
       });
       return { players: new Map(state.players) };
+    });
+  },
+
+  setPlayerName: (playerId, playerName) => {
+    set((state) => {
+      const targetPlayer = state.players.get(playerId);
+      if (targetPlayer) state.players.set(playerId, { ...targetPlayer, playerName });
+      return { players: state.players };
     });
   },
 
