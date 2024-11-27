@@ -1,8 +1,8 @@
 import { firstValueFrom, Observable } from 'rxjs';
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
 import { Socket } from 'socket.io';
-import { AsyncLocalStorage } from 'async_hooks'; // 이 부분 추가
+import { AsyncLocalStorage } from 'async_hooks';
+import { SystemMetricsService } from '../service/SystemMetricsService'; // 이 부분 추가
 
 /**
  * @class TraceStore
@@ -54,7 +54,7 @@ export class SocketEventLoggerInterceptor implements NestInterceptor {
   private readonly logger = new Logger('SocketEventLogger');
   private readonly EXECUTION_TIME_THRESHOLD = 1000;
 
-  constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(private readonly systemMetricsService: SystemMetricsService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     if (context.getType() !== 'ws') {
@@ -72,29 +72,50 @@ export class SocketEventLoggerInterceptor implements NestInterceptor {
     const traceContext = new TraceContext();
 
     return new Observable((subscriber) => {
-      // AsyncLocalStorage를 사용하여 추적 컨텍스트 설정
       TraceStore.getStore().run(traceContext, async () => {
         try {
-          // 핸들러 실행 전 로그
           traceContext.addLog(`[${className}.${methodName}] Started`);
-
-          // 원본 핸들러 실행
           const result = await firstValueFrom(next.handle());
-
           const executionTime = Date.now() - startTime;
           const logs = traceContext.getLogs();
 
+          // 시스템 메트릭 수집
+          const metrics = await this.systemMetricsService.getMetrics();
+
           if (executionTime >= this.EXECUTION_TIME_THRESHOLD) {
             this.logger.warn(
-              '🐢 Slow Socket Event Detected!\n' +
+              '\n=============================\n' +
+                '🐢 Slow Socket Event Detected!\n' +
                 logs.join('\n') +
-                `\nTotal Execution Time: ${executionTime}ms`
+                `\nTotal Execution Time: ${executionTime}ms\n` +
+                '\nSystem Metrics:\n' +
+                `CPU Usage: ${metrics.cpu.toFixed(2)}%\n` +
+                '\nMemory Usage:\n' +
+                `System Total: ${metrics.memory.system.total}GB\n` +
+                `System Used: ${metrics.memory.system.used}GB (${metrics.memory.system.usagePercentage}%)\n` +
+                `System Free: ${metrics.memory.system.free}GB\n` +
+                `Process Heap: ${metrics.memory.process.heapUsed}MB / ${metrics.memory.process.heapTotal}MB\n` +
+                `Process RSS: ${metrics.memory.process.rss}MB\n` +
+                '\nMySQL Connections:\n' +
+                `Total: ${metrics.mysql.total}, ` +
+                `Active: ${metrics.mysql.active}, ` +
+                `Idle: ${metrics.mysql.idle}, ` +
+                `Waiting: ${metrics.mysql.waiting}\n` +
+                '\nRedis Connections:\n' +
+                `Connected Clients: ${metrics.redis.connectedClients}, ` +
+                `Used Memory: ${metrics.redis.usedMemoryMB}MB\n` +
+                // `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
+                // `현재 처리중인 명령어 수 : ${metrics.redis.cmdstat}\n` +
+                '============================='
             );
           } else {
             this.logger.log(
-              '🚀 Socket Event Processed\n' +
+              '\n=============================\n' +
+                '🚀 Socket Event Processed\n' +
                 logs.join('\n') +
-                `\nTotal Execution Time: ${executionTime}ms`
+                `\nTotal Execution Time: ${executionTime}ms\n` +
+                '============================='
+              // 정상 처리시에는 간단한 로그만
             );
           }
 
@@ -102,8 +123,32 @@ export class SocketEventLoggerInterceptor implements NestInterceptor {
           subscriber.complete();
         } catch (error) {
           const logs = traceContext.getLogs();
+          // 에러 발생시에도 시스템 메트릭 수집
+          const metrics = await this.systemMetricsService.getMetrics();
+
           this.logger.error(
-            '❌ Socket Event Error\n' + logs.join('\n') + `\nError: ${error.message}`
+            '❌ Socket Event Error\n' +
+              logs.join('\n') +
+              `\nError: ${error.message}\n` +
+              '\nSystem Metrics:\n' +
+              `CPU Usage: ${metrics.cpu.toFixed(2)}%\n` +
+              '\nMemory Usage:\n' +
+              `System Total: ${metrics.memory.system.total}GB\n` +
+              `System Used: ${metrics.memory.system.used}GB (${metrics.memory.system.usagePercentage}%)\n` +
+              `System Free: ${metrics.memory.system.free}GB\n` +
+              `Process Heap: ${metrics.memory.process.heapUsed}MB / ${metrics.memory.process.heapTotal}MB\n` +
+              `Process RSS: ${metrics.memory.process.rss}MB\n` +
+              '\nMySQL Connections:\n' +
+              `Total: ${metrics.mysql.total}, ` +
+              `Active: ${metrics.mysql.active}, ` +
+              `Idle: ${metrics.mysql.idle}, ` +
+              `Waiting: ${metrics.mysql.waiting}\n` +
+              '\nRedis Connections:\n' +
+              `Connected Clients: ${metrics.redis.connectedClients}, ` +
+              `Used Memory: ${metrics.redis.usedMemoryMB}MB\n` +
+              // `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
+              // `현재 처리중인 명령어 수 : ${metrics.redis.cmdstat}\n` +
+              '============================='
           );
           subscriber.error(error);
         }

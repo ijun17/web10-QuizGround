@@ -5,8 +5,9 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from '@nestjs/websockets';
-import { Socket, Namespace } from 'socket.io';
-import { Logger, UseFilters, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Namespace, Server, Socket } from 'socket.io';
+import { instrument } from '@socket.io/admin-ui';
+import { Logger, UseFilters, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import SocketEvents from '../common/constants/socket-events';
 import { ChatMessageDto } from './dto/chat-message.dto';
@@ -30,7 +31,7 @@ import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventL
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: ['*,', 'https://admin.socket.io'],
     credentials: true
   },
   namespace: '/game'
@@ -139,7 +140,12 @@ export class GameGateway {
     await this.gameRoomService.kickRoom(kickRoomDto, client.id);
   }
 
-  afterInit() {
+  afterInit(nameSpace: Namespace) {
+    instrument(nameSpace.server, {
+      auth: false,
+      mode: 'development'
+    });
+    this.logger.verbose('Socket.IO Admin UI initialized');
     this.logger.verbose('WebSocket 서버 초기화 완료했어요!');
 
     this.gameService.subscribeRedisEvent(this.server).then(() => {
