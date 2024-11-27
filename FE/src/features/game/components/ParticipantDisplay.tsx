@@ -33,7 +33,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
             className="flex justify-between mt-2 pb-2 border-b border-default"
             key={player.playerId}
           >
-            <div>{player.emoji + ' ' + player.playerName}</div>
+            <div className="font-bold">{player.emoji + ' ' + player.playerName}</div>
             {isHost && currentPlayerId !== player.playerId && (
               <button
                 className="bg-blue-500 rounded-lg text-white w-8 h-6 text-r active:scale-90 hover:bg-red-500"
@@ -62,7 +62,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
               layout
               transition={{ type: 'spring', stiffness: 100, damping: 20 }}
             >
-              <div>{player.emoji + ' ' + player.playerName}</div>
+              <div className="font-bold">{player.emoji + ' ' + player.playerName}</div>
               <motion.div
                 initial={{ scale: 1 }}
                 animate={{ scale: 1.1 }}
@@ -97,7 +97,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
               layout
               transition={{ type: 'spring', stiffness: 100, damping: 20 }}
             >
-              <div style={{ color: player.isAnswer ? 'inherit' : 'red' }}>
+              <div className="font-bold" style={{ color: player.isAnswer ? 'inherit' : 'red' }}>
                 {player.emoji + ' ' + player.playerName}
               </div>
             </motion.div>
