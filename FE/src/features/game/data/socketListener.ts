@@ -6,7 +6,7 @@ import { useRoomStore } from './store/useRoomStore';
 import GameState from '@/constants/gameState';
 import QuizState from '@/constants/quizState';
 import { getQuizSetDetail } from '@/api/rest/quizApi';
-import { getEmoji } from '../utils/emoji';
+import { getEmojiByUUID } from '../utils/emoji';
 
 // chat
 socketService.on('chatMessage', (data) => {
@@ -21,7 +21,7 @@ socketService.on('joinRoom', (data) => {
     playerScore: 0,
     isAlive: true,
     isAnswer: true,
-    emoji: getEmoji()
+    emoji: getEmojiByUUID(player.playerId)
   }));
   addPlayers(newPlayers);
 });
