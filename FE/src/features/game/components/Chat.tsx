@@ -2,7 +2,6 @@ import { socketService } from '@/api/socket';
 import { useChatStore } from '@/features/game/data/store/useChatStore';
 import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
-import { Button } from '@mui/material';
 import { ReactElement, useEffect, useRef, useState } from 'react';
 
 const Chat = () => {
@@ -98,7 +97,10 @@ const Chat = () => {
               color: e.playerId === currentPlayerId ? 'cornflowerblue' : 'inherit'
             }}
           >
-            <span className="font-bold mr-2">{e.playerName}</span>
+            <span className="font-bold mr-2">
+              {players.has(e.playerId) && !players.get(e.playerId)!.isAlive && '👻'}
+              {e.playerName}
+            </span>
             <span>{e.message}</span>
           </div>
         ))
@@ -122,12 +124,6 @@ const Chat = () => {
           <div className="flex justify-center mb-4" key="1">
             🎉 QuizGround에 오신 것을 환영합니다 🎉
           </div>
-          {/* {messages.map((e, i) => (
-            <div className="break-words leading-5 mt-3" key={i}>
-              <span className="font-bold mr-2">{e.playerName}</span>
-              <span>{e.message}</span>
-            </div>
-          ))} */}
           {chatList}
           {myMessages.map((e, i) => (
             <div className="break-words leading-5 mt-3" key={-i - 1}>
@@ -151,20 +147,21 @@ const Chat = () => {
           />
         </form>
       </div>
-      {newMessage && !isAtBottom && (
-        <Button
-          variant="contained"
-          className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white p-2 rounded"
-          onClick={handleScrollToBottomClick}
-          style={{ zIndex: 1000 }}
-        >
-          {`${messages[messages.length - 1].playerName}: ${
-            messages[messages.length - 1].message.length > 15
-              ? messages[messages.length - 1].message.slice(0, 15) + '...'
-              : messages[messages.length - 1].message
-          }`}
-        </Button>
-      )}
+      <div className="relative z-0">
+        {newMessage && !isAtBottom && (
+          <button
+            className="absolute bottom-14 scale-75 bg-blue-500 text-white p-2 rounded w-full"
+            onClick={handleScrollToBottomClick}
+            style={{ zIndex: 1000 }}
+          >
+            {`${messages[messages.length - 1].playerName}: ${
+              messages[messages.length - 1].message.length > 15
+                ? messages[messages.length - 1].message.slice(0, 15) + '...'
+                : messages[messages.length - 1].message
+            }`}
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -15,34 +15,18 @@ import { ResultModal } from '@/features/game/components/ResultModal';
 import { ErrorModal } from '@/components/ErrorModal';
 import { useNavigate } from 'react-router-dom';
 import { getRandomNickname } from '@/features/game/utils/nickname';
-import { resetEmojiPool } from '../utils/emoji';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const updateRoom = useRoomStore((state) => state.updateRoom);
   const gameState = useRoomStore((state) => state.gameState);
   const currentPlayerName = usePlayerStore((state) => state.currentPlayerName);
-  // const setCurrentPlayerName = usePlayerStore((state) => state.setCurrentPlayerName);
   const setGameState = useRoomStore((state) => state.setGameState);
   const resetScore = usePlayerStore((state) => state.resetScore);
-  // const [isModalOpen, setIsModalOpen] = useState(true);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
   const navigate = useNavigate();
-
-  // 페이지에서 나갈때
-  // 스트릭트 모드에서 마운트 > 언마운트 > 마운트됨
-  // useEffect(() => {
-  //   return () => {
-  //     console.log('게임방에서 나갔습니다');
-  //     socketService.disconnect();
-  //   };
-  // }, []);
-
-  useEffect(() => {
-    if (gameId) resetEmojiPool(gameId);
-  }, [gameId]);
 
   useEffect(() => {
     if (gameId) socketService.joinRoom(gameId);
@@ -70,11 +54,38 @@ export const GamePage = () => {
   const handleSubmitNickname = (name: string) => {
     socketService.emit('setPlayerName', { playerName: name });
   };
+  // 클릭한 지점에 원 생기도록 효과 만들기
+  const [clickPosition, setClickPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // 클릭된 위치 기록
+  const handleClick = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    console.log(`${clientX} , ${clientY} 클릭됨`);
+    setClickPosition({ x: clientX, y: clientY });
+
+    setTimeout(() => {
+      setClickPosition(null);
+    }, 500); // 0.5초 후에 원 사라짐
+  };
 
   return (
-    <>
+    <div className="bg-gradient-to-r from-sky-100 to-indigo-200">
       <HeaderBar />
-      <div className="bg-surface-alt h-[calc(100vh-100px)] overflow-hidden">
+      <div className=" h-[calc(100vh-100px)] overflow-hidden cursor-gameCursor">
+        {clickPosition && (
+          <div
+            className="absolute bg-blue-500 rounded-full animate-ping"
+            style={{
+              left: `${clickPosition.x - 20}px`,
+              top: `${clickPosition.y - 20}px`,
+              width: '40px',
+              height: '40px',
+              zIndex: 10,
+              visibility: 'visible',
+              opacity: 1
+            }}
+          />
+        )}
         <div className="center p-4 pb-0 h-[30%]">
           {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
         </div>
@@ -83,7 +94,7 @@ export const GamePage = () => {
             <Chat />
           </div>
 
-          <div className="col-span-4 lg:col-span-2">
+          <div className="col-span-4 lg:col-span-2" onClick={handleClick}>
             <QuizOptionBoard />
           </div>
 
@@ -111,6 +122,6 @@ export const GamePage = () => {
           />
         </div>
       </div>
-    </>
+    </div>
   );
 };

@@ -4,7 +4,6 @@ import FailEffect from '@/assets/lottie/fail_effect2.json';
 import Character from '@/assets/lottie/character3.json';
 import QuizState from '@/constants/quizState';
 import { useQuizStore } from '@/features/game/data/store/useQuizStore';
-
 import lottie from 'lottie-web';
 import { usePlayerStore } from '../data/store/usePlayerStore';
 import { useRoomStore } from '../data/store/useRoomStore';
@@ -21,6 +20,7 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
   const [effectData, setEffectData] = useState(AnswerEffect);
   const quizState = useQuizStore((state) => state.quizState);
   const player = usePlayerStore((state) => state.players.get(playerId));
+  // const playerCount = usePlayerStore((state) => state.players.size);
 
   // Lottie 요소를 렌더링할 DOM 요소에 대한 참조
   const effectRef = useRef(null);
@@ -79,11 +79,14 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
     player.playerPosition[0] * boardSize[1]
   ];
 
+  // const playerSize = playerCount < 50 ? 1 : playerCount < 120 ? 0.9 : 0.8;
+  const playerSize = boardSize[0] + boardSize[1] > 1000 ? 1 : 0.8;
+
   return (
     <div
       className="absolute transition-all duration-500 ease-in-out"
       style={{
-        transform: `translate(calc(${xPos}px - 50%), calc(${yPos}px - 50%))`,
+        transform: `translate(calc(${xPos}px - 50%), calc(${yPos}px - 50%)) scale(${playerSize})`,
         zIndex: isCurrent ? 3 : 1,
         opacity: player.isAlive ? '1' : '0.3'
       }}
@@ -111,16 +114,14 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
             }}
           />
         )}
-        {/* <div ref={characterRef} style={{ width: '40px', height: '40px' }} /> */}
-        <div className="text-2xl">
+        <div className="text-2xl z-[2]">
           {quizState === 'end' && !player.isAnswer ? '👻' : player.emoji}
         </div>
         <div
           className="mt-2 text-[0.625rem]"
           style={{
             color: isCurrent ? 'lightgreen' : 'inherit',
-            opacity: isCurrent ? '1' : '0.2',
-            zIndex: 1
+            opacity: isCurrent ? '1' : '0.2'
           }}
         >
           {player.playerName}

@@ -31,6 +31,7 @@ export const QuizOptionBoard = () => {
   const [choiceListVisible, setChoiceListVisible] = useState(false);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [boardRect, setBoardRect] = useState<null | DOMRect>(null);
+  const [isWarningMove, setIsWarningMove] = useState(false);
 
   // 보드 크기 초기화
   useEffect(() => {
@@ -63,7 +64,10 @@ export const QuizOptionBoard = () => {
 
   const handleMove = (pageX: number, pageY: number) => {
     const currentPlayer = players.get(currentPlayerId);
-    if (!currentPlayer || !currentPlayer.isAlive) return;
+    if (!currentPlayer || !currentPlayer.isAlive) {
+      setIsWarningMove(true);
+      return;
+    }
     if (!boardRect) return;
     const { width, height, top, left } = boardRect;
     const x = (pageX - left - window.scrollX) / width;
@@ -73,6 +77,15 @@ export const QuizOptionBoard = () => {
     const option = Math.round(x) + Math.floor(y * Math.ceil(choiceList.length / 2)) * 2;
     setSelectedOption(option);
   };
+
+  // 경고 문구 2초뒤 끄기
+  useEffect(() => {
+    let timeout = null;
+    if (isWarningMove) timeout = setTimeout(() => setIsWarningMove(false), 2000);
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isWarningMove]);
 
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const { pageX, pageY } = e;
@@ -108,6 +121,13 @@ export const QuizOptionBoard = () => {
               })
           : null}
       </div>
+      {isWarningMove && (
+        <div className="absolute w-[100%] h-[100%] flex justify-center items-center z-20">
+          <div className="bg-gray-400 rounded-2xl p-4 opacity-50 text-white">
+            탈락하여 움직일 수 없습니다
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-4 p-4 h-[100%] w-[100%]">
         {choiceListVisible &&
           choiceList.map((option, i) => (

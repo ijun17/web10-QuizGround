@@ -1,4 +1,3 @@
-import { TextField } from '@mui/material';
 import { ReactNode, useEffect, useRef } from 'react';
 
 type InputProps = {
@@ -16,30 +15,38 @@ export const TextInput = (props: InputProps) => {
 
   useEffect(() => {
     if (props.error && inputRef.current) {
-      inputRef.current.querySelector('input')?.focus();
+      inputRef.current.focus();
     }
   }, [props.error, inputRef]);
 
   return (
-    <div className={'w-full ' + props.className}>
+    <div className={'relative w-full ' + props.className}>
       <div className="flex items-center">
-        <TextField
+        <input
           ref={inputRef}
-          label={props.label}
+          placeholder={props.label}
           type={props.type || 'text'}
-          variant="outlined"
           value={props.value}
           onChange={props.onChange}
-          className="w-full flex-grow"
-          slotProps={{
-            inputLabel: {
-              style: { color: props.error ? 'red' : 'inherit', borderColor: 'red' }
-            }
-          }}
+          className="w-full flex-grow h-12 border rounded-lg pl-2"
         />
         {props.children}
       </div>
-      <p className={'text-red-600 text-sm'}>{props.error}</p>
+      {props.error && (
+        <div className="absolute z-10 animate-pulse">
+          <p className=" text-red-600 text-sm bg-gray-100 px-2 py-1 rounded shadow-lg opacity-90">
+            {props.error}
+          </p>
+          <div
+            className="absolute left-6 bottom-full w-0 h-0 "
+            style={{
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderBottom: '6px solid rgb(243 244 246)'
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

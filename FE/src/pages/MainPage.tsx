@@ -5,10 +5,13 @@ import { socketService } from '@/api/socket';
 import Lottie from 'lottie-react';
 import mainCube from '../assets/lottie/mainLottie.json';
 import { InfoCard } from './InfoCard';
-
+import { gameCreate, waitRoom, pin, createQuiz } from '../assets/lottie';
+import { LoginModal } from '@/features/auth/LoginModal';
+import { Logo } from '@/components/Logo';
 export const MainPage = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isOpenLoginModal, setIsOpenLoginModal] = useState(false);
 
   useEffect(() => {
     socketService.disconnect();
@@ -22,11 +25,13 @@ export const MainPage = () => {
   }, []);
 
   const handleQuizCreate = () => {
-    if (isLoggedIn) navigate('/quiz/setup');
-    else {
-      alert('로그인이 필요한 서비스 입니다.');
-      navigate('/login');
-    }
+    // dev Mode
+    navigate('/quiz/setup');
+    // if (isLoggedIn) navigate('/quiz/setup');
+    // else {
+    //   alert('로그인이 필요한 서비스 입니다.');
+    //   navigate('/login');
+    // }
   };
 
   type ActionButtonProps = {
@@ -36,28 +41,35 @@ export const MainPage = () => {
 
   const ActionButton: FC<ActionButtonProps> = ({ label, navigatePath }) => {
     return (
-      <div
+      <button
         className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 cursor-pointer transition-all duration-300"
         onClick={() => navigate(navigatePath)}
       >
         {label}
-      </div>
+      </button>
     );
   };
   return (
     <div className="bg-gradient-to-r from-sky-200 to-indigo-400 min-h-screen">
-      <div className="flex justify-between items-center p-6 max-w-screen-xl mx-auto">
-        <h1 className="text-white text-3xl font-bold ">QuizGround</h1>
+      <div className="flex justify-between items-center max-w-screen-xl mx-auto p-4">
+        <Logo />
+
         <div>
-          <ActionButton
-            label={isLoggedIn ? '마이페이지' : '로그인'}
-            navigatePath={isLoggedIn ? '/mypage' : '/login'}
-          />
+          {isLoggedIn ? (
+            <ActionButton label="마이페이지" navigatePath="/mypage" />
+          ) : (
+            <button
+              className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 cursor-pointer transition-all duration-300"
+              onClick={() => setIsOpenLoginModal(true)}
+            >
+              로그인
+            </button>
+          )}
         </div>
       </div>
 
       {/*소개 및 카드 섹션 */}
-      <div className="mt-6 mb-6 px-4 sm:px-6 max-w-screen-xl mx-auto rounded-xl border-4 border-white py-10 flex flex-col items-center space-y-12 h-[calc(100vh-150px)] overflow-auto">
+      <div className="mt-6 mb-4 px-4 sm:px-6 max-w-screen-xl mx-auto rounded-xl border-4 border-white py-10 flex flex-col items-center space-y-12 h-[calc(100vh-120px)] overflow-auto">
         <div className="flex flex-wrap justify-between w-full px-4 sm:px-6">
           <div className="w-full md:w-1/2 text-center text-blue-900 flex flex-col justify-center">
             <h2 className="text-2xl font-bold">퀴즈 게임을 시작해보세요!</h2>
@@ -82,13 +94,14 @@ export const MainPage = () => {
             <InfoCard
               key={index}
               title={card.title}
-              description={card.description}
+              icon={card.icon}
               path={card.path}
               action={card.action === 'handleQuizCreate' ? handleQuizCreate : undefined}
             />
           ))}
         </div>
       </div>
+      <LoginModal isOpen={isOpenLoginModal} onClose={() => setIsOpenLoginModal(false)} />
     </div>
   );
 };
@@ -96,22 +109,22 @@ export const MainPage = () => {
 const cardData = [
   {
     title: '게임방 만들기',
-    description: '새로운 퀴즈 방을 만들고 친구들과 함께 퀴즈를 풀어보세요.',
+    icon: gameCreate,
     path: '/game/setup'
   },
   {
     title: '대기방 목록',
-    description: '현재 대기 중인 방 목록을 확인하고 대기실로 입장하세요.',
+    icon: waitRoom,
     path: '/game/lobby'
   },
   {
     title: 'PIN으로 방 찾기',
-    description: '특정 PIN 번호로 방을 찾아서 바로 입장하세요.',
+    icon: pin,
     path: '/pin'
   },
   {
-    title: '퀴즈 생성',
-    description: '퀴즈를 만들어 친구들과 함께 즐겨보세요.',
+    title: '퀴즈 생성 하기',
+    icon: createQuiz,
     action: 'handleQuizCreate' // Navigate 대신 특정 핸들러 호출
   }
 ];

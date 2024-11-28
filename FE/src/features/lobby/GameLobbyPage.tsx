@@ -1,7 +1,8 @@
-import { HeaderBar } from '@/components/HeaderBar';
+// import { HeaderBar } from '@/components/HeaderBar';
 import { LobbyList } from '@/features/lobby/LobbyList';
 import { useState, useEffect, useCallback } from 'react';
 import { getRoomList } from '@/api/rest/roomApi';
+import { Header } from '@/components/Header';
 
 type Room = {
   title: string;
@@ -21,7 +22,6 @@ export const GameLobbyPage = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [paging, setPaging] = useState<Paging | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
   const loadRooms = useCallback(
     async (cursor: string | null, take: number = 10) => {
       if (isLoading) return;
@@ -69,8 +69,8 @@ export const GameLobbyPage = () => {
   }, [handleScroll]);
 
   return (
-    <div>
-      <HeaderBar />
+    <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
+      <Header />
       <LobbyList rooms={rooms} />
       {isLoading && <div className="text-center mt-4">Loading...</div>}
     </div>

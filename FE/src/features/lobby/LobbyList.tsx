@@ -1,3 +1,5 @@
+import Lottie from 'lottie-react';
+import refreshIcon from '../../assets/lottie/refresh.json';
 type Room = {
   title: string;
   gameMode: string;
@@ -21,8 +23,18 @@ export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
   };
   return (
     <div className="flex flex-col items-center px-4 py-6 w-full max-w-7xl">
-      <header className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white">게임 대기실 목록</h1>
+      <header className="flex items-center mb-8">
+        <h1 className="text-3xl font-extrabold text-white mr-8">게임 대기실 목록</h1>
+        <Lottie
+          animationData={refreshIcon}
+          loop={true}
+          autoplay={true}
+          className="mx-auto cursor-pointer"
+          style={{
+            width: '50px',
+            height: '50px'
+          }}
+        />
       </header>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 w-full">
         {rooms.map((room) => (
@@ -52,7 +64,7 @@ export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
           </div>
         ))}
         {!rooms.length && (
-          <div className="text-white col-span-full text-center text-lg">
+          <div className="text-white col-span-full text-center text-lg mr-8">
             현재 표시할 방이 없습니다.
           </div>
         )}
