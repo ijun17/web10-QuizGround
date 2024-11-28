@@ -31,9 +31,12 @@ import { ExceptionMessage } from '../common/constants/exception-message';
 @UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
+  // cors: {
+  //   origin: ['*,', 'https://admin.socket.io'], //이러면 배포에서 cors오류 생김
+  //   credentials: true
+  // },
   cors: {
-    origin: ['*,', 'https://admin.socket.io'],
-    credentials: true
+    origin: '*' //이러면 배포에서 admin ui 접근 안됨
   },
   namespace: '/game'
 })
