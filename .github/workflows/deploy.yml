@@ -5,7 +5,7 @@ on:
     branches: [ "release" ]
 
 env:
-  NODE_ENV: production
+  NODE_ENV: test #이걸 바꾸면 BE 빌드가 안됨
   DB_HOST_TEST: localhost
   DB_PORT_TEST: 3306
   DB_PASSWD_TEST: test

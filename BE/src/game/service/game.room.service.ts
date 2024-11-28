@@ -83,9 +83,14 @@ export class GameRoomService {
           playerPosition: [parseFloat(player.positionX), parseFloat(player.positionY)]
         });
       }
+
+      // 방장의 id를 보내줘야함
+      const findRoom = await this.redis.hgetall(REDIS_KEY.ROOM(gameId));
+      const findHost = findRoom.host;
+      const isHost = findHost === clientId;
       client.join(gameId);
       client.emit(SocketEvents.GET_SELF_ID, { playerId: clientId });
-      client.emit(SocketEvents.JOIN_ROOM, { players });
+      client.emit(SocketEvents.JOIN_ROOM, { players, isHost });
       return;
     }
 
@@ -121,16 +126,19 @@ export class GameRoomService {
     await this.redis.sadd(REDIS_KEY.ROOM_PLAYERS(gameId), clientId);
 
     const players = [];
+    const roomData = await this.redis.hgetall(REDIS_KEY.ROOM(gameId));
+
     for (const playerId of currentPlayers) {
       const player = await this.redis.hgetall(REDIS_KEY.PLAYER(playerId));
+      const isHost = roomData.host === playerId;
       players.push({
         playerId,
         playerName: player.playerName,
-        playerPosition: [parseFloat(player.positionX), parseFloat(player.positionY)]
+        playerPosition: [parseFloat(player.positionX), parseFloat(player.positionY)],
+        isHost
       });
     }
 
-    const roomData = await this.redis.hgetall(REDIS_KEY.ROOM(gameId));
     client.emit(SocketEvents.UPDATE_ROOM_OPTION, {
       title: roomData.title,
       gameMode: roomData.gameMode,
@@ -300,7 +308,9 @@ export class GameRoomService {
     const targetPlayer = await this.redis.hgetall(targetPlayerKey);
     this.gameValidator.validatePlayerExists(SocketEvents.KICK_ROOM, targetPlayer);
     await this.redis.set(`${targetPlayerKey}:Changes`, 'Kicked', 'EX', 6000); // 해당플레이어의 변화정보 10분 후에 삭제
-
-    await this.handlePlayerExit(kickPlayerId);
+    await this.redis.hset(targetPlayerKey, {
+      isAlive: '0'
+    });
+    // await this.handlePlayerExit(kickPlayerId);
   }
 }
