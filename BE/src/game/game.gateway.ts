@@ -180,7 +180,7 @@ export class GameGateway {
 
   setNewPlayerIdToCookie(headers) {
     const playerId = uuidv4();
-    headers['Set-Cookie'] = serialize('playerId', playerId);
+    headers['Set-Cookie'] = serialize('playerId', playerId, { sameSite: 'none', secure: true });
     return playerId;
   }
 
