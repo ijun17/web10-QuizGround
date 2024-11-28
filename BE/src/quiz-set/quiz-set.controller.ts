@@ -4,12 +4,12 @@ import {
   DefaultValuePipe,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
   Query,
-  UseGuards,
-  Logger
+  UseGuards
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { QuizSetService } from './service/quiz-set.service';
@@ -44,7 +44,12 @@ export class QuizSetController {
     @Query('take', new ParseIntOrDefault(10)) take: number,
     @Query('search', new DefaultValuePipe('')) search: string
   ) {
-    const result = await this.quizService.findAllWithQuizzesAndChoices(category, cursor, take, search);
+    const result = await this.quizService.findAllWithQuizzesAndChoices(
+      category,
+      cursor,
+      take,
+      search
+    );
     this.logger.verbose(`퀴즈셋 목록 조회: ${result}`);
     return result;
   }
