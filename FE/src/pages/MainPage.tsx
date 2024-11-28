@@ -42,7 +42,7 @@ export const MainPage = () => {
   const ActionButton: FC<ActionButtonProps> = ({ label, navigatePath }) => {
     return (
       <button
-        className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 cursor-pointer transition-all duration-300"
+        className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 transition-all duration-300"
         onClick={() => navigate(navigatePath)}
       >
         {label}
@@ -50,7 +50,7 @@ export const MainPage = () => {
     );
   };
   return (
-    <div className="bg-gradient-to-r from-sky-200 to-indigo-400 min-h-screen">
+    <div className="bg-gradient-to-r from-sky-200 to-indigo-400 min-h-screen pb-4">
       <div className="flex justify-between items-center max-w-screen-xl mx-auto p-4">
         <Logo />
 
@@ -59,7 +59,7 @@ export const MainPage = () => {
             <ActionButton label="마이페이지" navigatePath="/mypage" />
           ) : (
             <button
-              className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 cursor-pointer transition-all duration-300"
+              className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 transition-all duration-300"
               onClick={() => setIsOpenLoginModal(true)}
             >
               로그인
@@ -69,7 +69,7 @@ export const MainPage = () => {
       </div>
 
       {/*소개 및 카드 섹션 */}
-      <div className="mt-6 mb-4 px-4 sm:px-6 max-w-screen-xl mx-auto rounded-xl border-4 border-white py-10 flex flex-col items-center space-y-12 h-[calc(100vh-120px)] overflow-auto">
+      <div className="mt-6 px-4 sm:px-6 max-w-screen-xl w-[95vw] mx-auto rounded-xl border-4 border-white py-10 flex flex-col items-center space-y-12">
         <div className="flex flex-wrap justify-between w-full px-4 sm:px-6">
           <div className="w-full md:w-1/2 text-center text-blue-900 flex flex-col justify-center">
             <h2 className="text-2xl font-bold">퀴즈 게임을 시작해보세요!</h2>
