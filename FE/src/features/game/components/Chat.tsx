@@ -18,19 +18,21 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState(false);
   const [prevMessageCount, setPrevMessageCount] = useState(messages.length);
   const [chatList, setChatList] = useState<ReactElement[]>([]);
+  const prevScrollTopRef = useRef(0);
 
-  const scrollToBottom = () => {
-    if (chatBottomRef.current) {
-      setTimeout(() => {
-        chatBottomRef.current?.scrollIntoView({
-          behavior: 'instant',
-          block: 'end'
-        });
-        setNewMessage(false);
-      }, 0);
+  // 최하단에서 위로 스크롤 할때 새로운 메시지 알림 끄기
+  useEffect(() => {
+    if (!isAtBottom) setNewMessage(false);
+  }, [isAtBottom]);
+
+  // 최하단으로 스크롤
+  useEffect(() => {
+    if (isAtBottom && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  };
+  }, [chatList, isAtBottom]);
 
+  // 스크롤 이벤트 발생할 때
   const handleScroll = () => {
     const container = chatContainerRef.current;
     if (!container) return;
@@ -38,15 +40,18 @@ const Chat = () => {
     const isBottom =
       Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 10;
 
-    if (isBottom) {
-      setIsAtBottom(true);
-    } else {
+    if (prevScrollTopRef.current > container.scrollTop) {
+      //위로 스크롤 하면
       setIsAtBottom(false);
+    } else if (isBottom) {
+      // 아래로 스크롤했는데 최하단이면
+      setIsAtBottom(true);
     }
+    prevScrollTopRef.current = container.scrollTop;
   };
 
+  // 새로운 메시지 보기 버튼 클릭
   const handleScrollToBottomClick = () => {
-    scrollToBottom();
     setIsAtBottom(true);
   };
 
@@ -63,10 +68,10 @@ const Chat = () => {
         playerName: '',
         timestamp: 0
       };
-      scrollToBottom();
       setMyMessages([...myMessages, message]);
       socketService.chatMessage(gameId, inputValue);
       setInputValue('');
+      setIsAtBottom(true);
     }
   };
 
@@ -86,6 +91,12 @@ const Chat = () => {
     if (messages.length > prevMessageCount) {
       setNewMessage(true); // 새로운 메시지가 도착한 것으로 판단
       setPrevMessageCount(messages.length);
+    }
+  }, [messages, prevMessageCount]);
+
+  // 메시지 바뀌면 메모
+  useEffect(() => {
+    if (messages.length > prevMessageCount) {
       setChatList([
         ...chatList,
         ...messages.slice(prevMessageCount).map((e, i) => (
@@ -106,11 +117,7 @@ const Chat = () => {
         ))
       ]);
     }
-
-    if (isAtBottom) {
-      requestAnimationFrame(() => scrollToBottom());
-    }
-  }, [messages, isAtBottom, prevMessageCount, chatList, players, currentPlayerId]);
+  }, [messages, prevMessageCount, chatList, players, currentPlayerId]);
 
   return (
     <div className="component-default h-[100%]">
@@ -150,7 +157,7 @@ const Chat = () => {
       <div className="relative z-0">
         {newMessage && !isAtBottom && (
           <button
-            className="absolute bottom-14 scale-75 bg-blue-500 text-white p-2 rounded w-full"
+            className="absolute bottom-14 scale-75 bg-blue-500 text-white p-2 rounded-md w-full"
             onClick={handleScrollToBottomClick}
             style={{ zIndex: 1000 }}
           >
