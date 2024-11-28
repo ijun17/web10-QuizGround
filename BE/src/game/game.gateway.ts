@@ -141,7 +141,7 @@ export class GameGateway {
   @SubscribeMessage(SocketEvents.KICK_ROOM)
   @UsePipes(new GameValidationPipe(SocketEvents.KICK_ROOM))
   async handleKickRoom(@MessageBody() kickRoomDto: KickRoomDto, @ConnectedSocket() client: Socket) {
-    await this.gameRoomService.kickRoom(kickRoomDto, client.id);
+    await this.gameRoomService.kickRoom(kickRoomDto, client.data.playerId);
   }
 
   afterInit(nameSpace: Namespace) {
