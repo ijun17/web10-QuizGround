@@ -22,7 +22,7 @@ export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
     navigate(`/game/${gameId}`);
   };
   return (
-    <div className="flex flex-col items-center px-4 py-6 w-full max-w-7xl">
+    <div className="flex flex-col items-center px-4 py-6 w-full max-w-7xl mt-14">
       <header className="flex items-center mb-8">
         <h1 className="text-3xl font-extrabold text-white mr-8">게임 대기실 목록</h1>
         <Lottie

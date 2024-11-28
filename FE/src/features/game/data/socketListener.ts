@@ -44,6 +44,7 @@ socketService.on('endQuizTime', (data) => {
         playerScore: p.score,
         isAnswer: p.isAnswer,
         isAlive: _p?.isAlive || false,
+        isHost: false,
         emoji: _p?.emoji || 'o'
       };
     })
@@ -67,7 +68,7 @@ socketService.on('endQuizTime', (data) => {
 });
 
 socketService.on('endGame', (data) => {
-  usePlayerStore.getState().setIsHost(data.hostId === usePlayerStore.getState().currentPlayerId);
+  usePlayerStore.getState().setHost(data.hostId);
 });
 
 socketService.on('exitRoom', (data) => {
@@ -75,9 +76,9 @@ socketService.on('exitRoom', (data) => {
 });
 
 socketService.on('getSelfId', (data) => {
-  const playerName = usePlayerStore.getState().players.get(data.playerId);
+  const playerName = usePlayerStore.getState().players.get(data.playerId)?.playerName;
   usePlayerStore.getState().setCurrentPlayerId(data.playerId);
-  usePlayerStore.getState().setCurrentPlayerName(String(playerName));
+  if (playerName) usePlayerStore.getState().setCurrentPlayerName(playerName);
 });
 
 socketService.on('setPlayerName', (data) => {
@@ -85,6 +86,14 @@ socketService.on('setPlayerName', (data) => {
   if (data.playerId === usePlayerStore.getState().currentPlayerId) {
     usePlayerStore.getState().setCurrentPlayerName(data.playerName);
   }
+});
+
+socketService.on('kickRoom', (data) => {
+  usePlayerStore.getState().removePlayer(data.playerId);
+});
+
+socketService.on('updateHost', (data) => {
+  usePlayerStore.getState().setHost(data.hostId);
 });
 
 // Quiz
@@ -126,12 +135,6 @@ socketService.on('startGame', () => {
 socketService.on('endGame', () => {
   useRoomStore.getState().setGameState(GameState.END);
 });
-
-socketService.on('kickRoom', () => {
-  alert('강퇴당하였습니다.');
-  // 메인페이지 or 로비로 이동시키기?
-});
-
 // 소켓 연결 해제시 초기화
 
 socketService.on('disconnect', () => {

@@ -1,4 +1,3 @@
-// import { HeaderBar } from '@/components/HeaderBar';
 import { LobbyList } from '@/features/lobby/LobbyList';
 import { useState, useEffect, useCallback } from 'react';
 import { getRoomList } from '@/api/rest/roomApi';

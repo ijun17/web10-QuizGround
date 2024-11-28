@@ -18,7 +18,8 @@ export class SocketMock {
       const currentPlayer = {
         playerId: this.id,
         playerName: 'Me',
-        playerPosition: [0.5, 0.5] as [number, number]
+        playerPosition: [0.5, 0.5] as [number, number],
+        isHost: false
       };
       this.emitServer('joinRoom', { players: [currentPlayer] });
       this.addPlayers([currentPlayer]);
@@ -120,6 +121,7 @@ export class SocketMock {
       playerId: string;
       playerName: string;
       playerPosition: [number, number];
+      isHost: boolean;
     }
   > = {};
 
@@ -240,7 +242,8 @@ export class SocketMock {
         .map((_, i) => ({
           playerId: String(playerCount + i + 1),
           playerName: 'player' + (playerCount + i),
-          playerPosition: [this.random(), this.random()]
+          playerPosition: [this.random(), this.random()],
+          isHost: false
         }))
     );
   }

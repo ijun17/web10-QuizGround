@@ -37,6 +37,12 @@
   *::after {
     box-sizing: inherit;
   }
+  button {
+    @apply cursor-gameCursorPointer;
+  }
+  a {
+    @apply cursor-gameCursorPointer;
+  }
 }
 
 ::-webkit-scrollbar {

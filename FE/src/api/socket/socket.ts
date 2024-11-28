@@ -48,14 +48,14 @@ class SocketService {
       this.socket = new mockMap[gameId as keyof typeof mockMap]() as SocketInterface;
     } else {
       // 소켓 연결
-      this.socket = io(this.url, { query: header }) as SocketInterface;
-      await new Promise<void>((resolve, reject) => {
-        if (!this.socket) return;
-        this.socket.on('connect', () => resolve());
-        this.socket.on('error', () => reject());
-      });
+      this.socket = io(this.url, { query: header, withCredentials: true }) as SocketInterface;
     }
     this.initHandler();
+    await new Promise<void>((resolve, reject) => {
+      if (!this.socket) return;
+      this.socket.on('connect', () => resolve());
+      this.socket.on('error', () => reject());
+    });
   }
 
   initHandler() {
@@ -78,14 +78,14 @@ class SocketService {
   }
 
   on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
-    if (this.socket && this.isActive()) this.socket.on(event, callback);
+    if (this.socket) this.socket.on(event, callback);
     if (!this.handlerMap[event]) this.handlerMap[event] = [];
     this.handlerMap[event].push(callback);
   }
 
   off<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
     if (!this.handlerMap[event]) return;
-    if (this.socket && this.isActive()) this.socket.off(event, callback);
+    if (this.socket) this.socket.off(event, callback);
     this.handlerMap[event] = this.handlerMap[event].filter((e) => e !== callback);
   }
 
@@ -123,6 +123,7 @@ class SocketService {
   }
 }
 
-const socketPort = process.env.SOCKET_PORT || '3333';
-const socketUrl = `${window.location.origin}:${socketPort}/game`;
+// const socketPort = process.env.SOCKET_PORT || '3333';
+// const socketUrl = `${window.location.origin}:${socketPort}/game`;
+const socketUrl = 'https://quizground.duckdns.org:3333/game';
 export const socketService = new SocketService(socketUrl);

@@ -59,6 +59,7 @@ type JoinRoomResponse = {
     playerId: string; // socketId
     playerName: string;
     playerPosition: [number, number];
+    isHost: boolean;
   }>;
 };
 
@@ -117,6 +118,10 @@ type KickRoomResponse = {
   playerId: string;
 };
 
+type UpdateHostResponse = {
+  hostId: string;
+};
+
 // 전체 소켓 이벤트 타입 맵
 export type SocketDataMap = {
   chatMessage: {
@@ -172,19 +177,25 @@ export type SocketDataMap = {
     response: EndGameResponse;
   };
 
-  exception: {
-    request: null;
-    response: {
-      eventName: string;
-      message: string;
-    };
-  };
-
   kickRoom: {
     request: KickRoomRequest;
     response: KickRoomResponse;
   };
 
+  updateHost: {
+    request: null;
+    response: UpdateHostResponse;
+  };
+
+  exception: {
+    request: null;
+    response: {
+      event: string;
+      message: string;
+    };
+  };
+
   connect: { request: null; response: null };
+  connection: { request: null; response: null };
   disconnect: { request: null; response: null };
 };
