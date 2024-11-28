@@ -78,14 +78,14 @@ class SocketService {
   }
 
   on<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
-    if (this.socket && this.isActive()) this.socket.on(event, callback);
+    if (this.socket) this.socket.on(event, callback);
     if (!this.handlerMap[event]) this.handlerMap[event] = [];
     this.handlerMap[event].push(callback);
   }
 
   off<T extends SocketEvent>(event: T, callback: (data: SocketDataMap[T]['response']) => void) {
     if (!this.handlerMap[event]) return;
-    if (this.socket && this.isActive()) this.socket.off(event, callback);
+    if (this.socket) this.socket.off(event, callback);
     this.handlerMap[event] = this.handlerMap[event].filter((e) => e !== callback);
   }
 

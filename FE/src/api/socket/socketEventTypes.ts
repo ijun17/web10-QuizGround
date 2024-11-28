@@ -190,7 +190,7 @@ export type SocketDataMap = {
   exception: {
     request: null;
     response: {
-      eventName: string;
+      event: string;
       message: string;
     };
   };
