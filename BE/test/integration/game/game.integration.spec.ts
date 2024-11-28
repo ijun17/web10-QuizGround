@@ -75,11 +75,19 @@ describe('Game 통합테스트', () => {
       // const joinResponse2 = await joinRoom(client2, createResponse.gameId);
       // const joinResponse3 = await joinRoom(client3, createResponse.gameId);
 
+      const startGamePromise = new Promise<void>((resolve) => {
+        client1.once(socketEvents.START_GAME, () => {
+          console.log('START_GAME 이벤트 수신!');
+          resolve(); // 이벤트 수신 시 Promise 해결
+        });
+      });
+
       client1.emit(socketEvents.START_GAME, {
         gameId: gameId
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // await new Promise((resolve) => setTimeout(resolve, 100));
+      await startGamePromise;
 
       // Redis 검증
       const quizSetIds = await redisMock.smembers(REDIS_KEY.ROOM_QUIZ_SET(gameId));

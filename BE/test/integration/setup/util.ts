@@ -25,7 +25,7 @@ export async function joinRoom(client, gameId) {
   return joinResponse;
 }
 
-export async function getAvailablePort(startPort = 3000): Promise<number> {
+export async function getAvailablePort(startPort = 3001): Promise<number> {
   const port = startPort;
   try {
     const server = net.createServer();
