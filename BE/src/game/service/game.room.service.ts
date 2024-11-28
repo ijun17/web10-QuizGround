@@ -109,7 +109,7 @@ export class GameRoomService {
 
     await this.redis.set(`${playerKey}:Changes`, 'Join');
     await this.redis.hset(playerKey, {
-      playerName: '닉네임 설정 이전',
+      playerName: '', //이래야 프론트에서 모달을 띄워주는 조건
       positionX: positionX.toString(),
       positionY: positionY.toString(),
       disconnected: '0',
