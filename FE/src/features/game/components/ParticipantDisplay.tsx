@@ -23,6 +23,8 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
     [gameId]
   );
 
+  const currentIsHost = players.get(currentPlayerId)?.isHost ?? false;
+
   // 대기 모드일 때 참가자 목록 표시
   const renderWaitingMode = useCallback(
     () => (
@@ -38,7 +40,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
                 방장 👑
               </span>
             )}
-            {player.isHost && currentPlayerId !== player.playerId && (
+            {currentIsHost && currentPlayerId !== player.playerId && (
               <button
                 className="bg-blue-500 rounded-lg text-white w-8 h-6 text-r active:scale-90 hover:bg-red-500"
                 onClick={() => handleKick(player.playerId)}
@@ -50,7 +52,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
         ))}
       </div>
     ),
-    [players, currentPlayerId, handleKick]
+    [players, currentPlayerId, handleKick, currentIsHost]
   );
 
   // 진행 모드일 때 랭킹 현황 표시

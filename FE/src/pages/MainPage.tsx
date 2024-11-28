@@ -34,6 +34,11 @@ export const MainPage = () => {
     // }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    location.reload();
+  };
+
   type ActionButtonProps = {
     label: string;
     navigatePath: string;
@@ -56,7 +61,12 @@ export const MainPage = () => {
 
         <div>
           {isLoggedIn ? (
-            <ActionButton label="마이페이지" navigatePath="/mypage" />
+            <div>
+              <button className="underline mr-4" onClick={handleLogout}>
+                로그아웃
+              </button>
+              <ActionButton label="마이페이지" navigatePath="/mypage" />
+            </div>
           ) : (
             <button
               className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 transition-all duration-300"

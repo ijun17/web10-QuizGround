@@ -32,7 +32,7 @@ export const LoginModal = ({ isOpen, onClose }: Props) => {
         className="component-popup max-w-md bg-white w-[90%] animate-popup border-4 border-blue-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-center mb-6 p-6">
+        <div className="text-center mb-6">
           <div className="text-lg font-bold w-full h-16 flex">
             <button
               className={`w-[50%] h-full px-4 transition ${!isSignUp ? 'text-blue-500' : 'text-gray-200'} cursor-pointer`}
@@ -79,8 +79,8 @@ type LoginFormProps = {
 };
 
 const LoginForm: React.FC<LoginFormProps> = ({ handleLogin }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin');
+  const [password, setPassword] = useState('admin');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 

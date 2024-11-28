@@ -51,6 +51,7 @@ socketService.on('endQuizTime', (data) => {
   );
 
   // 서바이벌 모드일 경우 3초 뒤에 탈락한 플레이어를 보이지 않게 한다.
+  // TODO: 입장한 방이 어떤 게임 모드인지 알 수 없다.
   if (gameMode === 'SURVIVAL') {
     setTimeout(() => {
       const { players, setPlayers } = usePlayerStore.getState();
