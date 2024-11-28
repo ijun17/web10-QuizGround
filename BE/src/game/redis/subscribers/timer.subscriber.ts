@@ -62,7 +62,12 @@ export class TimerSubscriber extends RedisSubscriber {
         continue;
       }
 
-      const selectAnswer = this.calculateAnswer(player.positionX, player.positionY);
+      const selectAnswer = this.calculateAnswer(
+        player.positionX,
+        player.positionY,
+        quizList.length
+      );
+      // this.logger.verbose(selectAnswer);
 
       await this.redis.set(`${REDIS_KEY.PLAYER(clientId)}:Changes`, 'AnswerCorrect');
       if (selectAnswer.toString() === quiz.answer) {
@@ -161,10 +166,32 @@ export class TimerSubscriber extends RedisSubscriber {
     this.logger.verbose(`startQuizTime: ${gameId} - ${newQuizNum}`);
   }
 
-  private calculateAnswer(positionX: string, positionY: string): number {
-    if (parseFloat(positionY) < 0.5) {
-      return parseFloat(positionX) < 0.5 ? 1 : 2;
-    }
-    return parseFloat(positionX) < 0.5 ? 3 : 4;
+  private calculateAnswer(positionX: string, positionY: string, quizLen: number): number {
+    const x = parseFloat(positionX);
+    const y = parseFloat(positionY);
+
+    // 행의 개수 계산 (2열 고정이므로 총 개수의 절반을 올림)
+    const rows = Math.ceil(quizLen / 2);
+
+    // Y 좌표를 행 번호로 변환
+    const rowIndex = Math.floor(y * rows);
+
+    // X 좌표로 왼쪽/오른쪽 결정
+    const colIndex = x < 0.5 ? 0 : 1;
+
+    // 최종 선택지 번호 계산
+    const answer = rowIndex * 2 + colIndex + 1;
+
+    // 실제 선택지 범위를 벗어나지 않도록 보정
+    return Math.min(answer, quizLen);
+    // return (
+    //   Math.round(
+    //     parseFloat(positionX) + Math.floor(parseFloat(positionY) * Math.ceil(quizLen / 2))
+    //   ) * 2
+    // );
+    // if (parseFloat(positionY) < 0.5) {
+    //   return parseFloat(positionX) < 0.5 ? 1 : 2;
+    // }
+    // return parseFloat(positionX) < 0.5 ? 3 : 4;
   }
 }
