@@ -20,7 +20,7 @@ const CategoriesEnum = Object.freeze({
   SPORTS: 'SPORTS',
   GAME: 'GAME',
   IT: 'IT',
-  POLITIC: 'POLITIC'
+  POLITICS: 'POLITICS'
 });
 
 @Entity('quiz_set')
