@@ -8,10 +8,10 @@ type Player = {
   isAnswer: boolean;
   isAlive: boolean;
   emoji: string;
+  isHost: boolean;
 };
 
 type PlayerStore = {
-  isHost: boolean;
   currentPlayerId: string;
   currentPlayerName: string;
   players: Map<string, Player>;
@@ -20,15 +20,14 @@ type PlayerStore = {
   removePlayer: (playerId: string) => void;
   setCurrentPlayerId: (currentPlayerId: string) => void;
   setCurrentPlayerName: (currentPlayerName: string) => void;
-  setIsHost: (isHost: boolean) => void;
   setPlayers: (players: Player[]) => void;
   resetScore: () => void;
   setPlayerName: (playerId: string, playerName: string) => void;
+  setHost: (playerId: string) => void;
   reset: () => void;
 };
 
 const initialPlayerState = {
-  isHost: false,
   currentPlayerId: '',
   currentPlayerName: '',
   players: new Map()
@@ -72,10 +71,6 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     set(() => ({ currentPlayerName }));
   },
 
-  setIsHost: (isHost) => {
-    set(() => ({ isHost }));
-  },
-
   resetScore: () => {
     set((state) => {
       state.players.forEach((value, key) => {
@@ -84,14 +79,21 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
       return { players: new Map(state.players) };
     });
   },
-
   setPlayerName: (playerId, playerName) => {
     set((state) => {
       const targetPlayer = state.players.get(playerId);
       if (targetPlayer) state.players.set(playerId, { ...targetPlayer, playerName });
-      return { players: state.players };
+      return { players: new Map(state.players) };
     });
   },
-
+  setHost: (playerId) => {
+    set((state) => {
+      const newPlayers = new Map(state.players);
+      newPlayers.forEach((player, id) => {
+        newPlayers.set(id, { ...player, isHost: id === playerId });
+      });
+      return { players: newPlayers };
+    });
+  },
   reset: () => set(initialPlayerState)
 }));
