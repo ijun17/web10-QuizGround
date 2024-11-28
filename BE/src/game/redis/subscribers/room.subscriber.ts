@@ -58,6 +58,13 @@ export class RoomSubscriber extends RedisSubscriber {
         server.to(gameId).emit(SocketEvents.START_GAME, '');
         this.logger.verbose(`Game started: ${gameId}`);
         break;
+
+      case 'Host':
+        server.to(gameId).emit(SocketEvents.UPDATE_HOST, {
+          hostId: roomData.host
+        });
+        this.logger.verbose(`Update Host: ${gameId}`);
+        break;
     }
   }
 }

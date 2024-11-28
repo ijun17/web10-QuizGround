@@ -13,7 +13,8 @@ const SocketEvents = {
   EXIT_ROOM: 'exitRoom',
   KICK_ROOM: 'kickRoom',
   SET_PLAYER_NAME: 'setPlayerName',
-  GET_SELF_ID: 'getSelfId'
+  GET_SELF_ID: 'getSelfId',
+  UPDATE_HOST: 'updateHost'
 } as const;
 
 export default SocketEvents;
