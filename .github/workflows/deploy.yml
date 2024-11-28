@@ -5,7 +5,7 @@ on:
     branches: [ "release" ]
 
 env:
-  NODE_ENV: production
+  NODE_ENV: test
   DB_HOST_TEST: localhost
   DB_PORT_TEST: 3306
   DB_PASSWD_TEST: test
