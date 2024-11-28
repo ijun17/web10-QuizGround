@@ -11,7 +11,7 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
 
     // ValidationPipe에서 발생한 에러 처리
     if (exception instanceof GameWsException) {
-      this.logger.error(`Validation Error: ${JSON.stringify(exception.message)}`);
+      this.logger.error(`Validation Error: ${JSON.stringify(exception.message)}`, exception.stack);
 
       client.emit('exception', {
         eventName: exception.eventName,

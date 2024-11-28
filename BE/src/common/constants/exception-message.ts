@@ -5,5 +5,8 @@ export const ExceptionMessage = {
   ONLY_HOST: '방장이 아닙니다.',
   GAME_NOT_STARTED: '게임이 시작되지 않았습니다.',
   EXCEEDS_QUIZ_SET_LIMIT: '선택된 퀴즈 수가 퀴즈셋에 있는 퀴즈 수를 초과했습니다.',
-  GAME_ALREADY_STARTED: '게임이 이미 시작되었습니다.'
+  GAME_ALREADY_STARTED: '게임이 이미 시작되었습니다.',
+  PLAYER_NOT_FOUND: '존재하지 않는 플레이어입니다.',
+  CONNECTION_ERROR:
+    '\n소켓 연결시 title,gameMode,maxPlayerCount,isPublic 이 있어야 합니다. 또는 참가할 game-id가 있어야 합니다.'
 };

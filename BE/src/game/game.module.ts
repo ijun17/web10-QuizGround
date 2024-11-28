@@ -16,6 +16,8 @@ import { PlayerSubscriber } from './redis/subscribers/player.subscriber';
 import { RoomCleanupSubscriber } from './redis/subscribers/room.cleanup.subscriber';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from '../auth/auth.module';
+import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventLoggerInterceptor';
+import { SystemMetricsService } from '../common/service/SystemMetricsService';
 
 @Module({
   imports: [RedisModule, QuizSetModule, JwtModule, AuthModule],
@@ -32,7 +34,9 @@ import { AuthModule } from '../auth/auth.module';
     TimerSubscriber,
     RoomSubscriber,
     PlayerSubscriber,
-    RoomCleanupSubscriber
+    RoomCleanupSubscriber,
+    SocketEventLoggerInterceptor,
+    SystemMetricsService
   ],
   exports: [GameService]
 })

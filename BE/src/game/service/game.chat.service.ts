@@ -5,8 +5,10 @@ import { GameValidator } from '../validations/game.validator';
 import { ChatMessageDto } from '../dto/chat-message.dto';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import SocketEvents from '../../common/constants/socket-events';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
+import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 
+@TraceClass()
 @Injectable()
 export class GameChatService {
   private readonly logger = new Logger(GameChatService.name);
@@ -37,19 +39,40 @@ export class GameChatService {
         timestamp: new Date()
       })
     );
-    this.logger.verbose(`채팅 전송: ${gameId} - ${clientId} (${player.playerName}) = ${message}`);
+
+    this.logger.verbose(
+      `[chatMessage] Room: ${gameId} | playerId: ${clientId} | playerName: ${player.playerName} | isAlive: ${player.isAlive ? '생존자' : '관전자'} | Message: ${message}`
+    );
   }
 
-  async subscribeChatEvent(server: Server) {
+  async subscribeChatEvent(server: Namespace) {
     const chatSubscriber = this.redis.duplicate();
     chatSubscriber.psubscribe('chat:*');
 
     chatSubscriber.on('pmessage', async (_pattern, channel, message) => {
-      console.log(`channel: ${channel}`); // channel: chat:317172
-      console.log(`message: ${message}`); //  message: {"playerId":"8CT28Iw5FgjgPHNyAAAs","playerName":"Player1","message":"Hello, everyone!","timestamp":"2024-11-14T08:32:38.617Z"}
-      const gameId = channel.split(':')[1];
+      const gameId = channel.split(':')[1]; // ex. channel: chat:317172
       const chatMessage = JSON.parse(message);
-      server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+
+      const playerKey = REDIS_KEY.PLAYER(chatMessage.playerId);
+      const isAlivePlayer = await this.redis.hget(playerKey, 'isAlive');
+
+      if (isAlivePlayer === '1') {
+        server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+        return;
+      }
+
+      // 죽은 사람의 채팅은 죽은 사람끼리만 볼 수 있도록 처리
+      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+      await Promise.all(
+        players.map(async (playerId) => {
+          const playerKey = REDIS_KEY.PLAYER(playerId);
+          const isAlive = await this.redis.hget(playerKey, 'isAlive');
+
+          if (isAlive === '0') {
+            server.to(playerId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+          }
+        })
+      );
     });
   }
 }

@@ -4,6 +4,25 @@ import { UserModel } from '../../user/entities/user.entity';
 import { QuizModel } from './quiz.entity';
 import { UserQuizArchiveModel } from '../../user/entities/user-quiz-archive.entity';
 
+const CategoriesEnum = Object.freeze({
+  GENERAL: 'GENERAL',
+  MOVIE: 'MOVIE',
+  MUSIC: 'MUSIC',
+  FOOD: 'FOOD',
+  ANIMAL: 'ANIMAL',
+  LANGUAGE: 'LANGUAGE',
+  NEWS: 'NEWS',
+  MATH: 'MATH',
+  SCIENCE: 'SCIENCE',
+  ECONOMY: 'ECONOMY',
+  HISTORY: 'HISTORY',
+  GEOGRAPHY: 'GEOGRAPHY',
+  SPORTS: 'SPORTS',
+  GAME: 'GAME',
+  IT: 'IT',
+  POLITICS: 'POLITICS'
+});
+
 @Entity('quiz_set')
 export class QuizSetModel extends BaseModel {
   @Column()
@@ -12,7 +31,11 @@ export class QuizSetModel extends BaseModel {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: CategoriesEnum,
+    default: CategoriesEnum.GENERAL // 기본값 설정 가능
+  })
   category: string;
 
   @ManyToOne(() => UserModel, (user) => user.quizSetList, {
