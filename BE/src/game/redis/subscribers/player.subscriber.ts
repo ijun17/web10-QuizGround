@@ -21,9 +21,7 @@ export class PlayerSubscriber extends RedisSubscriber {
       if (!playerId || message !== 'hset') {
         return;
       }
-
       const key = `Player:${playerId}`;
-
       await this.handlePlayerChanges(key, playerId, server);
     });
   }

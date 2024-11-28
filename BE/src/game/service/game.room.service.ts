@@ -300,7 +300,9 @@ export class GameRoomService {
     const targetPlayer = await this.redis.hgetall(targetPlayerKey);
     this.gameValidator.validatePlayerExists(SocketEvents.KICK_ROOM, targetPlayer);
     await this.redis.set(`${targetPlayerKey}:Changes`, 'Kicked', 'EX', 6000); // 해당플레이어의 변화정보 10분 후에 삭제
-
-    await this.handlePlayerExit(kickPlayerId);
+    await this.redis.hset(targetPlayerKey, {
+      isAlive: '0'
+    });
+    // await this.handlePlayerExit(kickPlayerId);
   }
 }
