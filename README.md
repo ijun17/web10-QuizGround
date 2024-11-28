@@ -47,7 +47,7 @@
 
 <a href="https://github.com/DongHoonYu96"><img src="https://avatars.githubusercontent.com/u/50190387?v=4" width="150"></a>
 
-- [github action을 이용한 자동배고 구현기 - 유동훈](https://www.notion.so/s0n9/ci-cd-github-action-d6b16167deea45308fb08a3fb2ccb60f?pvs=4)
+- [github action을 이용한 자동배포 구현기 - 유동훈](https://www.notion.so/s0n9/ci-cd-github-action-d6b16167deea45308fb08a3fb2ccb60f?pvs=4)
 
 ### 박준우
 
