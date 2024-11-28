@@ -1,7 +1,7 @@
 export function getEmojiByUUID(uuid: string) {
   const uuid8Arr = uuid.slice(0, 8).toLowerCase().split('');
   for (let i = 0; i < uuid8Arr.length; i++) {
-    if ((uuid >= '0' && uuid <= '9') || (uuid >= 'a' && uuid <= 'f')) continue;
+    if ((uuid8Arr[i] >= '0' && uuid8Arr[i] <= '9') || (uuid8Arr[i] >= 'a' && uuid8Arr[i] <= 'f')) continue;
     const char = (uuid.charCodeAt(i) * 3457) % 16;
     uuid8Arr[i] = char.toString(16);
   }
