@@ -29,8 +29,8 @@ export const NicknameModal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
+      <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-[90%]">
         <h2 className="text-xl font-semibold mb-4">{title}</h2>
         <input
           type="text"

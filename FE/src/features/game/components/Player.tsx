@@ -27,7 +27,7 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
   const characterRef = useRef(null);
 
   useEffect(() => {
-    if (quizState === QuizState.END && player && gameState === 'PROGRESS') {
+    if (quizState === QuizState.END && player && gameState === 'PROGRESS' && player.isAnswer) {
       setEffectData(player.isAnswer ? AnswerEffect : FailEffect);
       setShowEffect(true);
     }
@@ -84,7 +84,7 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
 
   return (
     <div
-      className="absolute transition-all duration-500 ease-in-out"
+      className="absolute transition-transform duration-500 ease-in-out will-change-transform"
       style={{
         transform: `translate(calc(${xPos}px - 50%), calc(${yPos}px - 50%)) scale(${playerSize})`,
         zIndex: isCurrent ? 3 : 1,
@@ -93,9 +93,9 @@ export const Player = ({ playerId, boardSize, isCurrent }: Props) => {
       onClick={(e) => e.preventDefault()}
     >
       <div
-        className="flex flex-col items-center justify-center relative transition-all duration-[3000ms]"
+        className="flex flex-col items-center justify-center relative transition-all duration-[4000ms]"
         style={{
-          transform: quizState === 'end' && !player.isAnswer ? 'translateY(-40px)' : 'none',
+          transform: quizState === 'end' && !player.isAnswer ? 'translateY(-60px)' : 'none',
           opacity: quizState === 'end' && !player.isAnswer ? '0' : '1'
         }}
       >

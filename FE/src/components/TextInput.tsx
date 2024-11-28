@@ -33,7 +33,7 @@ export const TextInput = (props: InputProps) => {
         {props.children}
       </div>
       {props.error && (
-        <div className="absolute z-10 animate-pulse">
+        <div className="absolute z-10">
           <p className=" text-red-600 text-sm bg-gray-100 px-2 py-1 rounded shadow-lg opacity-90">
             {props.error}
           </p>
