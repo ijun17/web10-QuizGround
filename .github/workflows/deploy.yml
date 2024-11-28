@@ -83,6 +83,7 @@ jobs:
             BE/dist \
             BE/package.json \
             BE/package-lock.json \
+            BE/ecosystem.config.js \
             .env \
             FE/dist \
             FE/package.json \
