@@ -60,10 +60,15 @@ export class PlayerSubscriber extends RedisSubscriber {
   }
 
   private async handlePlayerJoin(playerId: string, playerData: any, server: Namespace) {
+    const findRoom = await this.redis.hgetall(REDIS_KEY.ROOM(playerData.gameId));
+    const findHost = findRoom.host;
+    const isHost = findHost === playerId;
+
     const newPlayer = {
       playerId,
       playerName: playerData.playerName,
-      playerPosition: [parseFloat(playerData.positionX), parseFloat(playerData.positionY)]
+      playerPosition: [parseFloat(playerData.positionX), parseFloat(playerData.positionY)],
+      isHost
     };
 
     server.to(playerData.gameId).emit(SocketEvents.JOIN_ROOM, {
