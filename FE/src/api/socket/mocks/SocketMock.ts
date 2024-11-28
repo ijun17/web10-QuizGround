@@ -6,8 +6,27 @@ type SocketEvent = keyof SocketDataMap;
 export class SocketMock {
   private listenerSet: Record<string, ((...args: unknown[]) => void)[]> = {};
   private onAnyListenerList: ((event: string, ...args: unknown[]) => void)[] = [];
+  initialrized: Promise<void>;
   constructor() {
-    console.log(`Mock WebSocket 연결`);
+    console.log(`%c Mock WebSocket 연결`, 'color:yellow; font-weight:bold;');
+    this.initialrized = new Promise((resolve) => {
+      this.delay(0).then(() => {
+        resolve();
+      });
+    });
+    this.initialrized.then(() => {
+      const currentPlayer = {
+        playerId: this.id,
+        playerName: 'Me',
+        playerPosition: [0.5, 0.5] as [number, number]
+      };
+      this.emitServer('joinRoom', { players: [currentPlayer] });
+      this.addPlayers([currentPlayer]);
+      this.emitServer('getSelfId', { playerId: this.id });
+      this.emitServer('setPlayerName', { playerId: this.id, playerName: 'Me' });
+    });
+
+    // }
   }
 
   /**
@@ -28,12 +47,10 @@ export class SocketMock {
     this.onAnyListenerList.push(listener);
   }
   emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
-    //여기서 서버에 데이터 전송
+    console.log(`%c SERVER_SOCKET[${event}]`, 'background:blue; color:white', data);
     switch (event) {
       case SocketEvents.CHAT_MESSAGE:
         return this.handleChat(data as SocketDataMap[typeof SocketEvents.CHAT_MESSAGE]['request']);
-      case SocketEvents.JOIN_ROOM:
-        return this.handleJoin(data as SocketDataMap[typeof SocketEvents.JOIN_ROOM]['request']);
       case SocketEvents.UPDATE_POSITION:
         return this.handlePosition(
           data as SocketDataMap[typeof SocketEvents.UPDATE_POSITION]['request']
@@ -119,18 +136,6 @@ export class SocketMock {
     await this.delay(0.1);
     this.chatMessage(this.id, data.message);
   }
-  private async handleJoin(data: SocketDataMap[typeof SocketEvents.JOIN_ROOM]['request']) {
-    if (this.getPlayer(this.id)) return;
-    await this.delay(0.1);
-    const currentPlayer: (typeof this.players)[string] = {
-      playerId: this.id,
-      playerName: data.playerName,
-      playerPosition: [0.5, 0.5]
-    };
-    this.emitServer(SocketEvents.JOIN_ROOM, { players: this.getPlayerList() });
-    this.emitServer(SocketEvents.JOIN_ROOM, { players: [currentPlayer] });
-    this.addPlayers([currentPlayer]);
-  }
   private async handlePosition(
     data: SocketDataMap[typeof SocketEvents.UPDATE_POSITION]['request']
   ) {
@@ -159,7 +164,10 @@ export class SocketMock {
    * calculate()
    * progressQuiz()
    * updatePlayerPosition()
-   * chatMessage
+   * chatMessage()
+   * createDummyPlayer()
+   * chatRandom()
+   * moveRandom()
    */
   getPlayer(id: string) {
     return this.players[id];
@@ -169,6 +177,7 @@ export class SocketMock {
   }
   addPlayers(players: Array<SocketMock['players'][keyof SocketMock['players']]>) {
     players.forEach((p) => (this.players[p.playerId] = p));
+    this.emitServer('joinRoom', { players });
   }
   setQuiz(quiz: string, quizSecond: number, choiceList: string[]) {
     const COUNT_DOWN_TIME = 3000;
@@ -219,6 +228,52 @@ export class SocketMock {
       playerName: player.playerName,
       message,
       timestamp: 0
+    });
+  }
+
+  async createDummyPlayer(count: number) {
+    await this.initialrized;
+    const playerCount = Object.keys(this.players).length;
+    this.addPlayers(
+      Array(count)
+        .fill(null)
+        .map((_, i) => ({
+          playerId: String(playerCount + i + 1),
+          playerName: 'player' + (playerCount + i),
+          playerPosition: [this.random(), this.random()]
+        }))
+    );
+  }
+
+  async chatRandom(testSec: number, chatPerSecPerPlyaer: number = 1) {
+    await this.initialrized;
+    const playerCount = this.getPlayerList().length;
+    for (let j = 0; j < testSec; j++) {
+      for (const player of this.getPlayerList()) {
+        if (player.playerId === this.id) continue;
+        await this.delay(1 / playerCount / chatPerSecPerPlyaer);
+        this.chatMessage(player.playerId, 'message' + player.playerId);
+      }
+    }
+  }
+
+  async moveRandom(testSec: number, movePerSecPerPlyaer: number = 1) {
+    await this.initialrized;
+    const playerCount = this.getPlayerList().length;
+    for (let j = 0; j < testSec; j++) {
+      for (const player of this.getPlayerList()) {
+        if (player.playerId === this.id) continue;
+        await this.delay(1 / playerCount / movePerSecPerPlyaer);
+        this.updatePlayerPosition(player.playerId, [this.random(), this.random()]);
+      }
+    }
+  }
+
+  async performenceTest(fnList: unknown[]) {
+    const start = performance.now();
+    Promise.all(fnList).then(() => {
+      const end = performance.now();
+      this.log(`PERFORMENCE: ${((end - start) / 1000).toFixed(2)}s`);
     });
   }
 }

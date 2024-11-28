@@ -1,12 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { MainPage } from './pages/MainPage';
-import { GameSetupPage } from './pages/GameSetupPage';
-import { GamePage } from './pages/GamePage';
-import { QuizSetupPage } from './pages/QuizSetupPage';
-import { GameLobbyPage } from './pages/GameLobbyPage';
-import { LoginPage } from './pages/LoginPage';
-import { MyPage } from './pages/MyPage';
-import { PinPage } from './pages/PinPage';
+import { GameSetupPage, GamePage, PinPage } from './features/game';
+import { QuizSetupPage } from './features/quiz';
+import { GameLobbyPage } from './features/lobby';
+import { LoginPage } from './features/auth';
+import { MyPage } from './features/user';
 
 function App() {
   return (
