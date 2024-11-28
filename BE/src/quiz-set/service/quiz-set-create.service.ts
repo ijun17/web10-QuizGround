@@ -110,6 +110,16 @@ export class QuizSetCreateService {
   }
 
   private handleError(error: Error): never {
+    const mysqlError = error as unknown as {
+      code: number;
+      errno: number;
+      sqlState: string;
+      sqlMessage: string;
+    };
+    if (mysqlError.errno === 1265) {
+      throw new BadRequestException('퀴즈셋 생성 실패: 올바른 카테고리를 입력해주세요');
+    }
+
     if (error instanceof BadRequestException) {
       throw error;
     }
