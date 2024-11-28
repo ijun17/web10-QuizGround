@@ -129,7 +129,7 @@ export class TimerSubscriber extends RedisSubscriber {
       });
 
       server.to(gameId).emit(SocketEvents.END_GAME, {
-        host: leaderboard[0]
+        hostId: leaderboard[0]
       });
       this.logger.verbose(`[endGame]: ${gameId}`);
       return;

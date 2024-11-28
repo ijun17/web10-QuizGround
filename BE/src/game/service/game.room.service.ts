@@ -216,6 +216,7 @@ export class GameRoomService {
     const players = await this.redis.smembers(roomPlayersKey);
     if (host === clientId && players.length > 0) {
       const newHost = await this.redis.srandmember(roomPlayersKey);
+      await this.redis.set(`${roomKey}:Changes`, 'Host');
       await this.redis.hset(roomKey, {
         host: newHost
       });
