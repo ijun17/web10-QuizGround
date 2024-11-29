@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class RoomCleanupSubscriber extends RedisSubscriber {
   /**
    * Redis 구독 초기화 및 정리 이벤트 핸들러 등록
    */
-  async subscribe(server: Server): Promise<void> {
+  async subscribe(server: Namespace): Promise<void> {
     const subscriber = this.redis.duplicate();
 
     // 방 정리 이벤트 구독

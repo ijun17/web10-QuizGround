@@ -1,7 +1,7 @@
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { Logger } from '@nestjs/common';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 
 export abstract class RedisSubscriber {
@@ -11,7 +11,7 @@ export abstract class RedisSubscriber {
     this.logger = new Logger(this.constructor.name);
   }
 
-  abstract subscribe(server: Server): Promise<void>;
+  abstract subscribe(server: Namespace): Promise<void>;
 
   async getQuizResults(gameId: string) {
     // 1. 현재 퀴즈 정보 가져오기

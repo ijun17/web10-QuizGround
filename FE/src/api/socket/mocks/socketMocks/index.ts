@@ -1,5 +1,6 @@
 import SocketMockChat from './SocketMockChat';
 import SocketMockLoadTest from './SocketMockLoadTest';
+import SocketMockLoadTestOnlyMove from './SocketMockLoadTestOnlyMove';
 import SocketMockLoadTestWithQuiz from './SocketMockLoadTestWithQuiz';
 import SocketMockNextQuiz from './SocketMockNextQuiz';
 import SocketMockStartEnd from './SocketMockStartEnd';
@@ -11,7 +12,8 @@ const mockMap = {
   'test-next-quiz': SocketMockNextQuiz,
   'test-load': SocketMockLoadTest,
   'test-load-with-quiz': SocketMockLoadTestWithQuiz,
-  'test-start-end': SocketMockStartEnd
+  'test-start-end': SocketMockStartEnd,
+  'test-load-only-move': SocketMockLoadTestOnlyMove
 } as const;
 
 export default mockMap;
