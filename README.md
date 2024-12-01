@@ -59,7 +59,7 @@
 채팅도 주고받을 수 있어요!
 > 
 
-<img width="1440" alt="2" src="https://github.com/user-attachments/assets/5f184d43-0c4f-4968-981e-661eb6c975a4">
+<img width="1100" alt="2" src="https://github.com/user-attachments/assets/5f184d43-0c4f-4968-981e-661eb6c975a4">
 
 1. 서바이벌 모드: 퀴즈를 맞추면서 끝까지 살아남아보세요!
 2. 랭킹 모드: 퀴즈를 맞추면 점수를 받을 수 있고, 랭킹을 실시간으로 볼 수 있어요!
@@ -76,7 +76,7 @@
 > 현재 대기방 목록에 있는 게임방에 자유롭게 참여할 수 있어요!
 > 
 
-<img width="1440" alt="4" src="https://github.com/user-attachments/assets/ea28fa2e-c531-44dc-b1b6-a7104c62f0e1">
+<img width="1100" alt="4" src="https://github.com/user-attachments/assets/ea28fa2e-c531-44dc-b1b6-a7104c62f0e1">
 
 <br>
 
@@ -88,7 +88,7 @@
 
 ## 🏛️ 시스템 아키텍처
 
-![6](https://github.com/user-attachments/assets/0d7d9130-2a3f-4703-a45b-ad497376c3bc)
+<img width="718" alt="image" src="https://github.com/user-attachments/assets/0d7d9130-2a3f-4703-a45b-ad497376c3bc">
 
 <br>
 
