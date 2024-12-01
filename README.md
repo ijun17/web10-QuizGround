@@ -78,7 +78,7 @@
 
 ## ⚙️ 기술 스택
 
-<img width="612" alt="5" src="https://github.com/user-attachments/assets/ac837464-bb33-4450-b081-284839c07367">
+<img width="718" alt="image" src="https://github.com/user-attachments/assets/e53eeb6b-7271-4bf8-a504-2b6d3b58cc72">
 
 <br>
 
