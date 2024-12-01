@@ -2,6 +2,8 @@
   <h1>QuizGround</h1>
 </div>
 
+![0](https://github.com/user-attachments/assets/de64e956-2f62-4d42-8932-3216b354091c)
+
 <br>
 
 <p align=center>
