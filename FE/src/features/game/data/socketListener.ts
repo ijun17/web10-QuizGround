@@ -38,13 +38,13 @@ socketService.on('endQuizTime', (data) => {
     data.players.map((p) => {
       const _p = players.get(p.playerId);
       return {
-        playerId: String(p.playerId),
+        playerId: p.playerId,
         playerName: _p?.playerName || '',
         playerPosition: _p?.playerPosition || [0, 0],
         playerScore: p.score,
         isAnswer: p.isAnswer,
         isAlive: _p?.isAlive || false,
-        isHost: false,
+        isHost: _p?.isHost || false,
         emoji: _p?.emoji || 'o'
       };
     })
