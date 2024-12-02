@@ -5,6 +5,7 @@ import { Player } from './Player';
 import { socketService } from '@/api/socket';
 import { useEffect, useRef, useState } from 'react';
 import { getServerTimestamp } from '@/features/game/utils/serverTime';
+// import PingEffect from './PingEffect';
 
 const optionColors = [
   '#FF9AA2', // pastel red
@@ -72,7 +73,7 @@ export const QuizOptionBoard = () => {
     const { width, height, top, left } = boardRect;
     const x = (pageX - left - window.scrollX) / width;
     const y = (pageY - top - window.scrollY) / height;
-    if (x > 1 || y > 1) return;
+    if (x > 1 || y > 1 || x < 0 || y < 0) return;
     socketService.emit('updatePosition', { gameId, newPosition: [y, x] });
     const option = Math.round(x) + Math.floor(y * Math.ceil(choiceList.length / 2)) * 2;
     setSelectedOption(option);
@@ -86,10 +87,15 @@ export const QuizOptionBoard = () => {
       if (timeout) clearTimeout(timeout);
     };
   }, [isWarningMove]);
+  // const [clickPosition, setClickPosition] = useState<{ x: number; y: number } | null>(null);
 
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const { pageX, pageY } = e;
     handleMove(pageX, pageY);
+    // setClickPosition({ x: pageX, y: pageY });
+    // setTimeout(() => {
+    //   setClickPosition(null);
+    // }, 500); // 0.5초 후에 원 사라짐
   };
 
   const handleTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
@@ -100,11 +106,15 @@ export const QuizOptionBoard = () => {
 
   return (
     <div
-      className="relative component-default h-[100%] select-none"
+      className="relative component-default h-[100%] select-none "
       onClick={handleClick}
       onTouchEnd={handleTouchEnd}
       ref={boardRef}
     >
+      {/* <div className="overflow-hidden w-full h-full z-0 absolute component-default opacity-25">
+        <div className="w-full h-full bg-gradient-to-r from-blue-200 via-blue-300 to-blue-200 bg-300% animate-gradient"></div>
+      </div> */}
+      {/* <div className="relative">{clickPosition && <PingEffect position={clickPosition} />}</div> */}
       <div className="absolute h-[100%] w-[100%]">
         {boardRect
           ? Array.from(players)

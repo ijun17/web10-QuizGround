@@ -16,6 +16,7 @@ export const LoginModal = ({ isOpen, onClose }: Props) => {
       console.log(response);
       console.log(response.access_token);
       localStorage.setItem('accessToken', response.access_token);
+      location.reload();
     } else {
       alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
     }
@@ -78,8 +79,8 @@ type LoginFormProps = {
 };
 
 const LoginForm: React.FC<LoginFormProps> = ({ handleLogin }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin');
+  const [password, setPassword] = useState('admin');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 

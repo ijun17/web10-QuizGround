@@ -4,7 +4,7 @@ import { QuizOptionBoard } from '@/features/game/components/QuizOptionBoard';
 import { NicknameModal } from '../components/NicknameModal';
 import { useState, useEffect } from 'react';
 import { GameHeader } from '@/features/game/components/GameHeader';
-import { HeaderBar } from '@/components/HeaderBar';
+// import { HeaderBar } from '@/components/HeaderBar';
 import { socketService, useSocketException } from '@/api/socket';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '../data/store/useRoomStore';
@@ -15,6 +15,8 @@ import { ResultModal } from '@/features/game/components/ResultModal';
 import { ErrorModal } from '@/components/ErrorModal';
 import { useNavigate } from 'react-router-dom';
 import { getRandomNickname } from '@/features/game/utils/nickname';
+import { KickModal } from '../components/KickModal';
+import PingEffect from '../components/PingEffect';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -40,8 +42,8 @@ export const GamePage = () => {
     if (gameState === GameState.END) setIsResultOpen(true);
   }, [gameState]);
 
-  useSocketException('joinRoom', (data) => {
-    setErrorModalTitle(data);
+  useSocketException('connection', (data) => {
+    setErrorModalTitle(data.split('\n')[0]);
     setIsErrorModalOpen(true);
   });
 
@@ -60,33 +62,22 @@ export const GamePage = () => {
   // 클릭된 위치 기록
   const handleClick = (e: React.MouseEvent) => {
     const { clientX, clientY } = e;
-    console.log(`${clientX} , ${clientY} 클릭됨`);
     setClickPosition({ x: clientX, y: clientY });
 
     setTimeout(() => {
       setClickPosition(null);
     }, 500); // 0.5초 후에 원 사라짐
   };
-
   return (
-    <div className="bg-gradient-to-r from-sky-100 to-indigo-200">
-      <HeaderBar />
-      <div className=" h-[calc(100vh-100px)] overflow-hidden cursor-gameCursor">
-        {clickPosition && (
-          <div
-            className="absolute bg-blue-500 rounded-full animate-ping"
-            style={{
-              left: `${clickPosition.x - 20}px`,
-              top: `${clickPosition.y - 20}px`,
-              width: '40px',
-              height: '40px',
-              zIndex: 10,
-              visibility: 'visible',
-              opacity: 1
-            }}
-          />
-        )}
-        <div className="center p-4 pb-0 h-[30%]">
+    // <div className="bg-gradient-to-r from-sky-100 to-indigo-200 h-[100dvh] flex flex-col overflow-hidden items-center">
+    <div className="bg-[url('/retroBg.png')] bg-cover bg-center h-[100dvh] flex flex-col overflow-hidden items-center">
+      {/* <div className="w-[150dvh] h-[80dvh]"></div> */}
+      {/* <div className="max-w-[1200px] w-full  max-h-[80vh] "> */}
+      {/* <HeaderBar /> */}
+
+      <div className="flex-1 overflow-hidden cursor-gameCursor w-full">
+        <div className="relative">{clickPosition && <PingEffect position={clickPosition} />}</div>
+        <div className="center p-4 pb-0 h-[30%] min-h-[250px]">
           {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
         </div>
         <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[70%] p-4">
@@ -120,8 +111,11 @@ export const GamePage = () => {
             buttonText="메인 페이지로 이동"
             onClose={() => navigate('/')}
           />
+
+          <KickModal />
         </div>
       </div>
+      {/* </div> */}
     </div>
   );
 };
