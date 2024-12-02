@@ -65,7 +65,7 @@ export class TimerSubscriber extends RedisSubscriber {
       const selectAnswer = this.calculateAnswer(
         player.positionX,
         player.positionY,
-        quizList.length
+        parseInt(quiz.choiceCount)
       );
       // this.logger.verbose(selectAnswer);
 
@@ -167,8 +167,8 @@ export class TimerSubscriber extends RedisSubscriber {
   }
 
   private calculateAnswer(positionX: string, positionY: string, quizLen: number): number {
-    const x = parseFloat(positionX);
-    const y = parseFloat(positionY);
+    const x = parseFloat(positionY);
+    const y = parseFloat(positionX);
 
     // 행의 개수 계산 (2열 고정이므로 총 개수의 절반을 올림)
     const rows = Math.ceil(quizLen / 2);
@@ -177,21 +177,12 @@ export class TimerSubscriber extends RedisSubscriber {
     const rowIndex = Math.floor(y * rows);
 
     // X 좌표로 왼쪽/오른쪽 결정
-    const colIndex = x < 0.5 ? 0 : 1;
+    const colIndex = Math.round(x);
 
     // 최종 선택지 번호 계산
     const answer = rowIndex * 2 + colIndex + 1;
 
     // 실제 선택지 범위를 벗어나지 않도록 보정
     return Math.min(answer, quizLen);
-    // return (
-    //   Math.round(
-    //     parseFloat(positionX) + Math.floor(parseFloat(positionY) * Math.ceil(quizLen / 2))
-    //   ) * 2
-    // );
-    // if (parseFloat(positionY) < 0.5) {
-    //   return parseFloat(positionX) < 0.5 ? 1 : 2;
-    // }
-    // return parseFloat(positionX) < 0.5 ? 3 : 4;
   }
 }
