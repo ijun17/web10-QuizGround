@@ -38,19 +38,20 @@ socketService.on('endQuizTime', (data) => {
     data.players.map((p) => {
       const _p = players.get(p.playerId);
       return {
-        playerId: String(p.playerId),
+        playerId: p.playerId,
         playerName: _p?.playerName || '',
         playerPosition: _p?.playerPosition || [0, 0],
         playerScore: p.score,
         isAnswer: p.isAnswer,
         isAlive: _p?.isAlive || false,
-        isHost: false,
+        isHost: _p?.isHost || false,
         emoji: _p?.emoji || 'o'
       };
     })
   );
 
   // 서바이벌 모드일 경우 3초 뒤에 탈락한 플레이어를 보이지 않게 한다.
+  // TODO: 입장한 방이 어떤 게임 모드인지 알 수 없다.
   if (gameMode === 'SURVIVAL') {
     setTimeout(() => {
       const { players, setPlayers } = usePlayerStore.getState();

@@ -17,7 +17,7 @@ export const PinPage = () => {
   });
 
   useSocketException('connection', (data) => {
-    alert(data);
+    alert(data.split('\n')[0]);
   });
 
   const handleJoin = () => {
@@ -33,6 +33,7 @@ export const PinPage = () => {
 
     if (hasError) return;
 
+    socketService.disconnect();
     socketService.joinRoom(pin);
   };
 

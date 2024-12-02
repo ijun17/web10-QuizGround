@@ -22,7 +22,7 @@ export const GameSetupPage = () => {
   });
 
   useSocketException('connection', (data) => {
-    alert(data);
+    alert(data.split('\n')[0]);
   });
 
   const handleTitleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -54,7 +54,7 @@ export const GameSetupPage = () => {
     <>
       <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
         <Header />
-        <div className="p-4 max-w-full mx-auto bg-white shadow-lg rounded-lg w-full sm:w-4/5 md:w-3/5 lg:w-2/5 mt-6">
+        <div className="p-4 max-w-[600px] mx-auto bg-white shadow-lg rounded-lg w-[90%] mt-6">
           <h2 className="text-2xl font-bold text-center text-blue-500 mb-6">게임방 만들기</h2>
 
           <TextInput

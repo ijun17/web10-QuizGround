@@ -4,10 +4,14 @@ import { socketService } from '../socket';
 
 type SocketEvent = keyof SocketDataMap;
 
-export const useSocketException = (eventName: SocketEvent, callback: (message: string) => void) => {
+export const useSocketException = (
+  eventName: SocketEvent | '*',
+  callback: (message: string) => void
+) => {
   const fn = useCallback(
     (data: SocketDataMap['exception']['response']) => {
-      if (data.event === eventName) callback(data.message);
+      if (data.event === eventName || data.eventName === eventName || eventName === '*')
+        callback(data.message);
     },
     [eventName, callback]
   );

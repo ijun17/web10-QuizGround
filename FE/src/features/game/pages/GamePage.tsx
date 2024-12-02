@@ -43,7 +43,7 @@ export const GamePage = () => {
   }, [gameState]);
 
   useSocketException('connection', (data) => {
-    setErrorModalTitle(data);
+    setErrorModalTitle(data.split('\n')[0]);
     setIsErrorModalOpen(true);
   });
 
