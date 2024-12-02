@@ -1,7 +1,3 @@
-<div align="center">
-  <h1>QuizGround</h1>
-</div>
-
 ![0](https://github.com/user-attachments/assets/de64e956-2f62-4d42-8932-3216b354091c)
 
 <br>
@@ -79,17 +75,20 @@
 <img width="1100" alt="4" src="https://github.com/user-attachments/assets/ea28fa2e-c531-44dc-b1b6-a7104c62f0e1">
 
 <br>
+<br>
 
 ## ⚙️ 기술 스택
 
-<img width="718" alt="image" src="https://github.com/user-attachments/assets/e53eeb6b-7271-4bf8-a504-2b6d3b58cc72">
+<img width="710" alt="image" src="https://github.com/user-attachments/assets/06445949-2257-4331-be15-9a9b7e97c084">
 
+<br>
 <br>
 
 ## 🏛️ 시스템 아키텍처
 
 <img width="718" alt="image" src="https://github.com/user-attachments/assets/0d7d9130-2a3f-4703-a45b-ad497376c3bc">
 
+<br>
 <br>
 
 ## 🚨 FE 핵심 경험
@@ -102,7 +101,7 @@
     - 부하 테스트를 통해 200명이 원활히 플레이 가능한지 테스트했습니다.
     - 상태에 대한 자료구조와 구독 방식을 바꾸어 개선했습니다.
 - 결과
-    - 200명이 5초간 위치 업데이트를 하면 기존에는 `16.71초`가 걸렸지만 **`6.71초`**로 59% 빨라졌습니다.
+    - 200명이 5초간 위치 업데이트를 하면 기존에는 `16.71초`가 걸렸지만 `6.71초`로 59% 빨라졌습니다.
 - 해당 경험이 더 궁금하시다면?
     - [실시간 200명 플레이어 렌더링을 위한 최적화 과정](https://www.notion.so/200-82acd52251d2439091d101e193a26c9b?pvs=21)
 
