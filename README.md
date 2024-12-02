@@ -75,17 +75,20 @@
 <img width="1100" alt="4" src="https://github.com/user-attachments/assets/ea28fa2e-c531-44dc-b1b6-a7104c62f0e1">
 
 <br>
+<br>
 
 ## ⚙️ 기술 스택
 
 <img width="710" alt="image" src="https://github.com/user-attachments/assets/06445949-2257-4331-be15-9a9b7e97c084">
 
 <br>
+<br>
 
 ## 🏛️ 시스템 아키텍처
 
 <img width="718" alt="image" src="https://github.com/user-attachments/assets/0d7d9130-2a3f-4703-a45b-ad497376c3bc">
 
+<br>
 <br>
 
 ## 🚨 FE 핵심 경험
