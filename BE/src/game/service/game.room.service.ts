@@ -8,7 +8,6 @@ import { generateUniquePin } from '../../common/utils/utils';
 import SocketEvents from '../../common/constants/socket-events';
 import { UpdateRoomOptionDto } from '../dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { Socket } from 'socket.io';
 import { KickRoomDto } from '../dto/kick-room.dto';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
@@ -18,7 +17,6 @@ import { TraceClass } from '../../common/interceptor/SocketEventLoggerIntercepto
 export class GameRoomService {
   private readonly logger = new Logger(GameRoomService.name);
   private readonly INACTIVE_THRESHOLD = 30 * 60 * 1000; // 30분 30 * 60 * 1000;
-  private readonly PLAYER_GRACE_PERIOD = 10; // 10초
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
@@ -215,7 +213,7 @@ export class GameRoomService {
       disconnected: '1',
       disconnectedAt: Date.now().toString()
     });
-    pipeline.expire(REDIS_KEY.PLAYER(clientId), this.PLAYER_GRACE_PERIOD);
+    // pipeline.expire(REDIS_KEY.PLAYER(clientId), this.PLAYER_GRACE_PERIOD);
 
     await pipeline.exec();
 
@@ -233,7 +231,7 @@ export class GameRoomService {
     const remainingPlayers = await this.redis.scard(roomPlayersKey);
 
     // 4. 플레이어 관련 모든 키에 TTL 설정
-    await this.setTTLForPlayerKeys(clientId);
+    // await this.setTTLForPlayerKeys(clientId);
 
     if (remainingPlayers === 0) {
       // 마지막 플레이어가 나간 경우
@@ -256,45 +254,26 @@ export class GameRoomService {
   }
 
   /**
-   * 비활성 방 체크 (주기적으로 실행)
-   */
-  @Cron(CronExpression.EVERY_MINUTE)
-  async checkInactiveRooms(): Promise<void> {
-    const now = Date.now();
-    const rooms = await this.redis.smembers(REDIS_KEY.ACTIVE_ROOMS);
-    this.logger.verbose(`비활성 방 체크시작 / 활성 방 목록: ${rooms}`);
-
-    for (const roomId of rooms) {
-      const lastActivity = await this.redis.hget(REDIS_KEY.ROOM(roomId), 'lastActivityAt');
-
-      if (lastActivity && now - parseInt(lastActivity) > this.INACTIVE_THRESHOLD) {
-        await this.redis.publish('room:cleanup', roomId);
-        this.logger.verbose(`비활성으로 인해 방 ${roomId} 정리 시작`);
-      }
-    }
-  }
-
-  /**
    * 플레이어 관련 모든 데이터에 TTL 설정
    */
-  private async setTTLForPlayerKeys(clientId: string): Promise<void> {
-    let cursor = '0';
-    const pattern = `Player:${clientId}:*`;
-    const pipeline = this.redis.pipeline();
-
-    do {
-      // SCAN으로 플레이어 관련 키들을 배치로 찾기
-      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
-      cursor = nextCursor;
-
-      // 찾은 모든 키에 TTL 설정
-      for (const key of keys) {
-        pipeline.expire(key, this.PLAYER_GRACE_PERIOD);
-      }
-    } while (cursor !== '0');
-
-    await pipeline.exec();
-  }
+  // private async setTTLForPlayerKeys(clientId: string): Promise<void> {
+  //   let cursor = '0';
+  //   const pattern = `Player:${clientId}:*`;
+  //   const pipeline = this.redis.pipeline();
+  //
+  //   do {
+  //     // SCAN으로 플레이어 관련 키들을 배치로 찾기
+  //     const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+  //     cursor = nextCursor;
+  //
+  //     // 찾은 모든 키에 TTL 설정
+  //     for (const key of keys) {
+  //       pipeline.expire(key, this.PLAYER_GRACE_PERIOD);
+  //     }
+  //   } while (cursor !== '0');
+  //
+  //   await pipeline.exec();
+  // }
 
   async kickRoom(kickRoomDto: KickRoomDto, clientId: string) {
     const { gameId, kickPlayerId } = kickRoomDto;
