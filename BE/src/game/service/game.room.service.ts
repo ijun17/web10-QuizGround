@@ -16,7 +16,7 @@ import { TraceClass } from '../../common/interceptor/SocketEventLoggerIntercepto
 @Injectable()
 export class GameRoomService {
   private readonly logger = new Logger(GameRoomService.name);
-  private readonly PLAYER_GRACE_PERIOD = 10; // 10초
+  private readonly INACTIVE_THRESHOLD = 30 * 60 * 1000; // 30분 30 * 60 * 1000;
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
@@ -213,7 +213,7 @@ export class GameRoomService {
       disconnected: '1',
       disconnectedAt: Date.now().toString()
     });
-    pipeline.expire(REDIS_KEY.PLAYER(clientId), this.PLAYER_GRACE_PERIOD);
+    // pipeline.expire(REDIS_KEY.PLAYER(clientId), this.PLAYER_GRACE_PERIOD);
 
     await pipeline.exec();
 
@@ -231,7 +231,7 @@ export class GameRoomService {
     const remainingPlayers = await this.redis.scard(roomPlayersKey);
 
     // 4. 플레이어 관련 모든 키에 TTL 설정
-    await this.setTTLForPlayerKeys(clientId);
+    // await this.setTTLForPlayerKeys(clientId);
 
     if (remainingPlayers === 0) {
       // 마지막 플레이어가 나간 경우
@@ -256,24 +256,24 @@ export class GameRoomService {
   /**
    * 플레이어 관련 모든 데이터에 TTL 설정
    */
-  private async setTTLForPlayerKeys(clientId: string): Promise<void> {
-    let cursor = '0';
-    const pattern = `Player:${clientId}:*`;
-    const pipeline = this.redis.pipeline();
-
-    do {
-      // SCAN으로 플레이어 관련 키들을 배치로 찾기
-      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
-      cursor = nextCursor;
-
-      // 찾은 모든 키에 TTL 설정
-      for (const key of keys) {
-        pipeline.expire(key, this.PLAYER_GRACE_PERIOD);
-      }
-    } while (cursor !== '0');
-
-    await pipeline.exec();
-  }
+  // private async setTTLForPlayerKeys(clientId: string): Promise<void> {
+  //   let cursor = '0';
+  //   const pattern = `Player:${clientId}:*`;
+  //   const pipeline = this.redis.pipeline();
+  //
+  //   do {
+  //     // SCAN으로 플레이어 관련 키들을 배치로 찾기
+  //     const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+  //     cursor = nextCursor;
+  //
+  //     // 찾은 모든 키에 TTL 설정
+  //     for (const key of keys) {
+  //       pipeline.expire(key, this.PLAYER_GRACE_PERIOD);
+  //     }
+  //   } while (cursor !== '0');
+  //
+  //   await pipeline.exec();
+  // }
 
   async kickRoom(kickRoomDto: KickRoomDto, clientId: string) {
     const { gameId, kickPlayerId } = kickRoomDto;

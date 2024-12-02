@@ -72,7 +72,8 @@ export class GameRedisMemoryService {
    * TTL 관리를 위한 스케줄러
    * 배치 처리로 블로킹 최소화
    */
-  // @Cron(CronExpression.EVERY_SECOND)
+
+  // @Cron(CronExpression.EVERY_MINUTE)
   async manageTTL(): Promise<void> {
     try {
       // SCAN으로 활성 방 목록을 배치로 처리
