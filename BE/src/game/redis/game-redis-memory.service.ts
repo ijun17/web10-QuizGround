@@ -26,7 +26,7 @@ export class GameRedisMemoryService {
    * 비활성 방을 체크하고 정리하는 크론 작업
    * SCAN을 사용하여 대규모 방 목록도 안전하게 처리
    */
-  @Cron(CronExpression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async checkInactiveRooms(): Promise<void> {
     this.logger.verbose('비활성 방 체크 시작');
     try {
