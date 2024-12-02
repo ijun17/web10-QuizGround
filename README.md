@@ -1,7 +1,3 @@
-<div align="center">
-  <h1>QuizGround</h1>
-</div>
-
 ![0](https://github.com/user-attachments/assets/de64e956-2f62-4d42-8932-3216b354091c)
 
 <br>
@@ -82,7 +78,7 @@
 
 ## ⚙️ 기술 스택
 
-<img width="718" alt="image" src="https://github.com/user-attachments/assets/e53eeb6b-7271-4bf8-a504-2b6d3b58cc72">
+<img width="710" alt="image" src="https://github.com/user-attachments/assets/06445949-2257-4331-be15-9a9b7e97c084">
 
 <br>
 
