@@ -8,7 +8,6 @@ import { generateUniquePin } from '../../common/utils/utils';
 import SocketEvents from '../../common/constants/socket-events';
 import { UpdateRoomOptionDto } from '../dto/update-room-option.dto';
 import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { Socket } from 'socket.io';
 import { KickRoomDto } from '../dto/kick-room.dto';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
@@ -17,7 +16,6 @@ import { TraceClass } from '../../common/interceptor/SocketEventLoggerIntercepto
 @Injectable()
 export class GameRoomService {
   private readonly logger = new Logger(GameRoomService.name);
-  private readonly INACTIVE_THRESHOLD = 30 * 60 * 1000; // 30분 30 * 60 * 1000;
   private readonly PLAYER_GRACE_PERIOD = 10; // 10초
 
   constructor(
@@ -255,24 +253,21 @@ export class GameRoomService {
     await pipeline.exec();
   }
 
-  /**
-   * 비활성 방 체크 (주기적으로 실행)
-   */
-  @Cron(CronExpression.EVERY_MINUTE)
-  async checkInactiveRooms(): Promise<void> {
-    const now = Date.now();
-    const rooms = await this.redis.smembers(REDIS_KEY.ACTIVE_ROOMS);
-    this.logger.verbose(`비활성 방 체크시작 / 활성 방 목록: ${rooms}`);
-
-    for (const roomId of rooms) {
-      const lastActivity = await this.redis.hget(REDIS_KEY.ROOM(roomId), 'lastActivityAt');
-
-      if (lastActivity && now - parseInt(lastActivity) > this.INACTIVE_THRESHOLD) {
-        await this.redis.publish('room:cleanup', roomId);
-        this.logger.verbose(`비활성으로 인해 방 ${roomId} 정리 시작`);
-      }
-    }
-  }
+  // @Cron(CronExpression.EVERY_MINUTE)
+  // async checkInactiveRooms(): Promise<void> {
+  //   const now = Date.now();
+  //   const rooms = await this.redis.smembers(REDIS_KEY.ACTIVE_ROOMS);
+  //   this.logger.verbose(`비활성 방 체크시작 / 활성 방 목록: ${rooms}`);
+  //
+  //   for (const roomId of rooms) {
+  //     const lastActivity = await this.redis.hget(REDIS_KEY.ROOM(roomId), 'lastActivityAt');
+  //
+  //     if (lastActivity && now - parseInt(lastActivity) > this.INACTIVE_THRESHOLD) {
+  //       await this.redis.publish('room:cleanup', roomId);
+  //       this.logger.verbose(`비활성으로 인해 방 ${roomId} 정리 시작`);
+  //     }
+  //   }
+  // }
 
   /**
    * 플레이어 관련 모든 데이터에 TTL 설정
