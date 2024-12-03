@@ -35,7 +35,8 @@ import { ExceptionMessage } from '../common/constants/exception-message';
     origin: [
       'https://news.taskify.shop',
       'https://quizground.duckdns.org',
-      'https://admin.socket.io'
+      'https://admin.socket.io',
+      'https://quizground.site'
     ],
     credentials: true
   },
