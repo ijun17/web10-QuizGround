@@ -89,23 +89,23 @@ export class PlayerSubscriber extends RedisSubscriber {
       server.to(gameId).emit(SocketEvents.UPDATE_POSITION, updateData);
     } else if (isAlivePlayer === SurvivalStatus.DEAD) {
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-      const deadPlayers = await Promise.all(
-        players.map(async (id) => {
-          const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive');
-          const socketId = await this.redis.hget(REDIS_KEY.PLAYER(id), 'socketId');
-          return { id, isAlive, socketId };
-        })
-      );
-
-      deadPlayers
+      const pipeline = this.redis.pipeline();
+      players.forEach((id) => {
+        pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
+      });
+      const results = await pipeline.exec();
+      const deadPlayers = results
+        .map(([err, [isAlive, socketId]], index) => ({
+          id: players[index],
+          isAlive: err ? null : isAlive,
+          socketId: err ? null : socketId
+        }))
         .filter((player) => player.isAlive === '0')
         .forEach((player) => {
           const socket = server.sockets.get(player.socketId);
-
           if (!socket) {
             return;
           }
-
           socket.emit(SocketEvents.UPDATE_POSITION, updateData);
         });
     }
