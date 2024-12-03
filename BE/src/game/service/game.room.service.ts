@@ -71,24 +71,9 @@ export class GameRoomService {
           room.isWaiting
         );
       }
-      // 재접속 처리
-      const players = [];
-      for (const playerId of currentPlayers) {
-        const player = await this.redis.hgetall(REDIS_KEY.PLAYER(playerId));
-        players.push({
-          playerId,
-          playerName: player.playerName,
-          playerPosition: [parseFloat(player.positionX), parseFloat(player.positionY)]
-        });
-      }
 
-      // 방장의 id를 보내줘야함
-      const findRoom = await this.redis.hgetall(REDIS_KEY.ROOM(gameId));
-      const findHost = findRoom.host;
-      const isHost = findHost === clientId;
       client.join(gameId);
-      client.emit(SocketEvents.GET_SELF_ID, { playerId: clientId });
-      client.emit(SocketEvents.JOIN_ROOM, { players, isHost });
+      await this.sendCurrentInformation(client, gameId, clientId, currentPlayers);
       return;
     }
 
@@ -123,6 +108,16 @@ export class GameRoomService {
     await this.redis.zadd(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, clientId);
     await this.redis.sadd(REDIS_KEY.ROOM_PLAYERS(gameId), clientId);
 
+    this.logger.verbose(`게임 방 입장 완료: ${gameId} - ${clientId}`);
+    await this.sendCurrentInformation(client, gameId, clientId, currentPlayers);
+  }
+
+  async sendCurrentInformation(
+    client: Socket,
+    gameId: string,
+    clientId: string,
+    currentPlayers: string[]
+  ) {
     const players = [];
     const roomData = await this.redis.hgetall(REDIS_KEY.ROOM(gameId));
 
@@ -143,8 +138,11 @@ export class GameRoomService {
       maxPlayerCount: parseInt(roomData.maxPlayerCount),
       isPublic: roomData.isPublic === '1'
     });
+    client.emit(SocketEvents.UPDATE_ROOM_QUIZSET, {
+      quizSetId: roomData.quizSetId,
+      quizCount: parseInt(roomData.quizCount)
+    });
 
-    this.logger.verbose(`게임 방 입장 완료: ${gameId} - ${clientId}`);
     client.emit(SocketEvents.GET_SELF_ID, { playerId: clientId });
     client.emit(SocketEvents.JOIN_ROOM, { players });
   }
