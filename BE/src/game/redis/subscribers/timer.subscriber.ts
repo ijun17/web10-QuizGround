@@ -5,7 +5,7 @@ import Redis from 'ioredis';
 import { Namespace } from 'socket.io';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import SocketEvents from '../../../common/constants/socket-events';
-import { GameMode } from '../../../common/constants/game-mode';
+import { GameMode, SurvivalStatus } from '../../../common/constants/game';
 
 @Injectable()
 export class TimerSubscriber extends RedisSubscriber {
@@ -28,6 +28,7 @@ export class TimerSubscriber extends RedisSubscriber {
       const currentQuiz = await this.redis.get(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId));
       const [quizNum, state] = currentQuiz.split(':');
 
+      // REFACTOR: start, end 상수화
       if (state === 'start') {
         await this.handleQuizScoring(gameId, parseInt(quizNum), server);
       } else {
@@ -113,12 +114,18 @@ export class TimerSubscriber extends RedisSubscriber {
 
     // 생존 모드에서 모두 탈락하진 않았는지 체크
     const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-    const alivePlayers = players.filter(async (id) => {
-      const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive');
-      return isAlive === '1';
-    });
+    const aliveCount = (await Promise.all(
+      players.map(id => this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive'))
+    )).filter(isAlive => isAlive === SurvivalStatus.ALIVE).length;
 
-    if (quizList.length <= newQuizNum || alivePlayers.length === 0) {
+    // 게임 끝을 알림
+    if (this.hasNoMoreQuiz(quizList, newQuizNum) || this.checkSurvivalEnd(aliveCount)) {
+      // 모든 플레이어를 생존자로 변경
+      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+      players.forEach((id) => {
+        this.redis.hset(REDIS_KEY.PLAYER(id), { isAlive: SurvivalStatus.ALIVE });
+      });
+
       const leaderboard = await this.redis.zrange(
         REDIS_KEY.ROOM_LEADERBOARD(gameId),
         0,
@@ -184,5 +191,13 @@ export class TimerSubscriber extends RedisSubscriber {
 
     // 실제 선택지 범위를 벗어나지 않도록 보정
     return Math.min(answer, quizLen);
+  }
+
+  private hasNoMoreQuiz(quizList, newQuizNum: number) {
+    return quizList.length <= newQuizNum;
+  }
+
+  private checkSurvivalEnd(aliveCount: number) {
+    return aliveCount <= 1;
   }
 }

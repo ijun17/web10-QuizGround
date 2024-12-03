@@ -28,23 +28,36 @@ export class GameService {
     private readonly gameRoomService: GameRoomService
   ) {}
 
-  async updatePosition(updatePosition: UpdatePositionDto, clientId: string) {
+  /**
+   * 최적화된 플레이어 위치 업데이트 함수
+   * @param updatePosition - 업데이트할 위치 정보
+   * @param clientId - 플레이어 ID
+   * @returns Promise<void>
+   * @throws {Error} 플레이어가 게임에 속해있지 않은 경우
+   * @example
+   * await updatePosition({ gameId: '123', newPosition: [1, 2] }, 'player1');
+   */
+  async updatePosition(updatePosition: UpdatePositionDto, clientId: string): Promise<void> {
     const { gameId, newPosition } = updatePosition;
-
     const playerKey = REDIS_KEY.PLAYER(clientId);
 
-    const player = await this.redis.hgetall(playerKey);
-    this.gameValidator.validatePlayerInRoom(SocketEvents.UPDATE_POSITION, gameId, player);
+    // 1. 먼저 검증
+    const playerGameId = await this.redis.hget(playerKey, 'gameId');
+    this.gameValidator.validatePlayerInRoomV2(
+      SocketEvents.UPDATE_POSITION,
+      gameId,
+      playerGameId?.toString()
+    );
 
-    await this.redis.set(`${playerKey}:Changes`, 'Position');
-    await this.redis.hset(playerKey, {
+    // 2. 검증 통과 후 업데이트 수행
+    const pipeline = this.redis.pipeline();
+    pipeline.set(`${playerKey}:Changes`, 'Position');
+    pipeline.hmset(playerKey, {
       positionX: newPosition[0].toString(),
       positionY: newPosition[1].toString()
     });
 
-    this.logger.verbose(
-      `플레이어 위치 업데이트: ${gameId} - ${clientId} (${player.playerName}) = ${newPosition}`
-    );
+    await pipeline.exec();
   }
 
   async startGame(startGameDto: StartGameDto, clientId: string) {
