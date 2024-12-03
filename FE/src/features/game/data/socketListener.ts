@@ -15,7 +15,8 @@ socketService.on('chatMessage', (data) => {
 
 // player
 socketService.on('joinRoom', (data) => {
-  const { addPlayers } = usePlayerStore.getState();
+  const { addPlayers, currentPlayerId, currentPlayerName, setCurrentPlayerName } =
+    usePlayerStore.getState();
   const newPlayers = data.players.map((player) => ({
     ...player,
     playerScore: 0,
@@ -24,6 +25,12 @@ socketService.on('joinRoom', (data) => {
     emoji: getEmojiByUUID(player.playerId)
   }));
   addPlayers(newPlayers);
+
+  // 현재 플레이어 이름이 없다면
+  if (!currentPlayerName && currentPlayerId) {
+    const me = data.players.find((e) => e.playerId == currentPlayerId);
+    if (me) setCurrentPlayerName(me.playerName);
+  }
 });
 
 socketService.on('updatePosition', (data) => {
@@ -77,8 +84,8 @@ socketService.on('exitRoom', (data) => {
 });
 
 socketService.on('getSelfId', (data) => {
-  const playerName = usePlayerStore.getState().players.get(data.playerId)?.playerName;
   usePlayerStore.getState().setCurrentPlayerId(data.playerId);
+  const playerName = usePlayerStore.getState().players.get(data.playerId)?.playerName;
   if (playerName) usePlayerStore.getState().setCurrentPlayerName(playerName);
 });
 
@@ -115,6 +122,7 @@ socketService.on('endGame', () => {
 
 // TODO update 퀴즈 셋 시 퀴즈셋 받아오기
 socketService.on('updateRoomQuizset', async (data) => {
+  if (Number(data.quizSetId) < 0) return;
   const res = await getQuizSetDetail(String(data.quizSetId));
   useQuizStore.getState().setQuizSet(String(res?.title), String(res?.category));
 });
