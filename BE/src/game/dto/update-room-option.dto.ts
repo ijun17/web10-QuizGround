@@ -1,7 +1,7 @@
 import { IsIn, IsInt, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { WsException } from '@nestjs/websockets';
-import { GameMode } from '../../common/constants/game-mode';
+import { GameMode } from '../../common/constants/game';
 
 export class UpdateRoomOptionDto {
   @IsString()

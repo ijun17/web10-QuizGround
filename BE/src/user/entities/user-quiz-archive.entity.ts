@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseModel } from '../../common/entity/base.entity';
 import { QuizSetModel } from '../../quiz-set/entities/quiz-set.entity';
 import { UserModel } from './user.entity';
-import { GameMode } from '../../common/constants/game-mode';
+import { GameMode } from '../../common/constants/game';
 
 @Entity('user_quiz_archive')
 export class UserQuizArchiveModel extends BaseModel {
