@@ -221,7 +221,7 @@
 
 ## ⚙️ 기술 스택
 
-<img width="718" alt="image" src="https://github.com/user-attachments/assets/ebeb9f92-6fbd-428f-996f-c424af7fe176">
+<img width="718" alt="image" src="https://github.com/user-attachments/assets/56afd295-8996-4484-a753-862dc94924aa">
 
 <br>
 <br>
