@@ -92,14 +92,21 @@ export class PlayerSubscriber extends RedisSubscriber {
       const deadPlayers = await Promise.all(
         players.map(async (id) => {
           const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive');
-          return { id, isAlive };
+          const socketId = await this.redis.hget(REDIS_KEY.PLAYER(id), 'socketId');
+          return { id, isAlive, socketId };
         })
       );
 
       deadPlayers
         .filter((player) => player.isAlive === '0')
         .forEach((player) => {
-          server.to(player.id).emit(SocketEvents.UPDATE_POSITION, updateData);
+          const socket = server.sockets.get(player.socketId);
+
+          if (!socket) {
+            return;
+          }
+
+          socket.emit(SocketEvents.UPDATE_POSITION, updateData);
         });
     }
   }
