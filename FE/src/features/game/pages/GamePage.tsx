@@ -4,7 +4,6 @@ import { QuizOptionBoard } from '@/features/game/components/QuizOptionBoard';
 import { NicknameModal } from '../components/NicknameModal';
 import { useState, useEffect } from 'react';
 import { GameHeader } from '@/features/game/components/GameHeader';
-// import { HeaderBar } from '@/components/HeaderBar';
 import { socketService, useSocketException } from '@/api/socket';
 import { useParams } from 'react-router-dom';
 import { useRoomStore } from '../data/store/useRoomStore';
@@ -19,6 +18,7 @@ import { KickModal } from '../components/KickModal';
 import PingEffect from '../components/PingEffect';
 import RandomBackGround from '@/components/RandomBackGround';
 import SnowfallBackground from '../components/SnowfallBackground';
+import { backgrounds } from '../data/backgrounds';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -76,19 +76,24 @@ export const GamePage = () => {
       setClickPosition(null);
     }, 500); // 0.5초 후에 원 사라짐
   };
-  // <div className="bg-gradient-to-r from-sky-200 to-indigo-400 h-[100dvh] flex flex-col overflow-hidden items-center justify-center">
-  //   </div>
+  const [background, setBackground] = useState<string>(backgrounds[0]);
+  const handleBackgroundChange = () => {
+    const randomBackground = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+    setBackground(randomBackground);
+  };
+
   return (
-    <RandomBackGround>
-      <div className="flex-1 cursor-gameCursor w-full h-full max-w-[1400px] max-h-[900px] rounded-3xl min-[1400px]:bg-[#FFFA]">
-        <SnowfallBackground />
-        {/* <div className="center p-4 pb-0 h-[100%] max-h-[250px] z-10">
-          {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
-        </div> */}
-        <div className="flex flex-col justify-center p-4 pb-0 h-[250px] overflow-hidden z-10">
-          {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
+    <RandomBackGround background={background}>
+      <SnowfallBackground />
+      <div className="fixed flex-1 cursor-gameCursor w-full h-full max-w-[1400px] max-h-[900px] rounded-3xl min-[1400px]:bg-[#FFFA]">
+        <div className="flex flex-col justify-center p-4 pb-0 h-[250px] overflow-hidden z-50">
+          {gameState === GameState.WAIT ? (
+            <GameHeader onChangeBackground={handleBackgroundChange} />
+          ) : (
+            <QuizHeader />
+          )}
         </div>
-        <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[calc(100%-250px)] p-4 z-10">
+        <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[calc(100%-250px)] p-4 z-50">
           <div className="hidden lg:block lg:col-span-1">
             <Chat />
           </div>
@@ -109,7 +114,7 @@ export const GamePage = () => {
         currentPlayerName={currentPlayerName}
       />
       <NicknameModal
-        isOpen={!currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
+        isOpen={!currentPlayerName}
         title="플레이어 이름 설정"
         placeholder="이름을 입력하세요"
         initialValue={getRandomNickname()}
