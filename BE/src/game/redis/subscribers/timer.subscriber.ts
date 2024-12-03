@@ -119,7 +119,7 @@ export class TimerSubscriber extends RedisSubscriber {
     ).filter((isAlive) => isAlive === SurvivalStatus.ALIVE).length;
 
     // 게임 끝을 알림
-    if (this.hasNoMoreQuiz(quizList, newQuizNum) || this.checkSurvivalEnd(aliveCount)) {
+    if (this.hasNoMoreQuiz(quizList, newQuizNum) || this.checkSurvivalEnd(players.length, aliveCount)) {
       // 모든 플레이어를 생존자로 변경
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
       players.forEach((id) => {
@@ -197,7 +197,7 @@ export class TimerSubscriber extends RedisSubscriber {
     return quizList.length <= newQuizNum;
   }
 
-  private checkSurvivalEnd(aliveCount: number) {
-    return aliveCount <= 1;
+  private checkSurvivalEnd(playerCount: number, aliveCount: number) {
+    return playerCount > 1 && aliveCount <= 1;
   }
 }
