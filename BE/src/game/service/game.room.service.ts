@@ -145,6 +145,10 @@ export class GameRoomService {
 
     client.emit(SocketEvents.GET_SELF_ID, { playerId: clientId });
     client.emit(SocketEvents.JOIN_ROOM, { players });
+
+    if (roomData.status !== 'waiting' || roomData.isWaiting != '1') {
+      client.emit(SocketEvents.START_GAME, '');
+    }
   }
 
   async updateRoomOption(updateRoomOptionDto: UpdateRoomOptionDto, clientId: string) {
