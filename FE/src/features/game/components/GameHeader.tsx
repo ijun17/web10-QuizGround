@@ -60,14 +60,14 @@ export const GameHeader = React.memo(
                 size="half"
                 color="red"
                 onClick={() => navigate('/')}
-                className="shadow-md transform hover:translate-y-[-2px] hover:shadow-lg active:translate-y-1 active:shadow-sm transition w-full h-[35px]"
+                className="shadow-md transform hover:translate-y-[-2px] hover:shadow-lg active:translate-y-1 active:shadow-sm transition w-full animate-popup h-[35px]"
               />
               <CustomButton
                 text="배경 바꾸기"
                 size="half"
                 color="green"
                 onClick={onChangeBackground}
-                className="shadow-md transform hover:translate-y-[-2px] hover:shadow-lg active:translate-y-1 active:shadow-sm transition w-full h-[35px]"
+                className="shadow-md transform hover:translate-y-[-2px] hover:shadow-lg active:translate-y-1 active:shadow-sm transition w-full animate-popup h-[35px]"
               />
               {isHost && (
                 <>
