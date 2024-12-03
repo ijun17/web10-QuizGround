@@ -25,7 +25,7 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="relative bg-white rounded-lg shadow-xl w-[600px] h-[600px] overflow-hidden">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-[600px] w-[95%] h-[600px] overflow-hidden animate-popup">
         <Lottie
           animationData={starBg}
           loop={true}
