@@ -90,15 +90,19 @@ export class PlayerSubscriber extends RedisSubscriber {
     } else if (isAlivePlayer === SurvivalStatus.DEAD) {
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
       const pipeline = this.redis.pipeline();
+
       players.forEach((id) => {
         pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
       });
+
+      type Result = [Error | null, [string, string] | null];
       const results = await pipeline.exec();
-      const deadPlayers = results
-        .map(([err, [isAlive, socketId]], index) => ({
+
+      (results as Result[])
+        .map(([err, data], index) => ({
           id: players[index],
-          isAlive: err ? null : isAlive,
-          socketId: err ? null : socketId
+          isAlive: err ? null : data?.[0],
+          socketId: err ? null : data?.[1]
         }))
         .filter((player) => player.isAlive === '0')
         .forEach((player) => {
