@@ -114,9 +114,9 @@ export class TimerSubscriber extends RedisSubscriber {
 
     // 생존 모드에서 모두 탈락하진 않았는지 체크
     const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-    const aliveCount = (await Promise.all(
-      players.map(id => this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive'))
-    )).filter(isAlive => isAlive === SurvivalStatus.ALIVE).length;
+    const aliveCount = (
+      await Promise.all(players.map((id) => this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive')))
+    ).filter((isAlive) => isAlive === SurvivalStatus.ALIVE).length;
 
     // 게임 끝을 알림
     if (this.hasNoMoreQuiz(quizList, newQuizNum) || this.checkSurvivalEnd(aliveCount)) {
@@ -135,13 +135,13 @@ export class TimerSubscriber extends RedisSubscriber {
 
       this.redis.set(`${REDIS_KEY.ROOM(gameId)}:Changes`, 'End');
       this.redis.hset(REDIS_KEY.ROOM(gameId), {
-        host: leaderboard.at(-1),
+        host: leaderboard.at(-2),
         status: 'waiting',
         isWaiting: '1'
       });
 
       server.to(gameId).emit(SocketEvents.END_GAME, {
-        hostId: leaderboard.at(-1)
+        hostId: leaderboard.at(-2)
       });
       this.logger.verbose(`[endGame]: ${gameId}`);
       return;
