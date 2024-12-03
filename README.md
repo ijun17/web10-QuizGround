@@ -55,21 +55,21 @@
 
 > **생존 모드** 또는 **랭킹 모드** 중 선택하여 플레이할 수 있습니다.
 
-<table align=center>
+<table align="center">
 <tr>
   <td>
-    gif
+    <img src="https://github.com/user-attachments/assets/883e4920-ba5b-4d5f-a176-d32e152174a8" alt="survival" />
   </td>
   <td>
-    gif
+    <img src="https://github.com/user-attachments/assets/79707267-b5f4-4df3-83b5-5d47ae515598" alt="ranking3" />
   </td>
 </tr>
 <tr>
-  <td>
-    <p align=center>[생존 모드] 퀴즈를 맞춰 끝까지 살아남아보세요!</p>
+  <td align="center">
+    <p>[생존 모드] 퀴즈를 맞춰 끝까지 살아남아보세요!</p>
   </td>
-  <td>
-    <p align=center>[랭킹 모드] 퀴즈를 맞춰 점수를 모아보세요!</p>
+  <td align="center">
+    <p>[랭킹 모드] 퀴즈를 맞춰 점수를 모아보세요!</p>
   </td>
 </tr>
 </table>
@@ -81,10 +81,10 @@
 <table align=center>
 <tr>
   <td>
-    gif
+    <img src="https://github.com/user-attachments/assets/468c675a-b2cd-4704-8e93-4d7035990e77" alt="chat" />
   </td>
   <td>
-    gif
+    <img src="https://github.com/user-attachments/assets/fc395667-5455-439a-82df-ae8a8fe8f96c" alt="update" />
   </td>
 </tr>
 <tr>
@@ -101,7 +101,7 @@
 
 > 위 모든 기능이 200명이 있는 게임방에서도 가능해요!
 
-(gif)
+<img width=800px src="https://github.com/user-attachments/assets/b1ad07e6-9f0f-456c-8f2f-91729f97e1a0" alt="ranking3" />
 
 <br>
 <br>
