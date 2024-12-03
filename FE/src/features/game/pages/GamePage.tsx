@@ -17,6 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import { getRandomNickname } from '@/features/game/utils/nickname';
 import { KickModal } from '../components/KickModal';
 import PingEffect from '../components/PingEffect';
+import RandomBackGround from '@/components/RandomBackGround';
+import SnowfallBackground from '../components/SnowfallBackground';
 
 export const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -60,62 +62,68 @@ export const GamePage = () => {
   const [clickPosition, setClickPosition] = useState<{ x: number; y: number } | null>(null);
 
   // 클릭된 위치 기록
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const gameContainer = e.currentTarget.getBoundingClientRect();
     const { clientX, clientY } = e;
-    setClickPosition({ x: clientX, y: clientY });
+
+    // 상대 좌표 계산
+    const relativeX = clientX - gameContainer.left;
+    const relativeY = clientY - gameContainer.top;
+
+    setClickPosition({ x: relativeX, y: relativeY });
 
     setTimeout(() => {
       setClickPosition(null);
     }, 500); // 0.5초 후에 원 사라짐
   };
+  // <div className="bg-gradient-to-r from-sky-200 to-indigo-400 h-[100dvh] flex flex-col overflow-hidden items-center justify-center">
+  //   </div>
   return (
-    // <div className="bg-gradient-to-r from-sky-100 to-indigo-200 h-[100dvh] flex flex-col overflow-hidden items-center">
-    <div className="bg-[url('/retroBg.png')] bg-cover bg-center h-[100dvh] flex flex-col overflow-hidden items-center">
-      {/* <div className="w-[150dvh] h-[80dvh]"></div> */}
-      {/* <div className="max-w-[1200px] w-full  max-h-[80vh] "> */}
-      {/* <HeaderBar /> */}
-
-      <div className="flex-1 overflow-hidden cursor-gameCursor w-full">
-        <div className="relative">{clickPosition && <PingEffect position={clickPosition} />}</div>
-        <div className="center p-4 pb-0 h-[30%] min-h-[250px]">
+    <RandomBackGround>
+      <div className="flex-1 cursor-gameCursor w-full h-full max-w-[1400px] max-h-[900px] rounded-3xl min-[1400px]:bg-[#FFFA]">
+        <SnowfallBackground />
+        {/* <div className="center p-4 pb-0 h-[100%] max-h-[250px] z-10">
+          {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
+        </div> */}
+        <div className="flex flex-col justify-center p-4 pb-0 h-[250px] overflow-hidden z-10">
           {gameState === GameState.WAIT ? <GameHeader /> : <QuizHeader />}
         </div>
-        <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[70%] p-4">
+        <div className="grid grid-cols-4 grid-rows-1 gap-4 h-[calc(100%-250px)] p-4 z-10">
           <div className="hidden lg:block lg:col-span-1">
             <Chat />
           </div>
 
-          <div className="col-span-4 lg:col-span-2" onClick={handleClick}>
+          <div className="col-span-4 lg:col-span-2 relative" onClick={handleClick}>
             <QuizOptionBoard />
+            {clickPosition && <PingEffect position={clickPosition} />}
           </div>
 
           <div className="hidden lg:block lg:col-span-1">
             <ParticipantDisplay gameState={gameState} />
           </div>
-          <ResultModal
-            isOpen={isResultOpen}
-            onClose={handleEndGame}
-            currentPlayerName={currentPlayerName}
-          />
-          <NicknameModal
-            isOpen={!currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
-            title="플레이어 이름 설정"
-            placeholder="이름을 입력하세요"
-            initialValue={getRandomNickname()}
-            onSubmit={handleSubmitNickname}
-          />
-
-          <ErrorModal
-            isOpen={isErrorModalOpen}
-            title={errorModalTitle}
-            buttonText="메인 페이지로 이동"
-            onClose={() => navigate('/')}
-          />
-
-          <KickModal />
         </div>
       </div>
-      {/* </div> */}
-    </div>
+      <ResultModal
+        isOpen={isResultOpen}
+        onClose={handleEndGame}
+        currentPlayerName={currentPlayerName}
+      />
+      <NicknameModal
+        isOpen={!currentPlayerName} // playerName이 없을 때만 모달을 열도록 설정
+        title="플레이어 이름 설정"
+        placeholder="이름을 입력하세요"
+        initialValue={getRandomNickname()}
+        onSubmit={handleSubmitNickname}
+      />
+
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        title={errorModalTitle}
+        buttonText="메인 페이지로 이동"
+        onClose={() => navigate('/')}
+      />
+
+      <KickModal />
+    </RandomBackGround>
   );
 };
