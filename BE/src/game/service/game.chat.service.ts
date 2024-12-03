@@ -7,6 +7,7 @@ import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import SocketEvents from '../../common/constants/socket-events';
 import { Namespace } from 'socket.io';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
+import { SurvivalStatus } from '../../common/constants/game';
 
 @TraceClass()
 @Injectable()
@@ -56,7 +57,7 @@ export class GameChatService {
       const playerKey = REDIS_KEY.PLAYER(chatMessage.playerId);
       const isAlivePlayer = await this.redis.hget(playerKey, 'isAlive');
 
-      if (isAlivePlayer === '1') {
+      if (isAlivePlayer === SurvivalStatus.ALIVE) {
         server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
         return;
       }

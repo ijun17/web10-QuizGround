@@ -11,6 +11,7 @@ import { UpdateRoomQuizsetDto } from '../dto/update-room-quizset.dto';
 import { Socket } from 'socket.io';
 import { KickRoomDto } from '../dto/kick-room.dto';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
+import { SurvivalStatus } from '../../common/constants/game';
 
 @TraceClass()
 @Injectable()
@@ -117,7 +118,7 @@ export class GameRoomService {
       positionY: positionY.toString(),
       disconnected: '0',
       gameId: gameId,
-      isAlive: '1'
+      isAlive: SurvivalStatus.ALIVE
     });
 
     await this.redis.zadd(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, clientId);
