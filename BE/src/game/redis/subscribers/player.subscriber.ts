@@ -5,6 +5,7 @@ import Redis from 'ioredis';
 import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
+import { SurvivalStatus } from '../../../common/constants/game';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
@@ -84,34 +85,30 @@ export class PlayerSubscriber extends RedisSubscriber {
 
     const isAlivePlayer = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
 
-    if (isAlivePlayer === '1') {
+    if (isAlivePlayer === SurvivalStatus.ALIVE) {
       server.to(gameId).emit(SocketEvents.UPDATE_POSITION, updateData);
-    } else if (isAlivePlayer === '0') {
+    } else if (isAlivePlayer === SurvivalStatus.DEAD) {
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-
-      // 한 번에 모든 플레이어의 상태 조회
       const pipeline = this.redis.pipeline();
       players.forEach((id) => {
-        pipeline.hget(REDIS_KEY.PLAYER(id), 'isAlive');
+        pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
       });
-
       const results = await pipeline.exec();
       const deadPlayers = results
-        .map(([err, isAlive], index) => ({
+        .map(([err, [isAlive, socketId]], index) => ({
           id: players[index],
-          isAlive: err ? null : isAlive
+          isAlive: err ? null : isAlive,
+          socketId: err ? null : socketId
         }))
-        .filter((player) => player.isAlive === '0');
-
-      // 관전자들에게만 이벤트 전송
-      deadPlayers.forEach((player) => {
-        server.to(player.id).emit(SocketEvents.UPDATE_POSITION, updateData);
-      });
+        .filter((player) => player.isAlive === '0')
+        .forEach((player) => {
+          const socket = server.sockets.get(player.socketId);
+          if (!socket) {
+            return;
+          }
+          socket.emit(SocketEvents.UPDATE_POSITION, updateData);
+        });
     }
-
-    this.logger.verbose(
-      `[updatePosition] RoomId: ${gameId} | playerId: ${playerId} | isAlive: ${isAlivePlayer === '1' ? '생존자' : '관전자'} | position: [${positionX}, ${positionY}]`
-    );
   }
 
   private async handlePlayerDisconnect(playerId: string, playerData: any, server: Namespace) {
