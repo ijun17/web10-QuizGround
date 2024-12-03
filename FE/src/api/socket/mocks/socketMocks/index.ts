@@ -1,5 +1,7 @@
 import SocketMockChat from './SocketMockChat';
-import SocketMockForReadme from './SocketMockForReadme';
+import SocketMockForReadmeSurvival from './SocketMockForReadmeSurvival';
+import SocketMockForReadmeRanking from './SocketMockForReadmeRanking';
+import SocketMockForReadme200 from './SocketMockForReadme200';
 import SocketMockHost from './SocketMockHost';
 import SocketMockLoadTest from './SocketMockLoadTest';
 import SocketMockLoadTestOnlyMove from './SocketMockLoadTestOnlyMove';
@@ -17,7 +19,9 @@ const mockMap = {
   'test-load-with-quiz': SocketMockLoadTestWithQuiz,
   'test-start-end': SocketMockStartEnd,
   'test-load-only-move': SocketMockLoadTestOnlyMove,
-  readme: SocketMockForReadme
+  'readme-survival': SocketMockForReadmeSurvival,
+  'readme-ranking': SocketMockForReadmeRanking,
+  'readme-200': SocketMockForReadme200
 } as const;
 
 export default mockMap;

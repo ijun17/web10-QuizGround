@@ -24,7 +24,7 @@ const chatMessages = [
   '고마워!'
 ];
 
-export default class SocketMockForReadme extends SocketMock {
+export default class SocketMockForReadmeSurvival extends SocketMock {
   constructor() {
     super();
     this.test();
@@ -37,7 +37,7 @@ export default class SocketMockForReadme extends SocketMock {
     await this.initialrized;
     const playerCount = Object.keys(this.players).length;
     this.addPlayers(
-      Array(77)
+      Array(35)
         .fill(null)
         .map((_, i) => ({
           playerId: String(playerCount + i + 1),
@@ -59,9 +59,21 @@ export default class SocketMockForReadme extends SocketMock {
     this.emitServer('startGame', {});
 
     //퀴즈 전송
-    await this.progressQuiz('1+1=?', 5, ['1', '2', '3'], 1);
+    await this.progressQuiz(
+      '우리 팀의 이름은?',
+      5,
+      ['시크릿주주', '시크릿추추', '시크릿쥬쥬', '시크릿츄츄'],
+      0
+    );
     await this.delay(3);
-    await this.progressQuiz('2+2=?', 5, ['1', '2', '4'], 2);
+    await this.progressQuiz(
+      '이 서비스의 이름은?',
+      5,
+      ['퀴즈 그라운드', '배틀 그라운드', '큐플레이', '카훗'],
+      0
+    );
+    await this.delay(3);
+    await this.progressQuiz('네이버 부스트캠프는 국내 최고의 부트캠트다', 5, ['O', 'X'], 0);
 
     // 퀴즈 종료
     await this.delay(5);
@@ -74,7 +86,7 @@ export default class SocketMockForReadme extends SocketMock {
     for (let j = 0; j < 20; j++) {
       for (const player of this.getPlayerList()) {
         if (player.playerId === this.id) continue;
-        await this.delay(1 / playerCount / 0.01);
+        await this.delay(1 / playerCount / 0.1);
         this.chatMessage(
           player.playerId,
           chatMessages[Math.floor(Math.random() * chatMessages.length)]
