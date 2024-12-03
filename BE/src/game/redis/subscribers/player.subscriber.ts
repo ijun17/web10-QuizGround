@@ -88,18 +88,25 @@ export class PlayerSubscriber extends RedisSubscriber {
       server.to(gameId).emit(SocketEvents.UPDATE_POSITION, updateData);
     } else if (isAlivePlayer === '0') {
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-      const deadPlayers = await Promise.all(
-        players.map(async (id) => {
-          const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive');
-          return { id, isAlive };
-        })
-      );
 
-      deadPlayers
-        .filter((player) => player.isAlive === '0')
-        .forEach((player) => {
-          server.to(player.id).emit(SocketEvents.UPDATE_POSITION, updateData);
-        });
+      // 한 번에 모든 플레이어의 상태 조회
+      const pipeline = this.redis.pipeline();
+      players.forEach((id) => {
+        pipeline.hget(REDIS_KEY.PLAYER(id), 'isAlive');
+      });
+
+      const results = await pipeline.exec();
+      const deadPlayers = results
+        .map(([err, isAlive], index) => ({
+          id: players[index],
+          isAlive: err ? null : isAlive
+        }))
+        .filter((player) => player.isAlive === '0');
+
+      // 관전자들에게만 이벤트 전송
+      deadPlayers.forEach((player) => {
+        server.to(player.id).emit(SocketEvents.UPDATE_POSITION, updateData);
+      });
     }
 
     this.logger.verbose(
