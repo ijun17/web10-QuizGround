@@ -87,15 +87,10 @@ export const QuizOptionBoard = () => {
       if (timeout) clearTimeout(timeout);
     };
   }, [isWarningMove]);
-  // const [clickPosition, setClickPosition] = useState<{ x: number; y: number } | null>(null);
 
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const { pageX, pageY } = e;
     handleMove(pageX, pageY);
-    // setClickPosition({ x: pageX, y: pageY });
-    // setTimeout(() => {
-    //   setClickPosition(null);
-    // }, 500); // 0.5초 후에 원 사라짐
   };
 
   const handleTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
@@ -111,10 +106,6 @@ export const QuizOptionBoard = () => {
       onTouchEnd={handleTouchEnd}
       ref={boardRef}
     >
-      {/* <div className="overflow-hidden w-full h-full z-0 absolute component-default opacity-25">
-        <div className="w-full h-full bg-gradient-to-r from-blue-200 via-blue-300 to-blue-200 bg-300% animate-gradient"></div>
-      </div> */}
-      {/* <div className="relative">{clickPosition && <PingEffect position={clickPosition} />}</div> */}
       <div className="absolute h-[100%] w-[100%]">
         {boardRect
           ? Array.from(players)

@@ -209,10 +209,8 @@ export class SocketMock {
 
   async progressQuiz(quiz: string, quizSecond: number, choiceList: string[], answerIndex: number) {
     this.setQuiz(quiz, quizSecond, choiceList);
-    this.log('퀴즈 전송 완료.');
     await this.delay(3 + quizSecond);
     this.calculateScore(answerIndex);
-    this.log('퀴즈가 종료 되었습니다.');
   }
 
   updatePlayerPosition(playerId: string, newPosition: [number, number]) {
