@@ -57,6 +57,7 @@ export class GameChatService {
       const playerKey = REDIS_KEY.PLAYER(chatMessage.playerId);
       const isAlivePlayer = await this.redis.hget(playerKey, 'isAlive');
 
+      // 생존한 사람이라면 전체 브로드캐스팅
       if (isAlivePlayer === SurvivalStatus.ALIVE) {
         server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
         return;
@@ -66,11 +67,16 @@ export class GameChatService {
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
       await Promise.all(
         players.map(async (playerId) => {
-          const playerKey = REDIS_KEY.PLAYER(playerId);
-          const isAlive = await this.redis.hget(playerKey, 'isAlive');
+          const socketId = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'socketId');
+          const socket = server.sockets.get(socketId);
 
-          if (isAlive === '0') {
-            server.to(playerId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+          if (!socket) {
+            return;
+          }
+
+          const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
+          if (isAlive === SurvivalStatus.DEAD) {
+            socket.emit(SocketEvents.CHAT_MESSAGE, chatMessage);
           }
         })
       );

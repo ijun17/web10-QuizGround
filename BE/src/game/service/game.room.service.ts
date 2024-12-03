@@ -90,6 +90,12 @@ export class GameRoomService {
       client.join(gameId);
       client.emit(SocketEvents.GET_SELF_ID, { playerId: clientId });
       client.emit(SocketEvents.JOIN_ROOM, { players, isHost });
+
+      // 재접속한 플레이어의 socketId를 업데이트
+      await this.redis.hset(REDIS_KEY.PLAYER(clientId), {
+        socketId: client.id
+      });
+
       return;
     }
 
@@ -118,7 +124,8 @@ export class GameRoomService {
       positionY: positionY.toString(),
       disconnected: '0',
       gameId: gameId,
-      isAlive: SurvivalStatus.ALIVE
+      isAlive: SurvivalStatus.ALIVE,
+      socketId: client.id
     });
 
     await this.redis.zadd(REDIS_KEY.ROOM_LEADERBOARD(gameId), 0, clientId);
