@@ -41,31 +41,23 @@ export class GameService {
     const { gameId, newPosition } = updatePosition;
     const playerKey = REDIS_KEY.PLAYER(clientId);
 
-    // 모든 Redis 작업을 하나의 파이프라인으로 결합
+    // 1. 먼저 검증
+    const playerGameId = await this.redis.hget(playerKey, 'gameId');
+    this.gameValidator.validatePlayerInRoomV2(
+      SocketEvents.UPDATE_POSITION,
+      gameId,
+      playerGameId?.toString()
+    );
+
+    // 2. 검증 통과 후 업데이트 수행
     const pipeline = this.redis.pipeline();
-
-    // 검증을 위한 gameId 조회
-    pipeline.hget(playerKey, 'gameId');
-
-    // Changes 설정
     pipeline.set(`${playerKey}:Changes`, 'Position');
-
-    // 위치 업데이트
     pipeline.hmset(playerKey, {
       positionX: newPosition[0].toString(),
       positionY: newPosition[1].toString()
     });
 
-    // 모든 작업을 한 번에 실행
-    const results = await pipeline.exec();
-
-    // gameId 검증 (첫 번째 명령의 결과)
-    const playerGameId = results[0][1];
-    this.gameValidator.validatePlayerInRoomV2(
-      SocketEvents.UPDATE_POSITION,
-      gameId,
-      playerGameId.toString()
-    );
+    await pipeline.exec();
   }
 
   async startGame(startGameDto: StartGameDto, clientId: string) {
