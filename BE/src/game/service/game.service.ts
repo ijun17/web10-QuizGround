@@ -33,54 +33,40 @@ export class GameService {
    * @param updatePosition - 업데이트할 위치 정보
    * @param clientId - 플레이어 ID
    * @returns Promise<void>
+   * @throws {Error} 플레이어가 게임에 속해있지 않은 경우
+   * @example
+   * await updatePosition({ gameId: '123', newPosition: [1, 2] }, 'player1');
    */
   async updatePosition(updatePosition: UpdatePositionDto, clientId: string): Promise<void> {
     const { gameId, newPosition } = updatePosition;
     const playerKey = REDIS_KEY.PLAYER(clientId);
 
-    // Pipeline을 사용하여 여러 Redis 작업을 하나의 네트워크 요청으로 처리
+    // 모든 Redis 작업을 하나의 파이프라인으로 결합
     const pipeline = this.redis.pipeline();
 
-    // 필요한 필드만 가져오기
+    // 검증을 위한 gameId 조회
     pipeline.hget(playerKey, 'gameId');
-    pipeline.hget(playerKey, 'playerName');
 
-    const [gameIdResult, playerName] = await pipeline.exec();
-    const playerGameId = gameIdResult[1];
+    // Changes 설정
+    pipeline.set(`${playerKey}:Changes`, 'Position');
 
-    // 플레이어가 해당 게임에 속해있는지 검증
-    if (playerGameId !== gameId) {
-      throw new Error('Player not in game');
-    }
-
-    // 위치 업데이트를 위한 Redis 키 설정
-    await this.redis.set(`${playerKey}:Changes`, 'Position');
-
-    // 위치 업데이트를 단일 작업으로 처리
-    await this.redis.hmset(playerKey, {
+    // 위치 업데이트
+    pipeline.hmset(playerKey, {
       positionX: newPosition[0].toString(),
       positionY: newPosition[1].toString()
     });
-  }
 
-  // async updatePosition(updatePosition: UpdatePositionDto, clientId: string) {
-  //   const { gameId, newPosition } = updatePosition;
-  //
-  //   const playerKey = REDIS_KEY.PLAYER(clientId);
-  //
-  //   const player = await this.redis.hgetall(playerKey);
-  //   this.gameValidator.validatePlayerInRoom(SocketEvents.UPDATE_POSITION, gameId, player);
-  //
-  //   await this.redis.set(`${playerKey}:Changes`, 'Position');
-  //   await this.redis.hset(playerKey, {
-  //     positionX: newPosition[0].toString(),
-  //     positionY: newPosition[1].toString()
-  //   });
-  //
-  //   this.logger.verbose(
-  //     `플레이어 위치 업데이트: ${gameId} - ${clientId} (${player.playerName}) = ${newPosition}`
-  //   );
-  // }
+    // 모든 작업을 한 번에 실행
+    const results = await pipeline.exec();
+
+    // gameId 검증 (첫 번째 명령의 결과)
+    const playerGameId = results[0][1];
+    this.gameValidator.validatePlayerInRoomV2(
+      SocketEvents.UPDATE_POSITION,
+      gameId,
+      playerGameId.toString()
+    );
+  }
 
   async startGame(startGameDto: StartGameDto, clientId: string) {
     const { gameId } = startGameDto;
