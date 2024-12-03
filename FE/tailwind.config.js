@@ -57,10 +57,27 @@ export default {
         gradient: 'gradient 6s infinite ease-in-out'
       },
       backgroundSize: {
-        "300%": "300% 300%", // 커스텀 배경 크기
-      },
+        '300%': '300% 300%' // 커스텀 배경 크기
+      }
     }
   },
+  safelist: [
+    'bg-gradient-to-r',
+    'from-sky-300',
+    'to-indigo-500',
+    'from-pink-300',
+    'via-purple-300',
+    'to-indigo-300',
+    'from-green-200',
+    'to-blue-400',
+    "bg-[url('/snowBg1.png')]",
+    "bg-[url('/snowBg2.png')]",
+    "bg-[url('/snowBg3.png')]",
+    "bg-[url('/snowBg5.png')]",
+    "bg-[url('/snowBg6.png')]",
+    'bg-cover',
+    'bg-center'
+  ],
   plugins: [
     function ({ addUtilities, theme }) {
       const newUtilities = {
@@ -68,11 +85,11 @@ export default {
           borderWidth: '1px',
           borderColor: theme('borderColor.default'),
           borderRadius: theme('borderRadius.m'),
-          backgroundColor: theme('backgroundColor.surface.default')
+          backgroundColor: '#FFFD'
         },
         '.component-popup': {
           borderRadius: theme('borderRadius.m'),
-          backgroundColor: theme('backgroundColor.surface.default'),
+          backgroundColor: '#FFFD',
           boxShadow: theme('boxShadow.default')
         },
         '.center': {

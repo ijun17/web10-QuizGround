@@ -70,7 +70,7 @@ export const GameLobbyPage = () => {
   return (
     <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
       <Header />
-      <LobbyList rooms={rooms} />
+      <LobbyList rooms={rooms} loadRooms={loadRooms} />
       {isLoading && <div className="text-center mt-4">Loading...</div>}
     </div>
   );

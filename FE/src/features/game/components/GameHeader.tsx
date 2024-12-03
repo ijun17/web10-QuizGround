@@ -1,5 +1,4 @@
 import { ClipboardCopy } from '../../../components/ClipboardCopy';
-import { QuizPreview } from '../../../components/QuizPreview';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import React, { useState } from 'react';
@@ -19,44 +18,70 @@ export const GameHeader = React.memo(() => {
   const { quizSetTitle, quizSetCategory } = useQuizStore();
   const pinNum = String(gameId);
   const linkURL = window.location.hostname + `/game/${gameId}`;
+  const gameMode = useRoomStore((state) => state.gameMode);
 
   const handleStartGame = () => {
     if (gameId) socketService.emit('startGame', { gameId });
   };
   const navigate = useNavigate();
-  // 예시
-  return (
-    <div className="p-4 h-[100%] w-[100%] component-popup">
-      <div className="flex justify-center mb-4">
-        <ClipboardCopy valueToCopy={pinNum} message={`PIN: ${pinNum} 복사`} />
-        <ClipboardCopy valueToCopy={linkURL} message="공유 링크 복사" />
-      </div>
-      <div className="flex flex-col items-center justify-center text-center space-y-2">
-        <span className="text-xl font-semibold">{gameTitle}</span>
-      </div>
-      <div className="flex justify-center">
-        <div className="max-w-[500px] w-[100%]">
-          <QuizPreview title={quizSetTitle} description={quizSetCategory} />
-        </div>
-        <CustomButton text="나가기" size="small" color="yellow" onClick={() => navigate('/')} />
-      </div>
-      {isHost && (
-        <div className="flex space-x-4 justify-center mt-4">
-          <button
-            className="bg-yellow-400 text-black font-bold py-2 px-4 rounded-md shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl active:translate-y-1 active:shadow-sm transition"
-            onClick={() => setIsQuizModalOpen(true)}
-          >
-            퀴즈 설정
-          </button>
-          <button
-            className="bg-blue-500 text-white font-bold py-2 px-4 rounded-md shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl active:translate-y-1 active:shadow-sm transition"
-            onClick={handleStartGame}
-          >
-            게임 시작
-          </button>
-        </div>
-      )}
 
+  return (
+    <div className="component-default h-full flex justify-center">
+      <div className="max-w-[666px] w-[95%] h-full">
+        <div className="flex my-2">
+          <ClipboardCopy valueToCopy={pinNum} message={`PIN: ${pinNum} 복사`} />
+          <ClipboardCopy valueToCopy={linkURL} message="공유 링크 복사" />
+        </div>
+        <div className="flex justify-between gap-2">
+          <div className="w-[calc(100%-100px)] flex-1 flex flex-col">
+            <div className="truncate text-lg sm:text-2xl font-bold">
+              <span className={gameMode === 'RANKING' ? 'text-blue-500' : 'text-red-500'}>
+                [{gameMode === 'RANKING' ? '랭킹 모드' : '생존 모드'}]
+              </span>
+              <span className="ml-2 animate-popup">{gameTitle}</span>
+            </div>
+            <div className="w-full mt-4 flex-1">
+              {quizSetTitle ? (
+                <div className="component-default rounded-lg p-4 sm:mr-6 h-full flex flex-col justify-center animate-popup">
+                  <div className="text-xs sm:text-sm mb-2 truncate text-blue-300">
+                    {quizSetCategory}
+                  </div>
+                  <div className="text-md sm:text-xl font-bold line-clamp-2">{quizSetTitle}</div>
+                </div>
+              ) : (
+                <div className="text-gray-400">퀴즈를 선택해 주세요</div>
+              )}
+            </div>
+          </div>
+          <div className="w-[100px] flex gap-2 flex-col">
+            <CustomButton
+              text="나가기"
+              size="half"
+              color="red"
+              onClick={() => navigate('/')}
+              className="shadow-md transform hover:translate-y-[-2px] hover:shadow-lg active:translate-y-1 active:shadow-sm transition w-full"
+            />
+            {isHost && (
+              <>
+                <CustomButton
+                  text="퀴즈 설정"
+                  size="half"
+                  color="blue"
+                  onClick={() => setIsQuizModalOpen(true)}
+                  className="shadow-md transform hover:translate-y-[-2px] hover:shadow-lg active:translate-y-1 active:shadow-sm transition w-full animate-popup"
+                />
+                <CustomButton
+                  text="게임 시작"
+                  size="half"
+                  color="yellow"
+                  onClick={handleStartGame}
+                  className="shadow-md transform hover:translate-y-[-2px] hover:shadow-lg active:translate-y-1 active:shadow-sm transition w-full animate-popup"
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
       <QuizSettingModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} />
     </div>
   );

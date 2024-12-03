@@ -12,6 +12,7 @@ export default class SocketMockLoadTestWithQuiz extends SocketMock {
     await this.delay(2);
     this.log('게임이 시작되었습니다.');
     this.emitServer('startGame', {});
+
     //퀴즈 전송
     await this.progressQuiz('1+1=?', 5, ['1', '2', '3'], 1);
     this.log('첫번째 퀴즈가 종료되었습니다.');
