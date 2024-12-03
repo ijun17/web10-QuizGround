@@ -3,8 +3,9 @@
 <br>
 
 <p align=center>
-  <div style="background-color:blue;"><a href="http://quizground.duckdns.org/">서비스 링크</a></div>
-  <a href="http://quizground.duckdns.org/">서비스 링크</a>
+  <a href="http://quizground.duckdns.org/">
+    <img src="https://github.com/user-attachments/assets/a60abeb3-e744-4396-8f12-b8b690f83664" alt="퀴즈그라운드 바로가기" width="250px"/>
+  </a>
   <br>
   <br>
   <a href="https://s0n9.notion.site/QuizGround-12ac2492516b80ae93ccc80823d234a9?pvs=4">팀 노션</a>
