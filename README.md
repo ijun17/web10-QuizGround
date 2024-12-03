@@ -3,7 +3,9 @@
 <br>
 
 <p align=center>
-  <a href="http://quizground.duckdns.org/">서비스 링크</a>
+  <a href="http://quizground.duckdns.org/">
+    <img src="https://github.com/user-attachments/assets/2796b279-daa2-4e9a-a020-980dca424c95" alt="퀴즈그라운드 바로가기" width="250px"/>
+  </a>
   <br>
   <br>
   <a href="https://s0n9.notion.site/QuizGround-12ac2492516b80ae93ccc80823d234a9?pvs=4">팀 노션</a>
@@ -49,38 +51,57 @@
 
 ## 🚀 핵심 기능
 
-(아래 핵심 기능들을 표로 나타내도 괜찮을 듯)
+### 게임 모드
 
-### 게임 모드 
+> **생존 모드** 또는 **랭킹 모드** 중 선택하여 플레이할 수 있습니다.
 
-> 서바이벌 모드: 퀴즈를 맞춰 끝까지 살아남아보세요!
-> 랭킹 모드: 퀴즈를 맞춰 점수를 모아보세요!
+<table align="center">
+<tr>
+  <td>
+    <img src="https://github.com/user-attachments/assets/883e4920-ba5b-4d5f-a176-d32e152174a8" alt="survival" />
+  </td>
+  <td>
+    <img src="https://github.com/user-attachments/assets/79707267-b5f4-4df3-83b5-5d47ae515598" alt="ranking3" />
+  </td>
+</tr>
+<tr>
+  <td align="center">
+    <p>[생존 모드] 퀴즈를 맞춰 끝까지 살아남아보세요!</p>
+  </td>
+  <td align="center">
+    <p>[랭킹 모드] 퀴즈를 맞춰 점수를 모아보세요!</p>
+  </td>
+</tr>
+</table>
 
-<img width="1100" alt="2" src="https://github.com/user-attachments/assets/5f184d43-0c4f-4968-981e-661eb6c975a4">
+### 실시간 상호작용
 
-### 실시간 이동
+> **실시간 채팅**과 **실시간 이동**으로 다른 사용자들과 상호작용할 수 있습니다.
 
-> 원하는 곳을 클릭하여 이동하여 답을 선택할 수 있어요!
-
-(gif)
-
-### 실시간 채팅
-
-> 실시간으로 사람들과 함께 채팅을 주고 받을 수 있어요!
-
-(gif)
-
-### 실시간 순위
-
-> 실시간으로 내 순위를 볼 수 있어요!
-
-(gif)
+<table align=center>
+<tr>
+  <td>
+    <img src="https://github.com/user-attachments/assets/468c675a-b2cd-4704-8e93-4d7035990e77" alt="chat" />
+  </td>
+  <td>
+    <img src="https://github.com/user-attachments/assets/fc395667-5455-439a-82df-ae8a8fe8f96c" alt="update" />
+  </td>
+</tr>
+<tr>
+  <td>
+    <p align=center>실시간 채팅</p>
+  </td>
+  <td>
+    <p align=center>실시간 이동</p>
+  </td>
+</tr>
+</table>
 
 ### 200명과 함께 하는 게임
 
 > 위 모든 기능이 200명이 있는 게임방에서도 가능해요!
 
-(gif)
+<img width=800px src="https://github.com/user-attachments/assets/b1ad07e6-9f0f-456c-8f2f-91729f97e1a0" alt="ranking3" />
 
 <br>
 <br>
@@ -144,6 +165,17 @@
 - 해당 경험이 더 궁금하시다면?
     - [소켓 서버 없이 게임 시나리오 테스트하기](https://www.notion.so/2333831fc7504299b9fecd2fc12a57c1?pvs=21)
 
+### 클라이언트와 서버 시간을 동기화하자!
+
+- 동기
+  - 클라이언트와 서버 시간이 달라지는 오류가 발생하였습니다.
+- 행동
+  - 클라이언트가 주기적으로 서버 시간을 가져와 로컬 시간과의 차이를 계산합니다.
+- 결과
+  - 모든 클라이언트가 거의 동일한 상황에 퀴즈를 시작할 수 있게 되었습니다.
+- 해당 경험이 더 궁금하시다면?
+  - [컴퓨터 시간이 서버랑 안 맞으면 그건 그 사람 잘못 아닌가?](https://s0n9.notion.site/1b53dc837ba3441d9476e3df9c1f6d55)     
+
 <br>
 
 ## ✈️ [BE] 핵심 경험
@@ -174,11 +206,22 @@
 - 해당 경험이 더 궁금하시다면?
     - [[최적화] effective한 redis memory 관리](https://www.notion.so/effective-redis-memory-1a819eb7e512469b91b287cf8c627abd?pvs=21)
 
+### WAS 해킹을 당했어요!
+
+- 동기
+  - 데모 데이 1일 전 서버가 갑자기 안되는 이슈가 생겼습니다.
+- 행동
+  - pm2 로그가 아무것도 나오지 않았고, Ncloud를 확인해보니 cpu 100%를 찍고 있었습니다.
+- 결과
+  - 네이버 클라우드로 보안 이벤트 알림을 받았습니다.
+- 왜 해킹당했는지 더 궁금하시다면?
+  - [[트러블슈팅] WAS 해킹을 당했어요!](https://s0n9.notion.site/WAS-60f4c9deb87d4329bb274699b88ed429) 
+
 <br>
 
 ## ⚙️ 기술 스택
 
-<img width="710" alt="image" src="https://github.com/user-attachments/assets/06445949-2257-4331-be15-9a9b7e97c084">
+<img width="718" alt="image" src="https://github.com/user-attachments/assets/56afd295-8996-4484-a753-862dc94924aa">
 
 <br>
 <br>
