@@ -4,7 +4,7 @@
 
 <p align=center>
   <a href="http://quizground.duckdns.org/">
-    <img src="https://github.com/user-attachments/assets/a60abeb3-e744-4396-8f12-b8b690f83664" alt="퀴즈그라운드 바로가기" width="250px"/>
+    <img src="https://github.com/user-attachments/assets/223e621b-04c5-44cb-9dac-e4676a0131fb" alt="퀴즈그라운드 바로가기" width="250px"/>
   </a>
   <br>
   <br>
