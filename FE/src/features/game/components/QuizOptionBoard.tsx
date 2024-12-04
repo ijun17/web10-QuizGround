@@ -54,14 +54,15 @@ export const QuizOptionBoard = () => {
 
   // 퀴즈 시작 시간에 선택지 렌더링
   useEffect(() => {
+    setChoiceListVisible(false);
     const interval = setInterval(() => {
-      if (!choiceListVisible && currentQuiz && currentQuiz.startTime <= getServerTimestamp())
+      if (currentQuiz && currentQuiz.startTime <= getServerTimestamp()) {
         setChoiceListVisible(true);
-      else if (choiceListVisible && currentQuiz && currentQuiz.startTime > getServerTimestamp())
-        setChoiceListVisible(false);
+        clearInterval(interval);
+      }
     }, 100);
     return () => clearInterval(interval);
-  }, [choiceListVisible, currentQuiz]);
+  }, [currentQuiz]);
 
   const handleMove = (pageX: number, pageY: number) => {
     const currentPlayer = players.get(currentPlayerId);

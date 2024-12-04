@@ -87,7 +87,8 @@ export const SnowfallBackground = () => {
         left: 0,
         width: '100%',
         height: '100%',
-        pointerEvents: 'none' // 상호작용 방지
+        pointerEvents: 'none', // 상호작용 방지
+        zIndex: '0'
       }}
     />
   );
