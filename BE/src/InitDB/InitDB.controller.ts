@@ -1,5 +1,5 @@
-import { Controller, Post } from '@nestjs/common';
 import { InitDBService } from './InitDB.Service';
+import { Controller, HttpException, Post } from '@nestjs/common';
 
 @Controller('/api/initDB')
 export class InitDBController {
@@ -7,6 +7,7 @@ export class InitDBController {
 
   @Post()
   create() {
-    return this.initDBService.create();
+    throw new HttpException('test용 api 입니다.', 501);
+    // return this.initDBService.create();
   }
 }
