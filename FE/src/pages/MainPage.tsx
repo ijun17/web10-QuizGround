@@ -25,13 +25,12 @@ export const MainPage = () => {
   }, []);
 
   const handleQuizCreate = () => {
-    // dev Mode
-    navigate('/quiz/setup');
-    // if (isLoggedIn) navigate('/quiz/setup');
-    // else {
-    //   alert('로그인이 필요한 서비스 입니다.');
-    //   navigate('/login');
-    // }
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      navigate('/quiz/setup');
+    } else {
+      setIsOpenLoginModal(true);
+    }
   };
 
   const handleLogout = () => {

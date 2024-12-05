@@ -29,25 +29,25 @@ export const LoginModal = ({ isOpen, onClose }: Props) => {
       onClick={onClose}
     >
       <div
-        className="component-popup max-w-md bg-white w-[90%] animate-popup border-4 border-blue-200"
+        className="component-popup max-w-md w-[90%] animate-popup border-4 border-blue-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center mb-6">
           <div className="text-lg font-bold w-full h-16 flex">
             <button
-              className={`w-[50%] h-full px-4 transition ${!isSignUp ? 'text-blue-500' : 'text-gray-200'} cursor-pointer`}
+              className={`w-[50%] h-full px-4 transition ${!isSignUp ? 'text-blue-500' : 'text-gray-400'} cursor-pointer`}
               onClick={() => setIsSignUp(false)}
             >
               로그인
             </button>
             <button
-              className={`w-[50%] h-full px-4 transition ${isSignUp ? 'text-blue-500' : 'text-gray-200'} cursor-pointer`}
+              className={`w-[50%] h-full px-4 transition ${isSignUp ? 'text-blue-500' : 'text-gray-400'} cursor-pointer`}
               onClick={() => setIsSignUp(true)}
             >
               회원가입
             </button>
           </div>
-          <div className="relative w-full h-[2px] mx-auto bg-gray-200 rounded-full cursor-pointer">
+          <div className="relative w-full h-[2px] mx-auto bg-gray-300 rounded-full cursor-pointer">
             <div
               className={`absolute w-[50%] h-[2px] bg-blue-500 rounded-full transition-transform duration-400 ${
                 isSignUp ? 'translate-x-[100%]' : ''
@@ -63,7 +63,7 @@ export const LoginModal = ({ isOpen, onClose }: Props) => {
             <LoginForm handleLogin={handleLogin} />
           )}
           <button
-            className="mt-2 mb-4 w-full bg-gray-200 h-11 rounded-md hover:bg-gray-300"
+            className="mt-2 mb-4 w-full bg-gray-300 h-11 rounded-md hover:bg-gray-400"
             onClick={onClose}
           >
             취소
@@ -79,8 +79,8 @@ type LoginFormProps = {
 };
 
 const LoginForm: React.FC<LoginFormProps> = ({ handleLogin }) => {
-  const [email, setEmail] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
@@ -94,6 +94,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin }) => {
       return;
     }
     handleLogin(email, password);
+  };
+
+  // 비회원 로그인
+  const loginNonMember = () => {
+    handleLogin('admin', 'admin');
   };
 
   return (
@@ -120,12 +125,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin }) => {
         />
       </div>
 
-      <button
-        className="w-full px-4 py-3 mt-4 text-sm font-semibold text-blue-900 bg-yellow-400 rounded-md hover:bg-yellow-500"
-        onClick={onSubmit}
-      >
-        로그인
-      </button>
+      <div>
+        <button
+          className="w-full px-4 py-3 text-white text-sm font-semibold rounded-md bg-gradient-to-r from-sky-300 to-indigo-500 hover:from-sky-400 hover:to-indigo-600"
+          onClick={loginNonMember}
+        >
+          비회원으로 즐기기
+        </button>
+        <button
+          className="w-full px-4 py-3 mt-2 text-sm font-semibold text-blue-900 bg-yellow-400 rounded-md hover:bg-yellow-500"
+          onClick={onSubmit}
+        >
+          로그인
+        </button>
+      </div>
     </div>
   );
 };
