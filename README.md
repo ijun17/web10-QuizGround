@@ -3,7 +3,7 @@
 <br>
 
 <p align=center>
-  <a href="http://quizground.duckdns.org/">
+  <a href="https://quizground.site/">
     <img src="https://github.com/user-attachments/assets/a1fbf199-2976-4f0a-ac8f-bab4d7a11c97" alt="퀴즈그라운드 바로가기" width="250px"/>
   </a>
   <br>
@@ -36,8 +36,8 @@
   * [우리는 어떻게 Redis를 사용했는가?](#우리는-어떻게-redis를-사용했는가)
   * [Redis 메모리 아껴쓰기!](#redis-메모리-아껴쓰기)
   * [WAS 해킹을 당했어요!](#was-해킹을-당했어요)
-- [⚙️ 기술 스택](#-기술-스택)
-- [🏛️ 시스템 아키텍처](#-시스템-아키텍처)
+- [📚 기술 스택](#-기술-스택)
+- [🏪 시스템 아키텍처](#-시스템-아키텍처)
 - [🤗 시크릿주주 팀원](#-시크릿주주-팀원)
 
 <br>
@@ -207,7 +207,7 @@
 - 결과
     - 불필요한 데이터는 자동 정리되어 Redis 메모리를 효율적으로 관리했습니다.
 - 해당 경험이 더 궁금하시다면?
-    - [노션 링크](https://www.notion.so/effective-redis-memory-1a819eb7e512469b91b287cf8c627abd?pvs=21) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/effective%ED%95%9C-redis-memory-%EA%B4%80%EB%A6%AC)
+    - [노션 링크](https://www.notion.so/effective-redis-memory-1a819eb7e512469b91b287cf8c627abd?pvs=21) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/%5B%EC%B5%9C%EC%A0%81%ED%99%94%5D-effective%ED%95%9C-redis-memory-%EA%B4%80%EB%A6%AC)
 
 ### WAS 해킹을 당했어요!
 
@@ -222,14 +222,14 @@
 
 <br>
 
-## ⚙️ 기술 스택
+## 📚 기술 스택
 
 <img width="718" alt="image" src="https://github.com/user-attachments/assets/56afd295-8996-4484-a753-862dc94924aa">
 
 <br>
 <br>
 
-## 🏛️ 시스템 아키텍처
+## 🏪 시스템 아키텍처
 
 <img width="718" alt="image" src="https://github.com/user-attachments/assets/0d7d9130-2a3f-4703-a45b-ad497376c3bc">
 
