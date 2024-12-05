@@ -222,14 +222,14 @@
 
 <br>
 
-## ⚙️ 기술 스택
+## 📚 기술 스택
 
 <img width="718" alt="image" src="https://github.com/user-attachments/assets/56afd295-8996-4484-a753-862dc94924aa">
 
 <br>
 <br>
 
-## 🏛️ 시스템 아키텍처
+## 🏪 시스템 아키텍처
 
 <img width="718" alt="image" src="https://github.com/user-attachments/assets/0d7d9130-2a3f-4703-a45b-ad497376c3bc">
 
