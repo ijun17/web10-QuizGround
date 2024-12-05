@@ -34,6 +34,7 @@ class SocketService {
   private handlerMap: Partial<
     Record<SocketEvent, ((data: SocketDataMap[SocketEvent]['response']) => void)[]>
   > = {};
+  private log = true;
 
   constructor(url: string) {
     this.socket = null;
@@ -65,7 +66,13 @@ class SocketService {
       handlers.forEach((h) => socket.on(event, h))
     );
     this.socket.onAny((eventName, ...args) => {
-      console.log(`SOCKET[${eventName}]`, ...args);
+      if (this.log) {
+        if (eventName === 'exception')
+          console.log(`%cSOCKET[${eventName}]`, 'color:red', Date.now(), ...args);
+        else if (eventName !== 'updatePosition' && eventName !== 'chatMessage')
+          console.log(`%cSOCKET[${eventName}]`, 'color:green', Date.now(), ...args);
+        else console.log(`SOCKET[${eventName}]`, ...args);
+      }
     });
   }
 
@@ -92,6 +99,7 @@ class SocketService {
   emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
     if (!this.socket) return;
     this.socket.emit(event, data);
+    if (this.log) console.log(`%cSOCKET[${event}]`, 'background-color:blue', Date.now(), data);
   }
 
   async createRoom(option: {
