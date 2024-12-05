@@ -48,7 +48,6 @@ export class SocketMock {
     this.onAnyListenerList.push(listener);
   }
   emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
-    console.log(`%c SERVER_SOCKET[${event}]`, 'background:blue; color:white', data);
     switch (event) {
       case SocketEvents.CHAT_MESSAGE:
         return this.handleChat(data as SocketDataMap[typeof SocketEvents.CHAT_MESSAGE]['request']);
