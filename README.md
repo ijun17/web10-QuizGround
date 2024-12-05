@@ -207,7 +207,7 @@
 - 결과
     - 불필요한 데이터는 자동 정리되어 Redis 메모리를 효율적으로 관리했습니다.
 - 해당 경험이 더 궁금하시다면?
-    - [노션 링크](https://www.notion.so/effective-redis-memory-1a819eb7e512469b91b287cf8c627abd?pvs=21) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/effective%ED%95%9C-redis-memory-%EA%B4%80%EB%A6%AC)
+    - [노션 링크](https://www.notion.so/effective-redis-memory-1a819eb7e512469b91b287cf8c627abd?pvs=21) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/%5B%EC%B5%9C%EC%A0%81%ED%99%94%5D-effective%ED%95%9C-redis-memory-%EA%B4%80%EB%A6%AC)
 
 ### WAS 해킹을 당했어요!
 
