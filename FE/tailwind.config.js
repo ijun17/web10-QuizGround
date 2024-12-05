@@ -85,11 +85,11 @@ export default {
           borderWidth: '1px',
           borderColor: theme('borderColor.default'),
           borderRadius: theme('borderRadius.m'),
-          backgroundColor: '#FFFD'
+          backgroundColor: '#FFFC'
         },
         '.component-popup': {
           borderRadius: theme('borderRadius.m'),
-          backgroundColor: '#FFFD',
+          backgroundColor: '#FFFC',
           boxShadow: theme('boxShadow.default')
         },
         '.center': {
