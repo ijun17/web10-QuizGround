@@ -218,7 +218,7 @@
 - 결과
   - 네이버 클라우드로 보안 이벤트 알림을 받았습니다.
 - 왜 해킹당했는지 더 궁금하시다면?
-  - [노션 링크](https://s0n9.notion.site/WAS-60f4c9deb87d4329bb274699b88ed429)
+  - [노션 링크](https://s0n9.notion.site/WAS-60f4c9deb87d4329bb274699b88ed429) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/%5B%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85%5D-WAS-%ED%95%B4%ED%82%B9%EC%9D%84-%EB%8B%B9%ED%96%88%EC%96%B4%EC%9A%94!)
 
 <br>
 
