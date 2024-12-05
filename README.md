@@ -3,7 +3,7 @@
 <br>
 
 <p align=center>
-  <a href="http://quizground.duckdns.org/">
+  <a href="https://quizground.site/">
     <img src="https://github.com/user-attachments/assets/a1fbf199-2976-4f0a-ac8f-bab4d7a11c97" alt="퀴즈그라운드 바로가기" width="250px"/>
   </a>
   <br>
