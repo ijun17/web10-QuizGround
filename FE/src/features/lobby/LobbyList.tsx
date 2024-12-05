@@ -11,11 +11,11 @@ type Room = {
 
 type LobbyListProps = {
   rooms: Room[];
-  loadRooms: (cursor: string | null, take: number) => Promise<void>;
+  refreshRooms: () => void;
 };
 import { useNavigate } from 'react-router-dom';
 
-export const LobbyList: React.FC<LobbyListProps> = ({ rooms, loadRooms }) => {
+export const LobbyList: React.FC<LobbyListProps> = ({ rooms, refreshRooms }) => {
   const navigate = useNavigate();
 
   const handleJoinRoom = (gameId: string) => {
@@ -35,7 +35,7 @@ export const LobbyList: React.FC<LobbyListProps> = ({ rooms, loadRooms }) => {
             width: '50px',
             height: '50px'
           }}
-          onClick={() => loadRooms(null, 10)}
+          onClick={refreshRooms}
         />
       </header>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 w-full">
