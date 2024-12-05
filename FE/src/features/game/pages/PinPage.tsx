@@ -58,7 +58,7 @@ export const PinPage = () => {
           }}
           error={errors.pin}
         />
-        <CustomButton text="들어가기" onClick={handleJoin} />
+        <CustomButton text="들어가기" onClick={handleJoin} className="mt-4" />
       </div>
     </div>
   );
