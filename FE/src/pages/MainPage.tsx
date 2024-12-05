@@ -64,7 +64,7 @@ export const MainPage = () => {
               <button className="underline mr-4" onClick={handleLogout}>
                 로그아웃
               </button>
-              <ActionButton label="마이페이지" navigatePath="/mypage" />
+              {/* <ActionButton label="마이페이지" navigatePath="/mypage" /> */}
             </div>
           ) : (
             <button
