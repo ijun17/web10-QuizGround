@@ -6,21 +6,7 @@ import { CreateQuizSetPayload } from '@/api/rest/quizTypes';
 import { Header } from '@/components/Header';
 import CustomButton from '@/components/CustomButton';
 import QuizsetCategory from '@/constants/quizsetCategory';
-/*
-{
- title: string,              // 퀴즈셋의 제목
- category: string,   // 퀴즈셋 카테고리
- quizSet: {                 // 퀴즈들
-   quiz: string,             // 퀴즈 질문
-   limitTime: number,       // 제한 시간 (선택)
-   choices: {                // 선택지
-     content: string,        // 선택지 내용
-     order: number          // 선택지 번호
-     isAnswer: boolean
-   }[],
- }[]
-}
-*/
+
 type Choice = {
   choiceContent: string;
   choiceOrder: number;
@@ -274,13 +260,14 @@ export const QuizSetupPage: React.FC = () => {
               />
               <div className="">
                 {/* 선택지 추가 버튼 */}
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-2 mt-4">
                   <span className="text-lg font-bold text-blue-500">선택지</span>
                   <CustomButton
                     text="선택지 추가"
                     onClick={() => addChoice(quizIndex)}
                     size="third"
                     color="green"
+                    className="w-24 h-10"
                   />
                 </div>
                 {/* 선택지 입력 */}
@@ -332,7 +319,7 @@ export const QuizSetupPage: React.FC = () => {
 
           {/* 퀴즈 추가/제출 버튼 */}
           <CustomButton text="퀴즈 추가" onClick={addQuiz} className="w-full" color="yellow" />
-          <CustomButton text="퀴즈셋 생성하기" onClick={handleSubmit} className="w-full" />
+          <CustomButton text="퀴즈셋 생성하기" onClick={handleSubmit} className="w-full mt-4" />
         </div>
       </div>
     </>
