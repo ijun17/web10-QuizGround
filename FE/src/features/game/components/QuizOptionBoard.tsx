@@ -5,6 +5,7 @@ import { Player } from './Player';
 import { socketService } from '@/api/socket';
 import { useEffect, useRef, useState } from 'react';
 import { getServerTimestamp } from '@/features/game/utils/serverTime';
+// import PingEffect from './PingEffect';
 
 const optionColors = [
   '#FF9AA2', // pastel red
@@ -53,14 +54,15 @@ export const QuizOptionBoard = () => {
 
   // 퀴즈 시작 시간에 선택지 렌더링
   useEffect(() => {
+    setChoiceListVisible(false);
     const interval = setInterval(() => {
-      if (!choiceListVisible && currentQuiz && currentQuiz.startTime <= getServerTimestamp())
+      if (currentQuiz && currentQuiz.startTime <= getServerTimestamp()) {
         setChoiceListVisible(true);
-      else if (choiceListVisible && currentQuiz && currentQuiz.startTime > getServerTimestamp())
-        setChoiceListVisible(false);
+        clearInterval(interval);
+      }
     }, 100);
     return () => clearInterval(interval);
-  }, [choiceListVisible, currentQuiz]);
+  }, [currentQuiz]);
 
   const handleMove = (pageX: number, pageY: number) => {
     const currentPlayer = players.get(currentPlayerId);
@@ -72,7 +74,7 @@ export const QuizOptionBoard = () => {
     const { width, height, top, left } = boardRect;
     const x = (pageX - left - window.scrollX) / width;
     const y = (pageY - top - window.scrollY) / height;
-    if (x > 1 || y > 1) return;
+    if (x > 1 || y > 1 || x < 0 || y < 0) return;
     socketService.emit('updatePosition', { gameId, newPosition: [y, x] });
     const option = Math.round(x) + Math.floor(y * Math.ceil(choiceList.length / 2)) * 2;
     setSelectedOption(option);
@@ -100,7 +102,7 @@ export const QuizOptionBoard = () => {
 
   return (
     <div
-      className="relative component-default h-[100%] select-none"
+      className="relative component-default h-[100%] select-none "
       onClick={handleClick}
       onTouchEnd={handleTouchEnd}
       ref={boardRef}

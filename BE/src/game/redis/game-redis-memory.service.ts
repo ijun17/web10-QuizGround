@@ -1,13 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class GameRedisMemoryService {
   private readonly logger = new Logger(GameRedisMemoryService.name);
   private readonly BATCH_SIZE = 100; // 한 번에 처리할 배치 크기
+  private readonly INACTIVE_THRESHOLD = 30 * 60 * 1000; // 30분 30 * 60 * 1000;
 
   private readonly TTL = {
     ROOM: 3 * 60 * 60,
@@ -19,10 +20,60 @@ export class GameRedisMemoryService {
   constructor(@InjectRedis() private readonly redis: Redis) {}
 
   /**
+   * 비활성 방 체크 (주기적으로 실행)
+   */
+  /**
+   * 비활성 방을 체크하고 정리하는 크론 작업
+   * SCAN을 사용하여 대규모 방 목록도 안전하게 처리
+   */
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async checkInactiveRooms(): Promise<void> {
+    this.logger.verbose('비활성 방 체크 시작');
+    try {
+      const now = Date.now();
+      let cursor = '0';
+      let processedCount = 0;
+
+      do {
+        // SCAN을 사용하여 배치 단위로 처리
+        const [nextCursor, rooms] = await this.redis.sscan(
+          REDIS_KEY.ACTIVE_ROOMS,
+          cursor,
+          'COUNT',
+          this.BATCH_SIZE
+        );
+        cursor = nextCursor;
+
+        // 병렬로 방 상태 체크 및 처리
+        await Promise.all(
+          rooms.map(async (roomId) => {
+            try {
+              const lastActivity = await this.redis.hget(REDIS_KEY.ROOM(roomId), 'lastActivityAt');
+
+              if (lastActivity && now - parseInt(lastActivity) > this.INACTIVE_THRESHOLD) {
+                await this.redis.publish('room:cleanup', roomId);
+                this.logger.verbose(`비활성으로 인해 방 ${roomId} 정리 시작`);
+                processedCount++;
+              }
+            } catch (error) {
+              this.logger.error(`방 ${roomId} 처리 중 오류 발생: ${error.message}`);
+            }
+          })
+        );
+      } while (cursor !== '0');
+
+      this.logger.verbose(`비활성 방 체크 완료: ${processedCount}개 방 정리됨`);
+    } catch (error) {
+      this.logger.error(`비활성 방 체크 중 오류 발생: ${error.message}`);
+    }
+  }
+
+  /**
    * TTL 관리를 위한 스케줄러
    * 배치 처리로 블로킹 최소화
    */
-  @Cron(CronExpression.EVERY_MINUTE)
+
+  // @Cron(CronExpression.EVERY_MINUTE)
   async manageTTL(): Promise<void> {
     try {
       // SCAN으로 활성 방 목록을 배치로 처리

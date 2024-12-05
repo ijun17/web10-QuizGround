@@ -60,7 +60,7 @@ export const QuizSettingModal = ({ isOpen, onClose }: Props) => {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10"
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10 animate-popup"
       style={{ display: isOpen ? 'flex' : 'none' }}
     >
       <div className="component-popup max-w-[90vw] w-[40rem]">

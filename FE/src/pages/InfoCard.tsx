@@ -21,7 +21,7 @@ export const InfoCard: FC<CardProps> = ({ title, icon, path, action }) => {
         animationData={icon}
         loop={true}
         autoplay={true}
-        className="mx-auto cursor-pointer"
+        className="mx-auto cursor-gameCursorPointer"
         style={{
           width: '125px',
           height: '125px'

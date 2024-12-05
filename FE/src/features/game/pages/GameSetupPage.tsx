@@ -1,17 +1,15 @@
 import { Slider, Switch } from '@mui/material';
 import { useState } from 'react';
-import { socketService, useSocketEvent } from '@/api/socket';
+import { socketService, useSocketEvent, useSocketException } from '@/api/socket';
 import RoomConfig from '@/constants/roomConfig';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
-import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { TextInput } from '@/components/TextInput';
 import { Header } from '@/components/Header';
 import CustomButton from '../../../components/CustomButton';
 
 export const GameSetupPage = () => {
   const { updateRoom } = useRoomStore((state) => state);
-  const setIsHost = usePlayerStore((state) => state.setIsHost);
   const [title, setTitle] = useState('');
   const [titleError, setTitleError] = useState('');
   const [maxPlayerCount, setMaxPlayerCount] = useState<number>(RoomConfig.DEFAULT_PLAYERS);
@@ -21,6 +19,10 @@ export const GameSetupPage = () => {
 
   useSocketEvent('createRoom', (data) => {
     navigate(`/game/${data.gameId}`);
+  });
+
+  useSocketException('connection', (data) => {
+    alert(data.split('\n')[0]);
   });
 
   const handleTitleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -44,7 +46,6 @@ export const GameSetupPage = () => {
       gameMode,
       isPublic: roomPublic
     };
-    setIsHost(true);
     updateRoom(roomData);
     socketService.createRoom(roomData);
   };
@@ -53,11 +54,8 @@ export const GameSetupPage = () => {
     <>
       <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
         <Header />
-        <div className="p-4 max-w-full mx-auto bg-white shadow-lg rounded-lg w-full sm:w-4/5 md:w-3/5 lg:w-2/5 mt-6">
-          {/* 뒤로가기 버튼 */}
-          <div className="mb-6">
-            <CustomButton text="뒤로가기" onClick={() => navigate('/')} size="small" />
-          </div>
+        <div className="p-4 max-w-[600px] mx-auto bg-white shadow-lg rounded-lg w-[90%] mt-6">
+          <h2 className="text-2xl font-bold text-center text-blue-500 mb-6">게임방 만들기</h2>
 
           <TextInput
             value={title}
@@ -107,27 +105,33 @@ export const GameSetupPage = () => {
           <div className="mt-6">
             <fieldset className="mb-6">
               <legend className="text-blue-500 mb-2">게임 모드 선택</legend>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    value="SURVIVAL"
-                    checked={gameMode === 'SURVIVAL'}
-                    onChange={handleModeChange}
-                    className="text-blue-500 focus:ring-blue-500"
-                  />
-                  서바이벌
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    value="RANKING"
-                    checked={gameMode === 'RANKING'}
-                    onChange={handleModeChange}
-                    className="text-blue-500 focus:ring-blue-500"
-                  />
-                  랭킹
-                </label>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="gap-2 font-bold inline">
+                    <input
+                      type="radio"
+                      value="SURVIVAL"
+                      checked={gameMode === 'SURVIVAL'}
+                      onChange={handleModeChange}
+                      className="text-blue-500 focus:ring-blue-500 mr-2"
+                    />
+                    서바이벌
+                  </label>
+                  <span className="ml-4">퀴즈를 틀리면 탈락합니다.</span>
+                </div>
+                <div>
+                  <label className="gap-2 font-bold inline">
+                    <input
+                      type="radio"
+                      value="RANKING"
+                      checked={gameMode === 'RANKING'}
+                      onChange={handleModeChange}
+                      className="text-blue-500 focus:ring-blue-500 mr-2"
+                    />
+                    랭킹모드
+                  </label>
+                  <span className="ml-4">점수를 종합해 마지막에 순위를 발표합니다</span>
+                </div>
               </div>
             </fieldset>
             <fieldset>

@@ -19,7 +19,7 @@ export const ClipboardCopy: React.FC<ClipboardCopyProps> = ({ valueToCopy, messa
   };
 
   return (
-    <div>
+    <div className="truncate">
       <Button onClick={handleCopyToClipboard}>{message}</Button>
     </div>
   );

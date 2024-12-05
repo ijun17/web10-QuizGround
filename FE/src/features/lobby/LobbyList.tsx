@@ -11,10 +11,11 @@ type Room = {
 
 type LobbyListProps = {
   rooms: Room[];
+  refreshRooms: () => void;
 };
 import { useNavigate } from 'react-router-dom';
 
-export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
+export const LobbyList: React.FC<LobbyListProps> = ({ rooms, refreshRooms }) => {
   const navigate = useNavigate();
 
   const handleJoinRoom = (gameId: string) => {
@@ -22,7 +23,7 @@ export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
     navigate(`/game/${gameId}`);
   };
   return (
-    <div className="flex flex-col items-center px-4 py-6 w-full max-w-7xl">
+    <div className="flex flex-col items-center px-4 py-6 w-full max-w-7xl mt-14">
       <header className="flex items-center mb-8">
         <h1 className="text-3xl font-extrabold text-white mr-8">게임 대기실 목록</h1>
         <Lottie
@@ -34,6 +35,7 @@ export const LobbyList: React.FC<LobbyListProps> = ({ rooms }) => {
             width: '50px',
             height: '50px'
           }}
+          onClick={refreshRooms}
         />
       </header>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 w-full">

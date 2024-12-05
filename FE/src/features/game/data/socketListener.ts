@@ -15,7 +15,8 @@ socketService.on('chatMessage', (data) => {
 
 // player
 socketService.on('joinRoom', (data) => {
-  const { addPlayers } = usePlayerStore.getState();
+  const { addPlayers, currentPlayerId, currentPlayerName, setCurrentPlayerName } =
+    usePlayerStore.getState();
   const newPlayers = data.players.map((player) => ({
     ...player,
     playerScore: 0,
@@ -24,6 +25,12 @@ socketService.on('joinRoom', (data) => {
     emoji: getEmojiByUUID(player.playerId)
   }));
   addPlayers(newPlayers);
+
+  // 현재 플레이어 이름이 없다면
+  if (!currentPlayerName && currentPlayerId) {
+    const me = data.players.find((e) => e.playerId == currentPlayerId);
+    if (me) setCurrentPlayerName(me.playerName);
+  }
 });
 
 socketService.on('updatePosition', (data) => {
@@ -38,18 +45,20 @@ socketService.on('endQuizTime', (data) => {
     data.players.map((p) => {
       const _p = players.get(p.playerId);
       return {
-        playerId: String(p.playerId),
+        playerId: p.playerId,
         playerName: _p?.playerName || '',
         playerPosition: _p?.playerPosition || [0, 0],
         playerScore: p.score,
         isAnswer: p.isAnswer,
         isAlive: _p?.isAlive || false,
+        isHost: _p?.isHost || false,
         emoji: _p?.emoji || 'o'
       };
     })
   );
 
   // 서바이벌 모드일 경우 3초 뒤에 탈락한 플레이어를 보이지 않게 한다.
+  // TODO: 입장한 방이 어떤 게임 모드인지 알 수 없다.
   if (gameMode === 'SURVIVAL') {
     setTimeout(() => {
       const { players, setPlayers } = usePlayerStore.getState();
@@ -67,7 +76,7 @@ socketService.on('endQuizTime', (data) => {
 });
 
 socketService.on('endGame', (data) => {
-  usePlayerStore.getState().setIsHost(data.hostId === usePlayerStore.getState().currentPlayerId);
+  usePlayerStore.getState().setHost(data.hostId);
 });
 
 socketService.on('exitRoom', (data) => {
@@ -75,9 +84,9 @@ socketService.on('exitRoom', (data) => {
 });
 
 socketService.on('getSelfId', (data) => {
-  const playerName = usePlayerStore.getState().players.get(data.playerId);
   usePlayerStore.getState().setCurrentPlayerId(data.playerId);
-  usePlayerStore.getState().setCurrentPlayerName(String(playerName));
+  const playerName = usePlayerStore.getState().players.get(data.playerId)?.playerName;
+  if (playerName) usePlayerStore.getState().setCurrentPlayerName(playerName);
 });
 
 socketService.on('setPlayerName', (data) => {
@@ -85,6 +94,14 @@ socketService.on('setPlayerName', (data) => {
   if (data.playerId === usePlayerStore.getState().currentPlayerId) {
     usePlayerStore.getState().setCurrentPlayerName(data.playerName);
   }
+});
+
+socketService.on('kickRoom', (data) => {
+  usePlayerStore.getState().removePlayer(data.playerId);
+});
+
+socketService.on('updateHost', (data) => {
+  usePlayerStore.getState().setHost(data.hostId);
 });
 
 // Quiz
@@ -105,6 +122,7 @@ socketService.on('endGame', () => {
 
 // TODO update 퀴즈 셋 시 퀴즈셋 받아오기
 socketService.on('updateRoomQuizset', async (data) => {
+  if (Number(data.quizSetId) < 0) return;
   const res = await getQuizSetDetail(String(data.quizSetId));
   useQuizStore.getState().setQuizSet(String(res?.title), String(res?.category));
 });
@@ -126,12 +144,6 @@ socketService.on('startGame', () => {
 socketService.on('endGame', () => {
   useRoomStore.getState().setGameState(GameState.END);
 });
-
-socketService.on('kickRoom', () => {
-  alert('강퇴당하였습니다.');
-  // 메인페이지 or 로비로 이동시키기?
-});
-
 // 소켓 연결 해제시 초기화
 
 socketService.on('disconnect', () => {

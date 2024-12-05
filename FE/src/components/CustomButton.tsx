@@ -29,7 +29,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 
   return (
     <button
-      className={`mt-6 h-12 text-white font-semibold rounded-lg shadow-md transition-all duration-300 ease-in-out ${colorClass[color]} ${sizeClass[size]} ${className}`}
+      className={`h-12 text-white font-semibold rounded-lg shadow-md transition-all duration-300 ease-in-out ${colorClass[color]} ${sizeClass[size]} ${className}`}
       onClick={onClick}
     >
       {text}

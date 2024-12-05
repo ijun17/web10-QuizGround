@@ -1,6 +1,5 @@
-const sampleQuizImage =
-  'https://yt3.ggpht.com/f9olK5dD-VIZu35PnoEqHJqguck1OtcCQvRCJ4Ub4lbEzHdiZbuiIfN5nPlHeoY2EgBzu06kExzprg=s662-nd-v1';
-
+import Lottie from 'lottie-react';
+import snowMan from '../../src/assets/lottie/snowMan.json';
 type Props = {
   title: string;
   description: string;
@@ -8,13 +7,15 @@ type Props = {
 
 export const QuizPreview = ({ title, description }: Props) => {
   return (
-    <div className="component-default h-[100px] flex overflow-hidden">
-      <div className="w-[100px] overflow-hidden">
-        <img src={sampleQuizImage} className="object-cover w-[100%] h-[100%]" />
+    <div className="component-default flex items-center gap-4 p-4 rounded-lg shadow-lg bg-white">
+      <div className="flex-shrink-0 w-[100px] h-[80px] overflow-hidden rounded-md shadow-md">
+        <Lottie animationData={snowMan} loop={true} className="w-full h-full object-cover" />
+        {/* <img src={sampleQuizImage} alt={title} className="w-full h-full object-cover" /> */}
       </div>
-      <div className="flex flex-col pl-4 justify-center">
-        <div className="font-bold text-xl">{title}</div>
-        <div>{description}</div>
+
+      <div className="flex flex-col justify-center flex-grow">
+        <h3 className="text-lg font-bold text-gray-800 truncate">{title}</h3>
+        <p className="text-sm text-gray-600 line-clamp-2">{description}</p>
       </div>
     </div>
   );

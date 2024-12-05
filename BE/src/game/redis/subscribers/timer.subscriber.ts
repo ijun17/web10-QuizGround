@@ -5,7 +5,7 @@ import Redis from 'ioredis';
 import { Namespace } from 'socket.io';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import SocketEvents from '../../../common/constants/socket-events';
-import { GameMode } from '../../../common/constants/game-mode';
+import { GameMode, SurvivalStatus } from '../../../common/constants/game';
 
 @Injectable()
 export class TimerSubscriber extends RedisSubscriber {
@@ -28,6 +28,7 @@ export class TimerSubscriber extends RedisSubscriber {
       const currentQuiz = await this.redis.get(REDIS_KEY.ROOM_CURRENT_QUIZ(gameId));
       const [quizNum, state] = currentQuiz.split(':');
 
+      // REFACTOR: start, end 상수화
       if (state === 'start') {
         await this.handleQuizScoring(gameId, parseInt(quizNum), server);
       } else {
@@ -65,7 +66,7 @@ export class TimerSubscriber extends RedisSubscriber {
       const selectAnswer = this.calculateAnswer(
         player.positionX,
         player.positionY,
-        quizList.length
+        parseInt(quiz.choiceCount)
       );
       // this.logger.verbose(selectAnswer);
 
@@ -113,12 +114,18 @@ export class TimerSubscriber extends RedisSubscriber {
 
     // 생존 모드에서 모두 탈락하진 않았는지 체크
     const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-    const alivePlayers = players.filter(async (id) => {
-      const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive');
-      return isAlive === '1';
-    });
+    const aliveCount = (
+      await Promise.all(players.map((id) => this.redis.hget(REDIS_KEY.PLAYER(id), 'isAlive')))
+    ).filter((isAlive) => isAlive === SurvivalStatus.ALIVE).length;
 
-    if (quizList.length <= newQuizNum || alivePlayers.length === 0) {
+    // 게임 끝을 알림
+    if (this.hasNoMoreQuiz(quizList, newQuizNum) || this.checkSurvivalEnd(players.length, aliveCount)) {
+      // 모든 플레이어를 생존자로 변경
+      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+      players.forEach((id) => {
+        this.redis.hset(REDIS_KEY.PLAYER(id), { isAlive: SurvivalStatus.ALIVE });
+      });
+
       const leaderboard = await this.redis.zrange(
         REDIS_KEY.ROOM_LEADERBOARD(gameId),
         0,
@@ -128,13 +135,13 @@ export class TimerSubscriber extends RedisSubscriber {
 
       this.redis.set(`${REDIS_KEY.ROOM(gameId)}:Changes`, 'End');
       this.redis.hset(REDIS_KEY.ROOM(gameId), {
-        host: leaderboard[0],
+        host: leaderboard.at(-2),
         status: 'waiting',
         isWaiting: '1'
       });
 
       server.to(gameId).emit(SocketEvents.END_GAME, {
-        hostId: leaderboard[0]
+        hostId: leaderboard.at(-2)
       });
       this.logger.verbose(`[endGame]: ${gameId}`);
       return;
@@ -167,8 +174,8 @@ export class TimerSubscriber extends RedisSubscriber {
   }
 
   private calculateAnswer(positionX: string, positionY: string, quizLen: number): number {
-    const x = parseFloat(positionX);
-    const y = parseFloat(positionY);
+    const x = parseFloat(positionY);
+    const y = parseFloat(positionX);
 
     // 행의 개수 계산 (2열 고정이므로 총 개수의 절반을 올림)
     const rows = Math.ceil(quizLen / 2);
@@ -177,21 +184,20 @@ export class TimerSubscriber extends RedisSubscriber {
     const rowIndex = Math.floor(y * rows);
 
     // X 좌표로 왼쪽/오른쪽 결정
-    const colIndex = x < 0.5 ? 0 : 1;
+    const colIndex = Math.round(x);
 
     // 최종 선택지 번호 계산
     const answer = rowIndex * 2 + colIndex + 1;
 
     // 실제 선택지 범위를 벗어나지 않도록 보정
     return Math.min(answer, quizLen);
-    // return (
-    //   Math.round(
-    //     parseFloat(positionX) + Math.floor(parseFloat(positionY) * Math.ceil(quizLen / 2))
-    //   ) * 2
-    // );
-    // if (parseFloat(positionY) < 0.5) {
-    //   return parseFloat(positionX) < 0.5 ? 1 : 2;
-    // }
-    // return parseFloat(positionX) < 0.5 ? 3 : 4;
+  }
+
+  private hasNoMoreQuiz(quizList, newQuizNum: number) {
+    return quizList.length <= newQuizNum;
+  }
+
+  private checkSurvivalEnd(playerCount: number, aliveCount: number) {
+    return playerCount > 1 && aliveCount <= 1;
   }
 }

@@ -13,7 +13,6 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
   const players = usePlayerStore((state) => state.players);
   const maxPlayerCount = useRoomStore((state) => state.maxPlayerCount);
   const currentPlayerId = usePlayerStore((state) => state.currentPlayerId);
-  const isHost = usePlayerStore((state) => state.isHost);
   const gameMode = useRoomStore((state) => state.gameMode);
   const gameId = useRoomStore((state) => state.gameId);
 
@@ -24,17 +23,24 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
     [gameId]
   );
 
+  const currentIsHost = players.get(currentPlayerId)?.isHost ?? false;
+
   // 대기 모드일 때 참가자 목록 표시
   const renderWaitingMode = useCallback(
     () => (
       <div className="p-3 h-[calc(100%-2.5rem)] overflow-y-scroll">
         {Array.from(players).map(([, player]) => (
           <div
-            className="flex justify-between mt-2 pb-2 border-b border-default"
+            className="flex justify-between mt-2 pb-2 border-b border-default items-center"
             key={player.playerId}
           >
-            <div className="font-bold">{player.emoji + ' ' + player.playerName}</div>
-            {isHost && currentPlayerId !== player.playerId && (
+            <div className="font-bold">{player.emoji + ' ' + player.playerName} </div>
+            {player.isHost && (
+              <span className="text-white bg-red-600 px-2 py-1 rounded-lg shadow-sm text-sm ml-3">
+                방장 👑
+              </span>
+            )}
+            {currentIsHost && currentPlayerId !== player.playerId && (
               <button
                 className="bg-blue-500 rounded-lg text-white w-8 h-6 text-r active:scale-90 hover:bg-red-500"
                 onClick={() => handleKick(player.playerId)}
@@ -46,7 +52,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
         ))}
       </div>
     ),
-    [players, currentPlayerId, handleKick, isHost]
+    [players, currentPlayerId, handleKick, currentIsHost]
   );
 
   // 진행 모드일 때 랭킹 현황 표시
@@ -98,7 +104,7 @@ const ParticipantDisplay: React.FC<ParticipantDisplayProps> = ({ gameState }) =>
               transition={{ type: 'spring', stiffness: 100, damping: 20 }}
             >
               <div className="font-bold" style={{ color: player.isAnswer ? 'inherit' : 'red' }}>
-                {player.emoji + ' ' + player.playerName}
+                {(player.isAnswer ? player.emoji : '👻') + ' ' + player.playerName}
               </div>
             </motion.div>
           ))}

@@ -37,6 +37,15 @@ export class RoomCleanupSubscriber extends RedisSubscriber {
     try {
       const pipeline = this.redis.pipeline();
 
+      // 1. 방에 속한 플레이어 목록 가져오기, 200명미만 -> smembers 사용!
+      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(roomId));
+
+      // 2. 플레이어 데이터 삭제
+      for (const playerId of players) {
+        pipeline.del(REDIS_KEY.PLAYER(playerId)); // 플레이어 기본 데이터
+        pipeline.del(`${REDIS_KEY.PLAYER(playerId)}:Changes`); // 플레이어 Changes 데이터
+      }
+
       // 1. 방 관련 기본 데이터 삭제
       pipeline.del(REDIS_KEY.ROOM(roomId));
       pipeline.del(REDIS_KEY.ROOM_PLAYERS(roomId));

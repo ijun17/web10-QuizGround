@@ -1,4 +1,3 @@
-// import { HeaderBar } from '@/components/HeaderBar';
 import { LobbyList } from '@/features/lobby/LobbyList';
 import { useState, useEffect, useCallback } from 'react';
 import { getRoomList } from '@/api/rest/roomApi';
@@ -47,6 +46,16 @@ export const GameLobbyPage = () => {
     },
     [isLoading, paging]
   );
+  const refreshRooms = useCallback(() => {
+    if (isLoading) return;
+    setRooms([]);
+    setPaging(null);
+    loadRooms(null);
+  }, [isLoading, loadRooms]);
+
+  useEffect(() => {
+    loadRooms(null);
+  }, [loadRooms]);
 
   useEffect(() => {
     loadRooms(null);
@@ -71,7 +80,7 @@ export const GameLobbyPage = () => {
   return (
     <div className="bg-gradient-to-r from-blue-300 to-indigo-500 min-h-screen flex flex-col items-center justify-center">
       <Header />
-      <LobbyList rooms={rooms} />
+      <LobbyList rooms={rooms} refreshRooms={refreshRooms} />
       {isLoading && <div className="text-center mt-4">Loading...</div>}
     </div>
   );

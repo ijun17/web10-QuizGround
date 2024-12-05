@@ -18,7 +18,8 @@ export class SocketMock {
       const currentPlayer = {
         playerId: this.id,
         playerName: 'Me',
-        playerPosition: [0.5, 0.5] as [number, number]
+        playerPosition: [0.5, 0.5] as [number, number],
+        isHost: false
       };
       this.emitServer('joinRoom', { players: [currentPlayer] });
       this.addPlayers([currentPlayer]);
@@ -47,7 +48,6 @@ export class SocketMock {
     this.onAnyListenerList.push(listener);
   }
   emit<T extends SocketEvent>(event: T, data: SocketDataMap[T]['request']) {
-    console.log(`%c SERVER_SOCKET[${event}]`, 'background:blue; color:white', data);
     switch (event) {
       case SocketEvents.CHAT_MESSAGE:
         return this.handleChat(data as SocketDataMap[typeof SocketEvents.CHAT_MESSAGE]['request']);
@@ -120,6 +120,7 @@ export class SocketMock {
       playerId: string;
       playerName: string;
       playerPosition: [number, number];
+      isHost: boolean;
     }
   > = {};
 
@@ -207,10 +208,8 @@ export class SocketMock {
 
   async progressQuiz(quiz: string, quizSecond: number, choiceList: string[], answerIndex: number) {
     this.setQuiz(quiz, quizSecond, choiceList);
-    this.log('퀴즈 전송 완료.');
     await this.delay(3 + quizSecond);
     this.calculateScore(answerIndex);
-    this.log('퀴즈가 종료 되었습니다.');
   }
 
   updatePlayerPosition(playerId: string, newPosition: [number, number]) {
@@ -240,7 +239,8 @@ export class SocketMock {
         .map((_, i) => ({
           playerId: String(playerCount + i + 1),
           playerName: 'player' + (playerCount + i),
-          playerPosition: [this.random(), this.random()]
+          playerPosition: [this.random(), this.random()],
+          isHost: false
         }))
     );
   }

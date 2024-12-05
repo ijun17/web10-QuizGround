@@ -2,6 +2,7 @@ import Lottie from 'lottie-react';
 import starBg from '@/assets/lottie/star_bg.json';
 import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
+import { calculateRanks, Player } from '../utils/calculateRanks';
 
 type GameResultModalProps = {
   isOpen: boolean;
@@ -16,13 +17,15 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
 }) => {
   const gameMode = useRoomStore((state) => state.gameMode);
   const players = usePlayerStore((state) => state.players);
-  const sortedPlayers = [...players].sort(([, a], [, b]) => b.playerScore - a.playerScore);
+  // const sortedPlayers = [...players].sort(([, a], [, b]) => b.playerScore - a.playerScore);
+  const playerArray: Player[] = Array.from(players).map(([, player]) => player);
+  const { sortedPlayers, ranks } = calculateRanks(playerArray);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="relative bg-white rounded-lg shadow-xl w-[600px] h-[600px] overflow-hidden">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-[600px] w-[95%] h-[600px] overflow-hidden animate-popup">
         <Lottie
           animationData={starBg}
           loop={true}
@@ -34,14 +37,16 @@ export const ResultModal: React.FC<GameResultModalProps> = ({
           <h2 className="text-2xl font-bold text-gray-800 text-center">게임이 종료되었습니다.</h2>
 
           <div className="overflow-y-auto max-h-[300px] w-full bg-white/80 rounded-lg p-4 border border-gray-200 shadow-md">
-            {[...sortedPlayers].map(([, player], index) => (
+            {sortedPlayers.map((player, index) => (
               <div
-                key={index}
-                className={`flex justify-between px-4 py-2 border-b border-gray-100 ${currentPlayerName === player.playerName ? `bg-cyan-100` : null} last:border-none`}
+                key={player.playerId}
+                className={`flex justify-between px-4 py-2 border-b border-gray-100 ${
+                  currentPlayerName === player.playerName ? `bg-cyan-100` : null
+                } last:border-none`}
               >
                 <span className="text-gray-700 font-medium">
                   {gameMode === 'RANKING' ? (
-                    <span className="text-blue-700 font-medium">{index + 1}등</span>
+                    <span className="text-blue-700 font-medium">{ranks[index]}등</span>
                   ) : player.isAlive ? (
                     <span className="text-green-700 font-medium">생존</span>
                   ) : (

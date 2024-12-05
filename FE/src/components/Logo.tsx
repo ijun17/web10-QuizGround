@@ -7,12 +7,12 @@ const shadowStyle = '-2px 0 white, 0 2px white, 2px 0 white, 0 -2px white';
 export const Logo = () => {
   const navigate = useNavigate();
   return (
-    <div style={{ textShadow: shadowStyle }} onClick={() => navigate('/')}>
-      <h1
-        className={`font-logo ${color} text-3xl hover:text-blue-400 transition-all cursor-pointer`}
+    <span style={{ textShadow: shadowStyle }} onClick={() => navigate('/')}>
+      <span
+        className={`font-logo ${color} text-3xl hover:text-blue-400 transition-all cursor-gameCursorPointer`}
       >
         QuizGround
-      </h1>
-    </div>
+      </span>
+    </span>
   );
 };
