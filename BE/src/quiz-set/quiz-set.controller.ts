@@ -4,8 +4,8 @@ import {
   DefaultValuePipe,
   Delete,
   Get,
+  Logger,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -18,9 +18,12 @@ import { CreateQuizSetDto } from './dto/create-quiz.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserModel } from '../user/entities/user.entity';
+import { ParseIntOrDefault } from '../common/decorators/parse-int-or-default.decorator';
 
-@Controller('/api/quiz-set')
+@Controller('/api/quizset')
 export class QuizSetController {
+  private readonly logger = new Logger(QuizSetController.name);
+
   constructor(private readonly quizService: QuizSetService) {}
 
   @UseGuards(JwtAuthGuard)
@@ -29,37 +32,51 @@ export class QuizSetController {
   @ApiResponse({ status: 201, description: '퀴즈셋이 성공적으로 생성됨' })
   @ApiResponse({ status: 400, description: '잘못된 입력값' })
   async createQuizSet(@Body() createQuizSetDto: CreateQuizSetDto, @CurrentUser() user: UserModel) {
-    return this.quizService.createQuizSet(createQuizSetDto, user);
+    const result = await this.quizService.createQuizSet(createQuizSetDto, user);
+    this.logger.verbose(`퀴즈셋 생성: ${result}`);
+    return result;
   }
 
   @Get()
-  findAll(
+  async findAll(
     @Query('category', new DefaultValuePipe('')) category: string,
-    @Query('cursor', new DefaultValuePipe(1), ParseIntPipe) cursor: number,
-    @Query('take', new DefaultValuePipe(10), ParseIntPipe) take: number,
+    @Query('cursor', new ParseIntOrDefault(1)) cursor: number,
+    @Query('take', new ParseIntOrDefault(10)) take: number,
     @Query('search', new DefaultValuePipe('')) search: string
   ) {
-    return this.quizService.findAllWithQuizzesAndChoices(category, cursor, take, search);
+    const result = await this.quizService.findAllWithQuizzesAndChoices(
+      category,
+      cursor,
+      take,
+      search
+    );
+    this.logger.verbose(`퀴즈셋 목록 조회: ${result}`);
+    return result;
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.quizService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const result = await this.quizService.findOne(+id);
+    this.logger.verbose(`퀴즈셋 조회: ${result}`);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateQuizSetDto: UpdateQuizSetDto,
     @CurrentUser() user: UserModel
   ) {
-    return this.quizService.update(+id, updateQuizSetDto, user);
+    const result = await this.quizService.update(+id, updateQuizSetDto, user);
+    this.logger.verbose(`퀴즈셋 수정: ${result}`);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() user: UserModel) {
+  async remove(@Param('id') id: string, @CurrentUser() user: UserModel) {
+    this.logger.verbose(`퀴즈셋 삭제: ${id}`);
     return this.quizService.remove(+id, user);
   }
 }

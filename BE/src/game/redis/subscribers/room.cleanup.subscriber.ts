@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisSubscriber } from './base.subscriber';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { Server } from 'socket.io';
+import { Namespace } from 'socket.io';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class RoomCleanupSubscriber extends RedisSubscriber {
   /**
    * Redis 구독 초기화 및 정리 이벤트 핸들러 등록
    */
-  async subscribe(server: Server): Promise<void> {
+  async subscribe(server: Namespace): Promise<void> {
     const subscriber = this.redis.duplicate();
 
     // 방 정리 이벤트 구독
@@ -36,6 +36,15 @@ export class RoomCleanupSubscriber extends RedisSubscriber {
   private async cleanupRoom(roomId: string): Promise<void> {
     try {
       const pipeline = this.redis.pipeline();
+
+      // 1. 방에 속한 플레이어 목록 가져오기, 200명미만 -> smembers 사용!
+      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(roomId));
+
+      // 2. 플레이어 데이터 삭제
+      for (const playerId of players) {
+        pipeline.del(REDIS_KEY.PLAYER(playerId)); // 플레이어 기본 데이터
+        pipeline.del(`${REDIS_KEY.PLAYER(playerId)}:Changes`); // 플레이어 Changes 데이터
+      }
 
       // 1. 방 관련 기본 데이터 삭제
       pipeline.del(REDIS_KEY.ROOM(roomId));

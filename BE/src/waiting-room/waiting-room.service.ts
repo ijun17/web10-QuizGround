@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { RoomDto, RoomListResponseDto } from './dto/waiting-room-list.response.dto';
 
 @Injectable()
 export class WaitingRoomService {
+  private logger = new Logger('WaitingRoom');
+
   constructor(@InjectRedis() private readonly redis: Redis) {}
 
   async findAllWaitingRooms(cursor: number, take: number): Promise<RoomListResponseDto> {
@@ -58,6 +60,8 @@ export class WaitingRoomService {
     const hasNextPage = rooms.length > take;
     const responseRooms = hasNextPage ? rooms.slice(0, take) : rooms;
     const nextCursor = hasNextPage ? responseRooms[responseRooms.length - 1].gameId : null;
+
+    this.logger.verbose(`방 목록 조회: cursor=${cursor}, take=${take}, rooms=${rooms.length}, nextCursor=${nextCursor}`);
 
     return new RoomListResponseDto(responseRooms, nextCursor, hasNextPage);
   }

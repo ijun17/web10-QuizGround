@@ -3,19 +3,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { QuizSetService } from '../../src/quiz-set/service/quiz-set.service';
-import { QuizSetModel } from '../../src/quiz-set/entities/quiz-set.entity';
-import { QuizModel } from '../../src/quiz-set/entities/quiz.entity';
-import { QuizChoiceModel } from '../../src/quiz-set/entities/quiz-choice.entity';
-import { UserModel } from '../../src/user/entities/user.entity';
-import { UserQuizArchiveModel } from '../../src/user/entities/user-quiz-archive.entity';
-import { CreateQuizSetDto } from '../../src/quiz-set/dto/create-quiz.dto';
-import { QuizSetCreateService } from '../../src/quiz-set/service/quiz-set-create.service';
-import { QuizSetReadService } from '../../src/quiz-set/service/quiz-set-read.service';
-import { QuizSetUpdateService } from '../../src/quiz-set/service/quiz-set-update.service';
-import { QuizSetDeleteService } from '../../src/quiz-set/service/quiz-set-delete.service';
-import { UserService } from '../../src/user/user.service';
-import { AuthModule } from '../../src/auth/auth.module';
+import { QuizSetService } from '../../../src/quiz-set/service/quiz-set.service';
+import { QuizSetModel } from '../../../src/quiz-set/entities/quiz-set.entity';
+import { QuizModel } from '../../../src/quiz-set/entities/quiz.entity';
+import { QuizChoiceModel } from '../../../src/quiz-set/entities/quiz-choice.entity';
+import { UserModel } from '../../../src/user/entities/user.entity';
+import { UserQuizArchiveModel } from '../../../src/user/entities/user-quiz-archive.entity';
+import { CreateQuizSetDto } from '../../../src/quiz-set/dto/create-quiz.dto';
+import { QuizSetCreateService } from '../../../src/quiz-set/service/quiz-set-create.service';
+import { QuizSetReadService } from '../../../src/quiz-set/service/quiz-set-read.service';
+import { QuizSetUpdateService } from '../../../src/quiz-set/service/quiz-set-update.service';
+import { QuizSetDeleteService } from '../../../src/quiz-set/service/quiz-set-delete.service';
+import { UserService } from '../../../src/user/user.service';
+import { AuthModule } from '../../../src/auth/auth.module';
 
 describe('QuizService', () => {
   let quizService: QuizSetService;
@@ -105,7 +105,7 @@ describe('QuizService', () => {
       // Given
       const createQuizSetDto: CreateQuizSetDto = {
         title: '자바스크립트 기초',
-        category: 'PROGRAMMING',
+        category: 'IT',
         quizList: [
           {
             quiz: 'JavaScript의 원시 타입이 아닌 것은?',
@@ -213,7 +213,7 @@ describe('QuizService', () => {
       // Given - 테스트 데이터 생성
       const createQuizSetDto: CreateQuizSetDto = {
         title: '자바스크립트 기초',
-        category: 'PROGRAMMING',
+        category: 'IT',
         quizList: [
           {
             quiz: '테스트 문제',
@@ -237,11 +237,11 @@ describe('QuizService', () => {
       await quizService.createQuizSet(createQuizSetDto, testUser.user);
 
       // When
-      const result = await quizService.findAllWithQuizzesAndChoices('PROGRAMMING', 0, 10, '');
+      const result = await quizService.findAllWithQuizzesAndChoices('IT', 0, 10, '');
 
       // Then
       expect(result.quizSetList).toBeDefined();
-      expect(result.quizSetList[0].category).toBe('PROGRAMMING');
+      expect(result.quizSetList[0].category).toBe('IT');
       expect(result.quizSetList[0].quizCount).toBe(1);
     });
 
@@ -294,7 +294,7 @@ describe('QuizService', () => {
       // Given - 테스트 데이터 생성
       const dto = {
         title: '테스트 퀴즈',
-        category: 'TEST',
+        category: 'IT',
         quizList: [
           {
             quiz: '문제1',
@@ -338,7 +338,7 @@ describe('QuizService', () => {
       // Given - 테스트용 퀴즈셋 생성
       const dto = {
         title: '원본 퀴즈',
-        category: 'TEST',
+        category: 'IT',
         quizList: [
           {
             quiz: '원본 문제',
@@ -362,7 +362,7 @@ describe('QuizService', () => {
       // Given
       const updateDto = {
         title: '수정된 퀴즈',
-        category: 'UPDATED',
+        category: 'IT',
         quizList: [
           {
             quiz: '수정된 문제',
@@ -385,7 +385,7 @@ describe('QuizService', () => {
       const updated = await quizService.findOne(originQuizSetId);
       expect(updated.id).toBe(originQuizSetId.toString());
       expect(updated.title).toBe('수정된 퀴즈');
-      expect(updated.category).toBe('UPDATED');
+      expect(updated.category).toBe('IT');
       expect(updated.quizList[0].quiz).toBe('수정된 문제');
       expect(updated.quizList[0].limitTime).toBe(60);
     });
@@ -409,7 +409,7 @@ describe('QuizService', () => {
       // Given - 테스트용 퀴즈셋 생성
       const dto = {
         title: '삭제될 퀴즈',
-        category: 'TEST',
+        category: 'IT',
         quizList: [
           {
             quiz: '문제',
@@ -458,7 +458,7 @@ async function createQuizSetTestData(
 ) {
   const createQuizSetDto: CreateQuizSetDto = {
     title: quizSetTitle,
-    category: 'PROGRAMMING',
+    category: 'IT',
     quizList: [
       {
         quiz: '테스트',
