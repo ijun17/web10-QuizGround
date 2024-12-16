@@ -1,4 +1,4 @@
-<div align="center"> 
+<div align="center">
 
 ## [퀴즈그라운드 바로가기](http://www.quizground.duckdns.org)
 
