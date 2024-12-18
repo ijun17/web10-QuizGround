@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -22,6 +23,7 @@ export class QuizModel extends BaseModel {
   quizSetId: number;
 
   @Column('text')
+  @Index({ fulltext: true })
   quiz: string;
 
   @Column({ name: 'limit_time' })
