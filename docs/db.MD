@@ -119,6 +119,7 @@ flowchart LR
 
 - "B로 시작하는 책" → 'B' 섹션으로 바로 이동 가능
 - "중간에 'art'가 들어가는 책" → 모든 책을 하나씩 확인해야 함
+- **우리가 원하는것은 중간에 '과학' 이 들어가는 퀴즈를 찾는것**
 
 ## Full Text Search 알아보기
 
@@ -262,7 +263,7 @@ export class QuizSetReadService {
     - Full Text Search의 성능을 높이기 위해 실사용에 가까운 더 복잡한 데이터를 생성하여 테스트
 
 ```sql
-SET SESSION cte_max_recursion_depth = 1000000; -- 원하는 숫자로 설정
+SET SESSION cte_max_recursion_depth = 1000000;
 
 
 INSERT INTO quiz_set (title, createdAt, updatedAt, deletedAt, user_id, category)
