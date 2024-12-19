@@ -11,7 +11,10 @@ export class QuizChoiceModel extends BaseModel {
   isAnswer: boolean;
 
   @Column({ name: 'choice_content', type: 'text' })
-  @Index({ fulltext: true })
+  @Index({
+    fulltext: true,
+    parser: 'ngram'
+  })
   choiceContent: string;
 
   @Column({ name: 'choice_order', type: 'integer' })

@@ -23,7 +23,10 @@ export class QuizModel extends BaseModel {
   quizSetId: number;
 
   @Column('text')
-  @Index({ fulltext: true })
+  @Index({
+    fulltext: true,
+    parser: 'ngram'
+  })
   quiz: string;
 
   @Column({ name: 'limit_time' })
