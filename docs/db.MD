@@ -328,7 +328,7 @@ FROM cte, title_components;
 - like문 결과
   ![image](https://github.com/user-attachments/assets/a10c9d7a-7e96-46a2-90a9-fd0124d7b6a5)
 
-## Performance Comparison
+## 성능 비교
 
 실제 성능 테스트 결과: 약 50%의 성능개선
 
@@ -344,6 +344,7 @@ FROM cte, title_components;
 ## 요약
 
 - Full Text Search는 텍스트 검색 성능을 대폭 향상시킬 수 있는 강력한 도구
+- like문은 Full Table Scan을 유발할 수 있음
 - 하지만 항상 like 문보다 성능이 좋은것은 아님 (data가 간단한 경우)
 
 ## 레퍼런스
