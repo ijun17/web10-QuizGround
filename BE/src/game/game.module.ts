@@ -18,9 +18,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from '../auth/auth.module';
 import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventLoggerInterceptor';
 import { SystemMetricsService } from '../common/service/SystemMetricsService';
+import { MetricInterceptor } from '../metrics/metric.interceptor';
+import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
-  imports: [RedisModule, QuizSetModule, JwtModule, AuthModule],
+  imports: [RedisModule, QuizSetModule, JwtModule, AuthModule, MetricsModule],
   providers: [
     GameGateway,
     GameService,
@@ -36,7 +38,8 @@ import { SystemMetricsService } from '../common/service/SystemMetricsService';
     PlayerSubscriber,
     RoomCleanupSubscriber,
     SocketEventLoggerInterceptor,
-    SystemMetricsService
+    SystemMetricsService,
+    MetricInterceptor
   ],
   exports: [GameService]
 })

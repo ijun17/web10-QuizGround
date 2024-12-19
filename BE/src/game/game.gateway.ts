@@ -26,8 +26,10 @@ import { SetPlayerNameDto } from './dto/set-player-name.dto';
 import { KickRoomDto } from './dto/kick-room.dto';
 import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventLoggerInterceptor';
 import { ExceptionMessage } from '../common/constants/exception-message';
+import { MetricInterceptor } from '../metrics/metric.interceptor';
 
-@UseInterceptors(SocketEventLoggerInterceptor)
+// @UseInterceptors(SocketEventLoggerInterceptor)
+@UseInterceptors(MetricInterceptor)
 @UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
 @WebSocketGateway({
