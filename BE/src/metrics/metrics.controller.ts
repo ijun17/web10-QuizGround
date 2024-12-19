@@ -1,19 +1,19 @@
 import { Controller, Post } from '@nestjs/common';
-import { MetricStorageService } from './metric-storage.service';
+import { MetricStorageService, ResponseTimeMetric } from './metric-storage.service';
 
-@Controller('metrics')
+@Controller('/api/metrics')
 export class MetricsController {
   constructor(private metricStorage: MetricStorageService) {}
 
   @Post('start')
-  startMetrics() {
-    this.metricStorage.startCollecting();
+  async startMetrics() {
+    await this.metricStorage.startCollecting();
     return { success: true, message: 'Started collecting metrics' };
   }
 
   @Post('stop')
-  stopMetrics(): any {
-    const metrics = this.metricStorage.stopAndGetMetrics();
+  async stopMetrics(): Promise<any> {
+    const metrics = await this.metricStorage.stopAndGetMetrics();
     const eventTypes = [...new Set(metrics.map(m => m.eventType))];
     const allResponseTimes = metrics.map(m => m.responseTime).sort((a, b) => a - b);
 
@@ -59,17 +59,17 @@ export class MetricsController {
     return sortedValues[index];
   }
 
-  private calculateAverage(metrics: any[]) {
+  private calculateAverage(metrics: ResponseTimeMetric[]) {
     if (metrics.length === 0) return 0;
     return metrics.reduce((sum, m) => sum + m.responseTime, 0) / metrics.length;
   }
 
-  private calculateMax(metrics: any[]) {
+  private calculateMax(metrics: ResponseTimeMetric[]) {
     if (metrics.length === 0) return 0;
     return Math.max(...metrics.map(m => m.responseTime));
   }
 
-  private calculateMin(metrics: any[]) {
+  private calculateMin(metrics: ResponseTimeMetric[]) {
     if (metrics.length === 0) return 0;
     return Math.min(...metrics.map(m => m.responseTime));
   }
