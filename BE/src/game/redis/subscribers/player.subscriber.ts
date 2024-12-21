@@ -6,10 +6,16 @@ import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
+import { MetricService } from '../../../metric/metric.service';
+import { MetricInterceptor } from '../../../metric/metric.interceptor';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
-  constructor(@InjectRedis() redis: Redis) {
+  constructor(
+    @InjectRedis() redis: Redis,
+    private metricService: MetricService,
+    private metricInterceptor: MetricInterceptor
+  ) {
     super(redis);
   }
 
@@ -18,12 +24,22 @@ export class PlayerSubscriber extends RedisSubscriber {
     await subscriber.psubscribe('__keyspace@0__:Player:*');
 
     subscriber.on('pmessage', async (_pattern, channel, message) => {
+      const startedAt = process.hrtime();
+
       const playerId = this.extractPlayerId(channel);
       if (!playerId || message !== 'hset') {
         return;
       }
       const key = `Player:${playerId}`;
-      await this.handlePlayerChanges(key, playerId, server);
+      const { changes, playerData } = await this.handlePlayerChanges(key, playerId, server);
+
+      const endedAt = process.hrtime(startedAt);
+      const delta = endedAt[0] * 1e9 + endedAt[1];
+      const executionTime = delta / 1e6;
+
+      this.metricInterceptor.plusResponseCount(changes);
+      this.metricService.recordResponse(changes, 'success');
+      this.metricService.recordLatency(changes, 'response', executionTime);
     });
   }
 
@@ -36,6 +52,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     const changes = await this.redis.get(`${key}:Changes`);
     const playerKey = REDIS_KEY.PLAYER(playerId);
     const playerData = await this.redis.hgetall(playerKey);
+    const result = { changes, playerData };
 
     switch (changes) {
       case 'Join':
@@ -58,6 +75,8 @@ export class PlayerSubscriber extends RedisSubscriber {
         await this.handlePlayerKicked(playerId, playerData, server);
         break;
     }
+
+    return result;
   }
 
   private async handlePlayerJoin(playerId: string, playerData: any, server: Namespace) {

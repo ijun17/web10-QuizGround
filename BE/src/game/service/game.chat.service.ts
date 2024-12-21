@@ -8,6 +8,8 @@ import SocketEvents from '../../common/constants/socket-events';
 import { Namespace } from 'socket.io';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 import { SurvivalStatus } from '../../common/constants/game';
+import { MetricService } from '../../metric/metric.service';
+import { MetricInterceptor } from '../../metric/metric.interceptor';
 
 @TraceClass()
 @Injectable()
@@ -16,7 +18,9 @@ export class GameChatService {
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
-    private readonly gameValidator: GameValidator
+    private readonly gameValidator: GameValidator,
+    private metricService: MetricService,
+    private metricInterceptor: MetricInterceptor
   ) {}
 
   async chatMessage(chatMessage: ChatMessageDto, clientId: string) {
@@ -51,6 +55,8 @@ export class GameChatService {
     chatSubscriber.psubscribe('chat:*');
 
     chatSubscriber.on('pmessage', async (_pattern, channel, message) => {
+      const startedAt = process.hrtime();
+
       const gameId = channel.split(':')[1]; // ex. channel: chat:317172
       const chatMessage = JSON.parse(message);
 
@@ -60,26 +66,33 @@ export class GameChatService {
       // 생존한 사람이라면 전체 브로드캐스팅
       if (isAlivePlayer === SurvivalStatus.ALIVE) {
         server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
-        return;
+      } else {
+        // 죽은 사람의 채팅은 죽은 사람끼리만 볼 수 있도록 처리
+        const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+        await Promise.all(
+          players.map(async (playerId) => {
+            const socketId = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'socketId');
+            const socket = server.sockets.get(socketId);
+
+            if (!socket) {
+              return;
+            }
+
+            const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
+            if (isAlive === SurvivalStatus.DEAD) {
+              socket.emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+            }
+          })
+        );
       }
 
-      // 죽은 사람의 채팅은 죽은 사람끼리만 볼 수 있도록 처리
-      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-      await Promise.all(
-        players.map(async (playerId) => {
-          const socketId = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'socketId');
-          const socket = server.sockets.get(socketId);
+      const endedAt = process.hrtime(startedAt);
+      const delta = endedAt[0] * 1e9 + endedAt[1];
+      const executionTime = delta / 1e6;
 
-          if (!socket) {
-            return;
-          }
-
-          const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
-          if (isAlive === SurvivalStatus.DEAD) {
-            socket.emit(SocketEvents.CHAT_MESSAGE, chatMessage);
-          }
-        })
-      );
+      this.metricInterceptor.plusResponseCount('Chat');
+      this.metricService.recordResponse('Chat', 'success');
+      this.metricService.recordLatency('Chat', 'response', executionTime);
     });
   }
 }

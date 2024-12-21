@@ -24,11 +24,9 @@ import { parse, serialize } from 'cookie';
 import { v4 as uuidv4 } from 'uuid';
 import { SetPlayerNameDto } from './dto/set-player-name.dto';
 import { KickRoomDto } from './dto/kick-room.dto';
-import { SocketEventLoggerInterceptor } from '../common/interceptor/SocketEventLoggerInterceptor';
 import { ExceptionMessage } from '../common/constants/exception-message';
-import { MetricInterceptor } from '../metrics/metric.interceptor';
+import { MetricInterceptor } from '../metric/metric.interceptor';
 
-// @UseInterceptors(SocketEventLoggerInterceptor)
 @UseInterceptors(MetricInterceptor)
 @UseInterceptors(GameActivityInterceptor)
 @UseFilters(new WsExceptionFilter())
@@ -54,39 +52,6 @@ export class GameGateway {
     private readonly gameChatService: GameChatService,
     private readonly gameRoomService: GameRoomService
   ) {}
-
-  @SubscribeMessage('slowEvent')
-  async handleSlowEvent(@ConnectedSocket() client: Socket): Promise<void> {
-    // 의도적으로 지연 발생시키는 테스트 코드
-    await this.gameService.longBusinessLogic();
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    // 실제 로직
-    // ...
-  }
-
-  // @SubscribeMessage(SocketEvents.CREATE_ROOM)
-  // @UsePipes(new GameValidationPipe(SocketEvents.CREATE_ROOM))
-  // async handleCreateRoom(
-  //   @MessageBody() gameConfig: CreateGameDto,
-  //   @ConnectedSocket() client: Socket
-  // ): Promise<void> {
-  //   const roomId = await this.gameRoomService.createRoom(gameConfig, client.data.playerId);
-  //   client.emit(SocketEvents.CREATE_ROOM, { gameId: roomId });
-  // }
-
-  // @SubscribeMessage(SocketEvents.JOIN_ROOM)
-  // @UsePipes(new GameValidationPipe(SocketEvents.JOIN_ROOM))
-  // @UseGuards(WsJwtAuthGuard)
-  // async handleJoinRoom(
-  //   @MessageBody() dto: JoinRoomDto,
-  //   @ConnectedSocket() client: Socket
-  // ): Promise<void> {
-  //   if (client.data.user) {
-  //     dto.playerName = client.data.user.nickname;
-  //   }
-  //   const players = await this.gameRoomService.joinRoom(client, dto, client.data.playerId);
-  //   client.emit(SocketEvents.JOIN_ROOM, { players });
-  // }
 
   @SubscribeMessage(SocketEvents.UPDATE_POSITION)
   @UsePipes(new GameValidationPipe(SocketEvents.UPDATE_POSITION))

@@ -20,7 +20,7 @@ import { AuthModule } from './auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { GameRedisMemoryService } from './game/redis/game-redis-memory.service';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { MetricsModule } from './metrics/metrics.module';
+import { MetricModule } from './metric/metric.module';
 
 @Module({
   imports: [
@@ -57,7 +57,7 @@ import { MetricsModule } from './metrics/metrics.module';
     WaitingRoomModule,
     TimeModule,
     AuthModule,
-    MetricsModule
+    MetricModule
   ],
   controllers: [AppController, TimeController],
   providers: [
