@@ -9,7 +9,6 @@ import { Namespace } from 'socket.io';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 import { SurvivalStatus } from '../../common/constants/game';
 import { MetricService } from '../../metric/metric.service';
-import { MetricInterceptor } from '../../metric/metric.interceptor';
 
 @TraceClass()
 @Injectable()
@@ -20,7 +19,6 @@ export class GameChatService {
     @InjectRedis() private readonly redis: Redis,
     private readonly gameValidator: GameValidator,
     private metricService: MetricService,
-    private metricInterceptor: MetricInterceptor
   ) {}
 
   async chatMessage(chatMessage: ChatMessageDto, clientId: string) {
@@ -90,7 +88,6 @@ export class GameChatService {
       const delta = endedAt[0] * 1e9 + endedAt[1];
       const executionTime = delta / 1e6;
 
-      this.metricInterceptor.plusResponseCount('Chat');
       this.metricService.recordResponse('Chat', 'success');
       this.metricService.recordLatency('Chat', 'response', executionTime);
     });

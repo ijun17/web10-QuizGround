@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import * as promClient from 'prom-client';
 import { MetricSnapshot, SystemMetricSnapshot } from './interfaces/metric.interface';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
 
 @Injectable()
 export class MetricService {
-  private isCollecting = false;
-  private collectedMetrics: MetricSnapshot[] = [];
-
-  private systemMetricSnapshots: SystemMetricSnapshot[] = [];
-  private startSystemMetrics: SystemMetricSnapshot | null = null;
+  private readonly REDIS_KEYS = {
+    IS_COLLECTING: 'metrics:isCollecting',
+    COLLECTED_METRICS: 'metrics:collected',
+    SYSTEM_SNAPSHOTS: 'metrics:system:snapshots',
+    START_SYSTEM_METRICS: 'metrics:system:start',
+  };
 
   private readonly requestCounter: promClient.Counter;
   private readonly responseCounter: promClient.Counter;
@@ -20,7 +23,7 @@ export class MetricService {
     network: promClient.Gauge;
   };
 
-  constructor() {
+  constructor(@InjectRedis() private readonly redis: Redis) {
     this.requestCounter = new promClient.Counter({
       name: 'socket_requests_total',
       help: 'Total number of socket requests',
@@ -64,17 +67,17 @@ export class MetricService {
     this.startCollectingSystemMetrics();
   }
 
-  private startCollectingSystemMetrics() {
+  private async startCollectingSystemMetrics() {
     setInterval(async () => {
       const metrics = await this.getSystemMetrics();
 
-      // 기존 게이지 업데이트
       this.systemMetrics.cpu.set(metrics.cpu);
       this.systemMetrics.memory.set(metrics.memory);
 
-      // 수집 중일 때만 스냅샷 저장
-      if (this.isCollecting) {
-        this.systemMetricSnapshots.push(metrics);
+      const isCollecting = await this.isCurrentlyCollecting();
+      if (isCollecting) {
+        const snapshots = JSON.stringify(metrics);
+        await this.redis.rpush(this.REDIS_KEYS.SYSTEM_SNAPSHOTS, snapshots);
       }
     }, 1000);
   }
@@ -91,25 +94,47 @@ export class MetricService {
   }
 
   async startCollecting(): Promise<void> {
-    this.isCollecting = true;
-    this.collectedMetrics = [];
-    this.systemMetricSnapshots = [];
-    this.startSystemMetrics = await this.getSystemMetrics();
+    await this.redis.set(this.REDIS_KEYS.IS_COLLECTING, '1');
+    await this.redis.del(this.REDIS_KEYS.COLLECTED_METRICS);
+    await this.redis.del(this.REDIS_KEYS.SYSTEM_SNAPSHOTS);
+
+    const startMetrics = await this.getSystemMetrics();
+    await this.redis.set(
+      this.REDIS_KEYS.START_SYSTEM_METRICS,
+      JSON.stringify(startMetrics)
+    );
   }
 
   async stopCollecting(): Promise<any> {
-    this.isCollecting = false;
-    const applicationStats = this.calculateStats();
-    const systemStats = this.calculateSystemStats();
+    await this.redis.set(this.REDIS_KEYS.IS_COLLECTING, '0');
+
+    const collectedMetricsStr = await this.redis.lrange(this.REDIS_KEYS.COLLECTED_METRICS, 0, -1);
+    const collectedMetrics = collectedMetricsStr.map(str => JSON.parse(str));
+
+    const systemSnapshotsStr = await this.redis.lrange(this.REDIS_KEYS.SYSTEM_SNAPSHOTS, 0, -1);
+    const systemSnapshots = systemSnapshotsStr.map(str => JSON.parse(str));
+
+    const startSystemMetricsStr = await this.redis.get(this.REDIS_KEYS.START_SYSTEM_METRICS);
+    const startSystemMetrics = startSystemMetricsStr ? JSON.parse(startSystemMetricsStr) : null;
+
+    const applicationStats = this.calculateStats(collectedMetrics);
+    const systemStats = this.calculateSystemStats(startSystemMetrics, systemSnapshots);
+    const requestThroughput = this.calculateThroughput(collectedMetrics, 'request');
+    const responseThroughput = this.calculateThroughput(collectedMetrics, 'response');
 
     return {
       application: applicationStats,
-      system: systemStats
+      system: systemStats,
+      throughput: {
+        request: requestThroughput,
+        response: responseThroughput
+      }
     };
   }
 
   async isCurrentlyCollecting(): Promise<boolean> {
-    return this.isCollecting;
+    const status = await this.redis.get(this.REDIS_KEYS.IS_COLLECTING);
+    return status === '1';
   }
 
   recordRequest(event: string, status: 'success' | 'failure') {
@@ -120,27 +145,28 @@ export class MetricService {
     this.responseCounter.labels(event, status).inc();
   }
 
-  recordLatency(event: string, operation: 'request' | 'response', duration: number) {
+  async recordLatency(event: string, operation: 'request' | 'response', duration: number) {
     this.latencyHistogram.labels(event, operation).observe(duration / 1000);
 
-    if (this.isCollecting) {
-      this.collectedMetrics.push({
+    const isCollecting = await this.isCurrentlyCollecting();
+    if (isCollecting) {
+      const metric: MetricSnapshot = {
         eventType: event,
-        operation: operation,
+        operation,
         executionTime: duration,
         timestamp: Date.now()
-      });
+      };
+      await this.redis.rpush(
+        this.REDIS_KEYS.COLLECTED_METRICS,
+        JSON.stringify(metric)
+      );
     }
   }
 
-  updateThroughput(operation: 'request' | 'response', count: number) {
-    this.throughputGauge.labels(operation).set(count);
-  }
-
-  private calculateStats() {
+  private calculateStats(collectedMetrics: MetricSnapshot[]) {
     const operationMetrics = {
-      request: this.collectedMetrics.filter(m => m.operation === 'request'),
-      response: this.collectedMetrics.filter(m => m.operation === 'response')
+      request: collectedMetrics.filter(m => m.operation === 'request'),
+      response: collectedMetrics.filter(m => m.operation === 'response')
     };
 
     const result = {};
@@ -186,24 +212,24 @@ export class MetricService {
     return result;
   }
 
-  private calculateSystemStats() {
-    if (!this.startSystemMetrics || this.systemMetricSnapshots.length === 0) {
+  private calculateSystemStats(startSystemMetrics: SystemMetricSnapshot, systemSnapshots: SystemMetricSnapshot[]) {
+    if (!startSystemMetrics || systemSnapshots.length === 0) {
       return null;
     }
 
-    const endMetrics = this.systemMetricSnapshots[this.systemMetricSnapshots.length - 1];
+    const endMetrics = systemSnapshots[systemSnapshots.length - 1];
 
-    const cpuValues = this.systemMetricSnapshots.map(m => m.cpu);
-    const memoryValues = this.systemMetricSnapshots.map(m => m.memory);
+    const cpuValues = systemSnapshots.map(m => m.cpu);
+    const memoryValues = systemSnapshots.map(m => m.memory);
 
     return {
       duration: {
-        start: new Date(this.startSystemMetrics.timestamp).toLocaleString('ko-KR'),
+        start: new Date(startSystemMetrics.timestamp).toLocaleString('ko-KR'),
         end: new Date(endMetrics.timestamp).toLocaleString('ko-KR'),
-        seconds: `${(endMetrics.timestamp - this.startSystemMetrics.timestamp) / 1000}s`
+        seconds: `${(endMetrics.timestamp - startSystemMetrics.timestamp) / 1000}s`
       },
       // cpu: {
-      //   start: this.startSystemMetrics.cpu,
+      //   start: startSystemMetrics.cpu,
       //   end: endMetrics.cpu,
       //   min: Math.min(...cpuValues),
       //   max: Math.max(...cpuValues),
@@ -211,13 +237,44 @@ export class MetricService {
       //   p95: this.calculatePercentile(cpuValues.sort((a, b) => a - b), 95)
       // },
       // memory: {
-      //   start: this.startSystemMetrics.memory,
+      //   start: startSystemMetrics.memory,
       //   end: endMetrics.memory,
       //   min: Math.min(...memoryValues),
       //   max: Math.max(...memoryValues),
       //   mean: this.calculateAverage(memoryValues),
       //   p95: this.calculatePercentile(memoryValues.sort((a, b) => a - b), 95)
       // }
+    };
+  }
+
+  private calculateThroughput(collectedMetrics: MetricSnapshot[], operation: 'request' | 'response') {
+    const metrics = collectedMetrics.filter(m => m.operation === operation);
+
+    if (metrics.length === 0) {
+      return {
+        avgThroughput: 0,
+        peakThroughput: 0,
+        durationSeconds: 0
+      };
+    }
+
+    const startTime = Math.min(...metrics.map(m => m.timestamp));
+    const endTime = Math.max(...metrics.map(m => m.timestamp));
+    const durationSeconds = Math.max((endTime - startTime) / 1000, 1);
+
+    const timeWindows = new Map<number, number>();
+    metrics.forEach(metric => {
+      const windowKey = Math.floor((metric.timestamp - startTime) / 1000);
+      timeWindows.set(windowKey, (timeWindows.get(windowKey) || 0) + 1);
+    });
+
+    const avgThroughput = metrics.length / durationSeconds;
+    const peakThroughput = timeWindows.size > 0 ? Math.max(...timeWindows.values()) : 0;
+
+    return {
+      avgThroughput: Number(avgThroughput.toFixed(2)),
+      peakThroughput,
+      durationSeconds: Number(durationSeconds.toFixed(2))
     };
   }
 

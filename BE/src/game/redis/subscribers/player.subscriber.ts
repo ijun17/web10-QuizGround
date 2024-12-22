@@ -7,14 +7,12 @@ import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
 import { MetricService } from '../../../metric/metric.service';
-import { MetricInterceptor } from '../../../metric/metric.interceptor';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
   constructor(
     @InjectRedis() redis: Redis,
     private metricService: MetricService,
-    private metricInterceptor: MetricInterceptor
   ) {
     super(redis);
   }
@@ -37,7 +35,6 @@ export class PlayerSubscriber extends RedisSubscriber {
       const delta = endedAt[0] * 1e9 + endedAt[1];
       const executionTime = delta / 1e6;
 
-      this.metricInterceptor.plusResponseCount(changes);
       this.metricService.recordResponse(changes, 'success');
       this.metricService.recordLatency(changes, 'response', executionTime);
     });
