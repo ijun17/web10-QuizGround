@@ -9,6 +9,9 @@ import { SurvivalStatus } from '../../../common/constants/game';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
+  private positionUpdates: Map<string, any> = new Map(); // Map<gameId, {playerId, playerPosition}[]>
+  private positionUpdatesForDead: Map<string, any> = new Map(); // Map<gameId, {playerId, playerPosition}[]>
+
   constructor(@InjectRedis() redis: Redis) {
     super(redis);
   }
@@ -25,6 +28,15 @@ export class PlayerSubscriber extends RedisSubscriber {
       const key = `Player:${playerId}`;
       await this.handlePlayerChanges(key, playerId, server);
     });
+
+    setInterval(() => {
+      this.positionUpdates.forEach((queue, gameId) => {
+        if (queue.length > 0) {
+          const batch = queue.splice(0, queue.length); //O(N)
+          server.to(gameId).emit(SocketEvents.UPDATE_POSITION, batch);
+        }
+      });
+    }, 100);
   }
 
   private extractPlayerId(channel: string): string | null {
@@ -86,7 +98,13 @@ export class PlayerSubscriber extends RedisSubscriber {
     const isAlivePlayer = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
 
     if (isAlivePlayer === SurvivalStatus.ALIVE) {
-      server.to(gameId).emit(SocketEvents.UPDATE_POSITION, updateData);
+      // 1. Map에 배열을 만들고 set
+      if (!this.positionUpdates.has(gameId)) {
+        this.positionUpdates.set(gameId, []); // 빈 배열로 초기화
+      }
+      this.positionUpdates.get(gameId).push(updateData);
+
+      // server.to(gameId).emit(SocketEvents.UPDATE_POSITION, updateData);
     } else if (isAlivePlayer === SurvivalStatus.DEAD) {
       const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
       const pipeline = this.redis.pipeline();
