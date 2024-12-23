@@ -50,7 +50,7 @@ const AnswerModal: React.FC<AnswerModalProps> = ({ isOpen }) => {
     }
   }, [isOpen]);
 
-  if (!isOpen || !isAlive || countdown <= 0) return null;
+  if (!isOpen || countdown <= 0) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 z-50 pointer-events-none">
       {isAnswer && (
@@ -66,7 +66,9 @@ const AnswerModal: React.FC<AnswerModalProps> = ({ isOpen }) => {
       )}
 
       <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-4 p-8 text-6xl animate-popup">
-        {isAnswer ? (
+        {!isAlive ? (
+          <p className="text-green-500 [text-shadow:_0_0_4px_white]">정답 발표</p>
+        ) : isAnswer ? (
           <p className="text-green-500 [text-shadow:_0_0_4px_white]">정답입니다</p>
         ) : (
           <p className="text-red-500 [text-shadow:_0_0_4px_black]">틀렸습니다</p>
