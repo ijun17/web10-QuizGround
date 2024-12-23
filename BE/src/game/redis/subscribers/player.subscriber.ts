@@ -6,13 +6,28 @@ import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
+import { MetricService } from '../../../metric/metric.service';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
   private positionUpdates: Map<string, any> = new Map(); // Map<gameId, {playerId, playerPosition}[]>
   private positionUpdatesForDead: Map<string, any> = new Map(); // Map<gameId, {playerId, playerPosition}[]>
+  private positionUpdatesMetrics: Map<string, any> = new Map(); // Map<gameId, {startedAt}[]>
 
-  constructor(@InjectRedis() redis: Redis) {
+  // 메트릭 코드
+  // const startedAt = process.hrtime();
+  //
+  // const endedAt = process.hrtime(startedAt);
+  // const delta = endedAt[0] * 1e9 + endedAt[1];
+  // const executionTime = delta / 1e6;
+  //
+  // this.metricService.recordResponse(changes, 'success'); <- 이 친구는 현재 사용 x
+  // this.metricService.recordLatency(changes, 'response', executionTime);
+
+  constructor(
+    @InjectRedis() redis: Redis,
+    private metricService: MetricService
+  ) {
     super(redis);
   }
 
@@ -21,19 +36,43 @@ export class PlayerSubscriber extends RedisSubscriber {
     await subscriber.psubscribe('__keyspace@0__:Player:*');
 
     subscriber.on('pmessage', async (_pattern, channel, message) => {
+      const startedAt = process.hrtime();
+
       const playerId = this.extractPlayerId(channel);
       if (!playerId || message !== 'hset') {
         return;
       }
-      const key = `Player:${playerId}`;
-      await this.handlePlayerChanges(key, playerId, server);
+      const playerKey = REDIS_KEY.PLAYER(playerId);
+      const gameId = await this.redis.hget(playerKey, 'gameId');
+      const changes = await this.redis.get(`${playerKey}:Changes`);
+
+      if (!this.positionUpdatesMetrics.has(gameId)) {
+        this.positionUpdatesMetrics.set(gameId, []); // 빈 배열로 초기화
+      }
+      this.positionUpdatesMetrics.get(gameId).push(startedAt);
+
+      await this.handlePlayerChanges(changes, playerId, server);
     });
 
     setInterval(() => {
+      // 배치 처리
       this.positionUpdates.forEach((queue, gameId) => {
         if (queue.length > 0) {
           const batch = queue.splice(0, queue.length); //O(N)
           server.to(gameId).emit(SocketEvents.UPDATE_POSITION, batch);
+        }
+      });
+
+      // 배치 처리에 관한 메트릭 측정
+      this.positionUpdatesMetrics.forEach((metrics) => {
+        if (metrics.length > 0) {
+          const batch = metrics.splice(0, metrics.length);
+          batch.forEach((startedAt) => {
+            const endedAt = process.hrtime(startedAt);
+            const delta = endedAt[0] * 1e9 + endedAt[1];
+            const executionTime = delta / 1e6;
+            this.metricService.recordLatency('Position', 'response', executionTime);
+          });
         }
       });
     }, 100);
@@ -44,8 +83,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     return splitKey.length === 2 ? splitKey[1] : null;
   }
 
-  private async handlePlayerChanges(key: string, playerId: string, server: Namespace) {
-    const changes = await this.redis.get(`${key}:Changes`);
+  private async handlePlayerChanges(changes: string, playerId: string, server: Namespace) {
     const playerKey = REDIS_KEY.PLAYER(playerId);
     const playerData = await this.redis.hgetall(playerKey);
 
