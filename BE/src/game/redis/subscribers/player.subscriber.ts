@@ -14,16 +14,6 @@ export class PlayerSubscriber extends RedisSubscriber {
   private positionUpdatesForDead: Map<string, any> = new Map(); // Map<gameId, {playerId, playerPosition}[]>
   private positionUpdatesMetrics: Map<string, any> = new Map(); // Map<gameId, {startedAt}[]>
 
-  // 메트릭 코드
-  // const startedAt = process.hrtime();
-  //
-  // const endedAt = process.hrtime(startedAt);
-  // const delta = endedAt[0] * 1e9 + endedAt[1];
-  // const executionTime = delta / 1e6;
-  //
-  // this.metricService.recordResponse(changes, 'success'); <- 이 친구는 현재 사용 x
-  // this.metricService.recordLatency(changes, 'response', executionTime);
-
   constructor(
     @InjectRedis() redis: Redis,
     private metricService: MetricService
