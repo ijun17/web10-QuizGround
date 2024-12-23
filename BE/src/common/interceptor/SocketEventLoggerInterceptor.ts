@@ -61,7 +61,7 @@ export class SocketEventLoggerInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const startTime = Date.now();
+    const startedAt = process.hrtime();
     const ctx = context.switchToWs();
     const client: Socket = ctx.getClient();
     const event = ctx.getData();
@@ -76,48 +76,53 @@ export class SocketEventLoggerInterceptor implements NestInterceptor {
         try {
           traceContext.addLog(`[${className}.${methodName}] Started`);
           const result = await firstValueFrom(next.handle());
-          const executionTime = Date.now() - startTime;
+          const endedAt = process.hrtime(startedAt);
+          const delta = endedAt[0] * 1e9 + endedAt[1];
+          const executionTime = delta / 1e6;
+
           const logs = traceContext.getLogs();
 
           // 시스템 메트릭 수집
           const metrics = await this.systemMetricsService.getMetrics();
 
-          if (executionTime >= this.EXECUTION_TIME_THRESHOLD) {
-            this.logger.warn(
-              '\n=============================\n' +
-                '🐢 Slow Socket Event Detected!\n' +
-                logs.join('\n') +
-                `\nTotal Execution Time: ${executionTime}ms\n` +
-                '\nSystem Metrics:\n' +
-                `CPU Usage: ${metrics.cpu.toFixed(2)}%\n` +
-                '\nMemory Usage:\n' +
-                `System Total: ${metrics.memory.system.total}GB\n` +
-                `System Used: ${metrics.memory.system.used}GB (${metrics.memory.system.usagePercentage}%)\n` +
-                `System Free: ${metrics.memory.system.free}GB\n` +
-                `Process Heap: ${metrics.memory.process.heapUsed}MB / ${metrics.memory.process.heapTotal}MB\n` +
-                `Process RSS: ${metrics.memory.process.rss}MB\n` +
-                '\nMySQL Connections:\n' +
-                `Total: ${metrics.mysql.total}, ` +
-                `Active: ${metrics.mysql.active}, ` +
-                `Idle: ${metrics.mysql.idle}, ` +
-                `Waiting: ${metrics.mysql.waiting}\n` +
-                '\nRedis Connections:\n' +
-                `Connected Clients: ${metrics.redis.connectedClients}, ` +
-                `Used Memory: ${metrics.redis.usedMemoryMB}MB\n` +
-                // `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
-                // `현재 처리중인 명령어 수 : ${metrics.redis.cmdstat}\n` +
-                '============================='
-            );
-          } else {
-            this.logger.log(
-              '\n=============================\n' +
-                '🚀 Socket Event Processed\n' +
-                logs.join('\n') +
-                `\nTotal Execution Time: ${executionTime}ms\n` +
-                '============================='
-              // 정상 처리시에는 간단한 로그만
-            );
-          }
+          this.logger.log(`${methodName} - ${executionTime}ms`);
+
+          // if (executionTime >= this.EXECUTION_TIME_THRESHOLD) {
+          //   this.logger.warn(
+          //     '\n=============================\n' +
+          //       '🐢 Slow Socket Event Detected!\n' +
+          //       logs.join('\n') +
+          //       `\nTotal Execution Time: ${executionTime}ms\n` +
+          //       '\nSystem Metrics:\n' +
+          //       `CPU Usage: ${metrics.cpu.toFixed(2)}%\n` +
+          //       '\nMemory Usage:\n' +
+          //       `System Total: ${metrics.memory.system.total}GB\n` +
+          //       `System Used: ${metrics.memory.system.used}GB (${metrics.memory.system.usagePercentage}%)\n` +
+          //       `System Free: ${metrics.memory.system.free}GB\n` +
+          //       `Process Heap: ${metrics.memory.process.heapUsed}MB / ${metrics.memory.process.heapTotal}MB\n` +
+          //       `Process RSS: ${metrics.memory.process.rss}MB\n` +
+          //       '\nMySQL Connections:\n' +
+          //       `Total: ${metrics.mysql.total}, ` +
+          //       `Active: ${metrics.mysql.active}, ` +
+          //       `Idle: ${metrics.mysql.idle}, ` +
+          //       `Waiting: ${metrics.mysql.waiting}\n` +
+          //       '\nRedis Connections:\n' +
+          //       `Connected Clients: ${metrics.redis.connectedClients}, ` +
+          //       `Used Memory: ${metrics.redis.usedMemoryMB}MB\n` +
+          //       // `클라이언트 큐 길이: ${metrics.redis.queueLength}\n` +
+          //       // `현재 처리중인 명령어 수 : ${metrics.redis.cmdstat}\n` +
+          //       '============================='
+          //   );
+          // } else {
+          //   this.logger.log(
+          //     '\n=============================\n' +
+          //       '🚀 Socket Event Processed\n' +
+          //       logs.join('\n') +
+          //       `\nTotal Execution Time: ${executionTime}ms\n` +
+          //       '============================='
+          //     // 정상 처리시에는 간단한 로그만
+          //   );
+          // }
 
           subscriber.next(result);
           subscriber.complete();
@@ -203,10 +208,6 @@ export function Trace() {
 
 /**
  * @function TraceClass
- * @description 클래스의 모든 메서드에 추적을 적용하는 데코레이터
- */
-/**
- * @class TraceClass
  * @description 클래스의 모든 메서드에 추적을 적용하는 데코레이터
  */
 export function TraceClass(

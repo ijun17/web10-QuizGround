@@ -76,6 +76,7 @@ export class PlayerSubscriber extends RedisSubscriber {
   private async handlePlayerChanges(changes: string, playerId: string, server: Namespace) {
     const playerKey = REDIS_KEY.PLAYER(playerId);
     const playerData = await this.redis.hgetall(playerKey);
+    const result = { changes, playerData };
 
     switch (changes) {
       case 'Join':
@@ -98,6 +99,8 @@ export class PlayerSubscriber extends RedisSubscriber {
         await this.handlePlayerKicked(playerId, playerData, server);
         break;
     }
+
+    return result;
   }
 
   private async handlePlayerJoin(playerId: string, playerData: any, server: Namespace) {
