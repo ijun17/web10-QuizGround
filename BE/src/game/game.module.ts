@@ -36,7 +36,7 @@ import { SystemMetricsService } from '../common/service/SystemMetricsService';
     PlayerSubscriber,
     RoomCleanupSubscriber,
     SocketEventLoggerInterceptor,
-    SystemMetricsService
+    SystemMetricsService,
   ],
   exports: [GameService]
 })
