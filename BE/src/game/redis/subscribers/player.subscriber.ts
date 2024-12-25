@@ -9,19 +9,6 @@ import { SurvivalStatus } from '../../../common/constants/game';
 import { createBatchProcessor } from '../../service/BatchProcessor';
 import { MetricService } from '../../../metric/metric.service';
 
-// Position update interface
-interface PositionUpdate {
-  playerId: string;
-  playerPosition: [number, number];
-}
-
-// Chat message interface
-interface ChatMessage {
-  playerId: string;
-  message: string;
-  timestamp: Date;
-}
-
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
   private positionProcessor: ReturnType<typeof createBatchProcessor>;
