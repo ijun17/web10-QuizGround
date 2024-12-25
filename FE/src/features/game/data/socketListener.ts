@@ -10,11 +10,11 @@ import { getEmojiByUUID } from '../utils/emoji';
 
 // chat
 socketService.on('chatMessage', (data) => {
-  if(Array.isArray(data)){
-    data.forEach((e)=>{
+  if (Array.isArray(data)) {
+    data.forEach((e) => {
       useChatStore.getState().addMessage(e);
-    })
-  }else{
+    });
+  } else {
     useChatStore.getState().addMessage(data);
   }
 });
@@ -40,11 +40,11 @@ socketService.on('joinRoom', (data) => {
 });
 
 socketService.on('updatePosition', (data) => {
-  if(Array.isArray(data)){
-    data.forEach((e)=>{
+  if (Array.isArray(data)) {
+    data.forEach((e) => {
       usePlayerStore.getState().updatePlayerPosition(e.playerId, e.playerPosition);
-    })
-  }else{
+    });
+  } else {
     usePlayerStore.getState().updatePlayerPosition(data.playerId, data.playerPosition);
   }
 });
