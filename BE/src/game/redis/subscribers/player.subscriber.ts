@@ -40,10 +40,12 @@ export class PlayerSubscriber extends RedisSubscriber {
       const gameId = await this.redis.hget(playerKey, 'gameId');
       const changes = await this.redis.get(`${playerKey}:Changes`);
 
-      if (!this.positionUpdatesMetrics.has(gameId)) {
-        this.positionUpdatesMetrics.set(gameId, []); // 빈 배열로 초기화
+      if (changes === 'Position') {
+        if (!this.positionUpdatesMetrics.has(gameId)) {
+          this.positionUpdatesMetrics.set(gameId, []); // 빈 배열로 초기화
+        }
+        this.positionUpdatesMetrics.get(gameId).push(startedAt);
       }
-      this.positionUpdatesMetrics.get(gameId).push(startedAt);
 
       await this.handlePlayerChanges(changes, playerId, server);
     });
