@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useRoomStore } from '@/features/game/data/store/useRoomStore';
 import React, { useState } from 'react';
 import { QuizSettingModal } from './QuizSettingModal';
-import { socketService } from '@/api/socket';
+import { socketService, useSocketEvent, useSocketException } from '@/api/socket';
 import { usePlayerStore } from '@/features/game/data/store/usePlayerStore';
 import { useQuizStore } from '@/features/game/data/store/useQuizStore';
 import CustomButton from '@/components/CustomButton';
@@ -17,14 +17,20 @@ export const GameHeader = React.memo(
     const gameTitle = useRoomStore((state) => state.title);
     const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
     const { quizSetTitle, quizSetCategory } = useQuizStore();
+    const [gameLoading, setGameLoading] = useState(false);
     const pinNum = String(gameId);
     const linkURL = window.location.hostname + `/game/${gameId}`;
     const gameMode = useRoomStore((state) => state.gameMode);
+    const navigate = useNavigate();
 
     const handleStartGame = () => {
+      if (gameLoading) return;
+      setGameLoading(true);
       if (gameId) socketService.emit('startGame', { gameId });
     };
-    const navigate = useNavigate();
+
+    useSocketEvent('startGame', () => setGameLoading(false));
+    useSocketException('startGame', () => setGameLoading(false));
 
     return (
       <div className="component-default h-full flex justify-center">
