@@ -39,14 +39,14 @@ export function createBatchProcessor(
   /**
    * Processes and emits all batched data
    */
-  const processBatch = () => {
+  const processBatch = async () => {
     if (isProcessing) {
       return;
     }
 
     isProcessing = true;
     try {
-      batchMap.forEach(async (queue, gameId) => {
+      const processingTasks = Array.from(batchMap.entries()).map(async ([gameId, queue]) => {
         if (queue.length > 0) {
           const batch = queue.splice(0, queue.length);
 
@@ -77,9 +77,13 @@ export function createBatchProcessor(
                 socket.emit(eventName, batch);
               });
           }
+
           logger.debug(`Processed ${batch.length} items for game ${gameId}`);
         }
       });
+
+      // 모든 작업이 완료될 때까지 대기
+      await Promise.all(processingTasks);
     } catch (error) {
       logger.error(`Error processing batch: ${error.message}`);
     } finally {
