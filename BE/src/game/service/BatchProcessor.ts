@@ -3,18 +3,26 @@
  */
 import { Namespace } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import Redis from 'ioredis';
+import { REDIS_KEY } from '../../common/constants/redis-key.constant';
+import { SurvivalStatus } from '../../common/constants/game';
 
-interface BatchData {
-  gameId: string;
-  data: any;
+export enum BatchProcessorType {
+  'DEFAULT',
+  'ONLY_DEAD'
 }
 
 /**
  * Creates a batch processor instance
  */
-export function createBatchProcessor(server: Namespace, eventName: string) {
+export function createBatchProcessor(
+  server: Namespace,
+  eventName: string,
+  type: BatchProcessorType,
+  redis: Redis
+) {
   const logger = new Logger(`BatchProcessor:${eventName}`);
-  // 이 변수들은 클로저에 의해 보호됨
+
   const batchMap = new Map<string, any[]>();
   let isProcessing = false;
 
@@ -38,10 +46,37 @@ export function createBatchProcessor(server: Namespace, eventName: string) {
 
     isProcessing = true;
     try {
-      batchMap.forEach((queue, gameId) => {
+      batchMap.forEach(async (queue, gameId) => {
         if (queue.length > 0) {
           const batch = queue.splice(0, queue.length);
-          server.to(gameId).emit(eventName, batch);
+
+          if (type === BatchProcessorType.DEFAULT) {
+            server.to(gameId).emit(eventName, batch);
+          } else if (type === BatchProcessorType.ONLY_DEAD) {
+            const players = await redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+            const pipeline = redis.pipeline();
+            players.forEach((id) => {
+              pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
+            });
+
+            type Result = [Error | null, [string, string] | null];
+            const results = await pipeline.exec();
+
+            (results as Result[])
+              .map(([err, data], index) => ({
+                id: players[index],
+                isAlive: err ? null : data?.[0],
+                socketId: err ? null : data?.[1]
+              }))
+              .filter((player) => player.isAlive === SurvivalStatus.DEAD)
+              .forEach((player) => {
+                const socket = server.sockets.get(player.socketId);
+                if (!socket) {
+                  return;
+                }
+                socket.emit(eventName, batch);
+              });
+          }
           logger.debug(`Processed ${batch.length} items for game ${gameId}`);
         }
       });

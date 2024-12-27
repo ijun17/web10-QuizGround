@@ -6,12 +6,13 @@ import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
-import { createBatchProcessor } from '../../service/BatchProcessor';
+import { BatchProcessorType, createBatchProcessor } from '../../service/BatchProcessor';
 import { MetricService } from '../../../metric/metric.service';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
   private positionProcessor: ReturnType<typeof createBatchProcessor>;
+  private positionProcessorDead: ReturnType<typeof createBatchProcessor>;
   private positionUpdatesMetrics: Map<string, any> = new Map(); // Map<gameId, {startedAt}[]>
 
   constructor(
@@ -23,8 +24,21 @@ export class PlayerSubscriber extends RedisSubscriber {
 
   async subscribe(server: Namespace): Promise<void> {
     // Create batch processor for position updates
-    this.positionProcessor = createBatchProcessor(server, SocketEvents.UPDATE_POSITION);
+    this.positionProcessor = createBatchProcessor(
+      server,
+      SocketEvents.UPDATE_POSITION,
+      BatchProcessorType.DEFAULT,
+      this.redis
+    );
     this.positionProcessor.startProcessing(100); // Start processing every 100ms
+
+    this.positionProcessorDead = createBatchProcessor(
+      server,
+      SocketEvents.UPDATE_POSITION,
+      BatchProcessorType.ONLY_DEAD,
+      this.redis
+    );
+    this.positionProcessorDead.startProcessing(100);
 
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe('__keyspace@0__:Player:*');
@@ -81,7 +95,7 @@ export class PlayerSubscriber extends RedisSubscriber {
         break;
 
       case 'Position':
-        await this.handlePlayerPosition(playerId, playerData, server);
+        await this.handlePlayerPosition(playerId, playerData);
         break;
 
       case 'Disconnect':
@@ -118,7 +132,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     this.logger.verbose(`Player joined: ${playerId} to game: ${playerData.gameId}`);
   }
 
-  private async handlePlayerPosition(playerId: string, playerData: any, server: Namespace) {
+  private async handlePlayerPosition(playerId: string, playerData: any) {
     const { gameId, positionX, positionY } = playerData;
     const playerPosition = [parseFloat(positionX), parseFloat(positionY)];
     const updateData = { playerId, playerPosition };
@@ -128,30 +142,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     if (isAlivePlayer === SurvivalStatus.ALIVE) {
       this.positionProcessor.pushData(gameId, updateData);
     } else if (isAlivePlayer === SurvivalStatus.DEAD) {
-      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-      const pipeline = this.redis.pipeline();
-
-      players.forEach((id) => {
-        pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
-      });
-
-      type Result = [Error | null, [string, string] | null];
-      const results = await pipeline.exec();
-
-      (results as Result[])
-        .map(([err, data], index) => ({
-          id: players[index],
-          isAlive: err ? null : data?.[0],
-          socketId: err ? null : data?.[1]
-        }))
-        .filter((player) => player.isAlive === '0')
-        .forEach((player) => {
-          const socket = server.sockets.get(player.socketId);
-          if (!socket) {
-            return;
-          }
-          socket.emit(SocketEvents.UPDATE_POSITION, updateData);
-        });
+      this.positionProcessorDead.pushData(gameId, updateData);
     }
   }
 
