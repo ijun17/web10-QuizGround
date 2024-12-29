@@ -125,18 +125,19 @@
 - 해당 경험이 더 궁금하시다면?
     - [노션 링크](https://www.notion.so/200-82acd52251d2439091d101e193a26c9b?pvs=21) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/%EC%8B%A4%EC%8B%9C%EA%B0%84-200%EB%AA%85-%ED%94%8C%EB%A0%88%EC%9D%B4%EC%96%B4-%EB%A0%8C%EB%8D%94%EB%A7%81%EC%9D%84-%EC%9C%84%ED%95%9C-%EC%B5%9C%EC%A0%81%ED%99%94-%EA%B3%BC%EC%A0%95)
 
-### [BE] 멀티 프로세스를 통한 36% 성능 향상
+### [BE] 캐릭터 위치 업데이트 최적화 
 
 - 동기
     - 200명이 한 게임방에서 원활히 플레이할 수 있는 걸 목표로 했습니다.
 - 행동
     - 부하 테스트를 통해 200명이 원활히 플레이 가능한지 테스트했습니다.
     - 멀티 프로세스로 운영하여 소켓 메시지 응답 시간을 줄였습니다.
+    - 배치 처리를 도입하여 소켓 메시지 응답 시간을 줄였습니다. 
 - 결과
-    - **위치 업데이트**가  `1.43초`에서 `0.91초`로 **36% 빨라졌습니다.**
-    - **실시간 채팅**이 `1.20초`에서 `0.79초`로 **34% 빨라졌습니다.**
+    - 멀티 프로세스를 통해 위치 업데이트에 대한 서버 응답시간을 p95 `18.7초`에서 `7.1초`로 개선했습니다.
+    - 배치 처리를 통해 위치 업데이트에 대한 서버 응답시간을 p95 `7.1초`에서 `0.11초`로 개선했습니다. 
 - 해당 경험이 더 궁금하시다면?
-    - [노션 링크](https://www.notion.so/57-eed2841cf83447fb924fed316a321f19?pvs=21) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/%5B%EC%B5%9C%EC%A0%81%ED%99%94%5D-%EB%A9%80%ED%8B%B0-%ED%94%84%EB%A1%9C%EC%84%B8%EC%8A%A4%EB%A5%BC-%ED%86%B5%ED%95%9C-36%25-%EC%84%B1%EB%8A%A5-%ED%96%A5%EC%83%81)
+    - [노션 링크](https://s0n9.notion.site/d59740bf3feb45fdb74db4e6658ac1b6?pvs=4) or [위키 링크](https://github.com/boostcampwm-2024/web10-QuizGround/wiki/%5B%EC%B5%9C%EC%A0%81%ED%99%94%5D-%EC%BA%90%EB%A6%AD%ED%84%B0-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EC%84%9C%EB%B2%84-%EC%9D%91%EB%8B%B5%EC%8B%9C%EA%B0%84-%EC%B5%9C%EC%A0%81%ED%99%94)
  
 <br>
 
