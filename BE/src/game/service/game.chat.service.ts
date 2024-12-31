@@ -9,7 +9,7 @@ import { Namespace } from 'socket.io';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 import { SurvivalStatus } from '../../common/constants/game';
 import { MetricService } from '../../metric/metric.service';
-import { BatchProcessorType, createBatchProcessor } from './BatchProcessor';
+import { BatchProcessorType, createBatchProcessor } from './batch.processor';
 
 @TraceClass()
 @Injectable()
@@ -92,7 +92,7 @@ export class GameChatService {
       const executionTime = delta / 1e6;
 
       this.metricService.recordResponse('Chat', 'success');
-      await this.metricService.recordLatency('Chat', 'response', executionTime);
+      this.metricService.recordLatency('Chat', 'response', executionTime);
     });
   }
 }

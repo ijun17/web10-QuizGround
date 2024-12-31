@@ -6,7 +6,7 @@ import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
-import { BatchProcessorType, createBatchProcessor } from '../../service/BatchProcessor';
+import { BatchProcessorType, createBatchProcessor } from '../../service/batch.processor';
 import { MetricService } from '../../../metric/metric.service';
 
 @Injectable()
