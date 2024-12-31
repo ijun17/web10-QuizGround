@@ -10,6 +10,7 @@ import { TraceClass } from '../../common/interceptor/SocketEventLoggerIntercepto
 import { SurvivalStatus } from '../../common/constants/game';
 import { MetricService } from '../../metric/metric.service';
 import { BatchProcessorType, createBatchProcessor } from './batch.processor';
+import { CHAT_BATCH_TIME } from '../../common/constants/batch-time';
 
 @TraceClass()
 @Injectable()
@@ -58,7 +59,7 @@ export class GameChatService {
       BatchProcessorType.DEFAULT,
       this.redis
     );
-    this.chatProcessor.startProcessing(50); // 채팅은 더 빠른 업데이트가 필요할 수 있어서 50ms
+    this.chatProcessor.startProcessing(CHAT_BATCH_TIME); // 채팅은 더 빠른 업데이트가 필요할 수 있어서 50ms
 
     this.chatProcessorDead = createBatchProcessor(
       server,
@@ -66,7 +67,7 @@ export class GameChatService {
       BatchProcessorType.ONLY_DEAD,
       this.redis
     );
-    this.chatProcessorDead.startProcessing(50);
+    this.chatProcessorDead.startProcessing(CHAT_BATCH_TIME);
 
     const chatSubscriber = this.redis.duplicate();
     chatSubscriber.psubscribe('chat:*');

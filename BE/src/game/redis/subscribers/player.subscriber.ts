@@ -8,6 +8,7 @@ import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
 import { BatchProcessorType, createBatchProcessor } from '../../service/batch.processor';
 import { MetricService } from '../../../metric/metric.service';
+import { POSITION_BATCH_TIME } from '../../../common/constants/batch-time';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
@@ -30,7 +31,7 @@ export class PlayerSubscriber extends RedisSubscriber {
       BatchProcessorType.DEFAULT,
       this.redis
     );
-    this.positionProcessor.startProcessing(100); // Start processing every 100ms
+    this.positionProcessor.startProcessing(POSITION_BATCH_TIME);
 
     this.positionProcessorDead = createBatchProcessor(
       server,
@@ -38,7 +39,7 @@ export class PlayerSubscriber extends RedisSubscriber {
       BatchProcessorType.ONLY_DEAD,
       this.redis
     );
-    this.positionProcessorDead.startProcessing(100);
+    this.positionProcessorDead.startProcessing(POSITION_BATCH_TIME);
 
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe('__keyspace@0__:Player:*');
