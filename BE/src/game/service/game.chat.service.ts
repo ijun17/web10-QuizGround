@@ -65,10 +65,10 @@ export class GameChatService {
 
       // 생존한 사람이라면 전체 브로드캐스팅
       if (isAlivePlayer === SurvivalStatus.ALIVE) {
-        this.chatProcessor.logMetricStart(BatchProcessorType.DEFAULT, gameId);
+        this.chatProcessor.startMetric(BatchProcessorType.DEFAULT, gameId);
         this.chatProcessor.pushData(BatchProcessorType.DEFAULT, gameId, chatMessage);
       } else {
-        this.chatProcessor.logMetricStart(BatchProcessorType.ONLY_DEAD, gameId);
+        this.chatProcessor.startMetric(BatchProcessorType.ONLY_DEAD, gameId);
         this.chatProcessor.pushData(BatchProcessorType.ONLY_DEAD, gameId, chatMessage);
       }
     });

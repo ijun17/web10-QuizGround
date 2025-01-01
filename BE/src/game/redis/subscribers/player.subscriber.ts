@@ -99,10 +99,10 @@ export class PlayerSubscriber extends RedisSubscriber {
     const isAlivePlayer = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
 
     if (isAlivePlayer === SurvivalStatus.ALIVE) {
-      this.positionProcessor.logMetricStart(BatchProcessorType.DEFAULT, gameId);
+      this.positionProcessor.startMetric(BatchProcessorType.DEFAULT, gameId);
       this.positionProcessor.pushData(BatchProcessorType.DEFAULT, gameId, updateData);
     } else if (isAlivePlayer === SurvivalStatus.DEAD) {
-      this.positionProcessor.logMetricStart(BatchProcessorType.ONLY_DEAD, gameId);
+      this.positionProcessor.startMetric(BatchProcessorType.ONLY_DEAD, gameId);
       this.positionProcessor.pushData(BatchProcessorType.ONLY_DEAD, gameId, updateData);
     }
   }

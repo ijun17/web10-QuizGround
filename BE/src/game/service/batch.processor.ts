@@ -45,13 +45,47 @@ export class BatchProcessor implements OnApplicationShutdown, OnModuleDestroy {
     batchMap.get(gameId).push(data);
   }
 
-  logMetricStart(type: BatchProcessorType, gameId: string): void {
+  startMetric(type: BatchProcessorType, gameId: string): void {
     const metricMap = this.metricMap.get(type);
     if (!metricMap.has(gameId)) {
       metricMap.set(gameId, []);
     }
     metricMap.get(gameId).push(process.hrtime());
   }
+
+  private batchProcessHandlers: Record<
+    BatchProcessorType,
+    (gameId: string, batch: any[]) => Promise<void>
+  > = {
+    [BatchProcessorType.DEFAULT]: async (gameId, batch) => {
+      this.server.to(gameId).emit(this.eventName, batch);
+    },
+    [BatchProcessorType.ONLY_DEAD]: async (gameId, batch) => {
+      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+      const pipeline = this.redis.pipeline();
+      players.forEach((id) => {
+        pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
+      });
+
+      type Result = [Error | null, [string, string] | null];
+      const results = await pipeline.exec();
+
+      (results as Result[])
+        .map(([err, data], index) => ({
+          id: players[index],
+          isAlive: err ? null : data?.[0],
+          socketId: err ? null : data?.[1]
+        }))
+        .filter((player) => player.isAlive === SurvivalStatus.DEAD)
+        .forEach((player) => {
+          const socket = this.server.sockets.get(player.socketId);
+          if (!socket) {
+            return;
+          }
+          socket.emit(this.eventName, batch);
+        });
+    }
+  };
 
   private async processBatch(): Promise<void> {
     if (this.isProcessing) {
@@ -67,32 +101,11 @@ export class BatchProcessor implements OnApplicationShutdown, OnModuleDestroy {
           if (queue.length > 0) {
             const batch = queue.splice(0, queue.length);
 
-            if (type === BatchProcessorType.DEFAULT) {
-              this.server.to(gameId).emit(this.eventName, batch);
-            } else if (type === BatchProcessorType.ONLY_DEAD) {
-              const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-              const pipeline = this.redis.pipeline();
-              players.forEach((id) => {
-                pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
-              });
-
-              type Result = [Error | null, [string, string] | null];
-              const results = await pipeline.exec();
-
-              (results as Result[])
-                .map(([err, data], index) => ({
-                  id: players[index],
-                  isAlive: err ? null : data?.[0],
-                  socketId: err ? null : data?.[1]
-                }))
-                .filter((player) => player.isAlive === SurvivalStatus.DEAD)
-                .forEach((player) => {
-                  const socket = this.server.sockets.get(player.socketId);
-                  if (!socket) {
-                    return;
-                  }
-                  socket.emit(this.eventName, batch);
-                });
+            const handler = this.batchProcessHandlers[type];
+            if (handler) {
+              await handler(gameId, batch);
+            } else {
+              console.error('No handler found for value:', type);
             }
 
             this.logger.debug(`Processed ${batch.length} items for game ${gameId}`);
