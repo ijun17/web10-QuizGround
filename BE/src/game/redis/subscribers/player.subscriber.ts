@@ -6,40 +6,21 @@ import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
-import { BatchProcessorType, createBatchProcessor } from '../../service/batch.processor';
-import { MetricService } from '../../../metric/metric.service';
+import { BatchProcessor, BatchProcessorType } from '../../service/batch.processor';
 import { POSITION_BATCH_TIME } from '../../../common/constants/batch-time';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
-  private positionProcessor: ReturnType<typeof createBatchProcessor>;
-  private positionProcessorDead: ReturnType<typeof createBatchProcessor>;
-  private positionUpdatesMetrics: Map<string, any> = new Map(); // Map<gameId, {startedAt}[]>
-
   constructor(
     @InjectRedis() redis: Redis,
-    private metricService: MetricService
+    private positionProcessor: BatchProcessor
   ) {
     super(redis);
   }
 
   async subscribe(server: Namespace): Promise<void> {
-    // Create batch processor for position updates
-    this.positionProcessor = createBatchProcessor(
-      server,
-      SocketEvents.UPDATE_POSITION,
-      BatchProcessorType.DEFAULT,
-      this.redis
-    );
+    this.positionProcessor.initialize(server, SocketEvents.UPDATE_POSITION);
     this.positionProcessor.startProcessing(POSITION_BATCH_TIME);
-
-    this.positionProcessorDead = createBatchProcessor(
-      server,
-      SocketEvents.UPDATE_POSITION,
-      BatchProcessorType.ONLY_DEAD,
-      this.redis
-    );
-    this.positionProcessorDead.startProcessing(POSITION_BATCH_TIME);
 
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe('__keyspace@0__:Player:*');
@@ -50,34 +31,11 @@ export class PlayerSubscriber extends RedisSubscriber {
         return;
       }
 
-      const startedAt = process.hrtime();
       const playerKey = REDIS_KEY.PLAYER(playerId);
-      const gameId = await this.redis.hget(playerKey, 'gameId');
       const changes = await this.redis.get(`${playerKey}:Changes`);
-
-      if (changes === 'Position') {
-        if (!this.positionUpdatesMetrics.has(gameId)) {
-          this.positionUpdatesMetrics.set(gameId, []); // 빈 배열로 초기화
-        }
-        this.positionUpdatesMetrics.get(gameId).push(startedAt);
-      }
 
       await this.handlePlayerChanges(changes, playerId, server);
     });
-    setInterval(() => {
-      // 배치 처리에 관한 메트릭 측정
-      this.positionUpdatesMetrics.forEach((metrics) => {
-        if (metrics.length > 0) {
-          const batch = metrics.splice(0, metrics.length);
-          batch.forEach((startedAt) => {
-            const endedAt = process.hrtime(startedAt);
-            const delta = endedAt[0] * 1e9 + endedAt[1];
-            const executionTime = delta / 1e6;
-            this.metricService.recordLatency('Position', 'response', executionTime);
-          });
-        }
-      });
-    }, 100);
   }
 
   private extractPlayerId(channel: string): string | null {
@@ -141,9 +99,11 @@ export class PlayerSubscriber extends RedisSubscriber {
     const isAlivePlayer = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
 
     if (isAlivePlayer === SurvivalStatus.ALIVE) {
-      this.positionProcessor.pushData(gameId, updateData);
+      this.positionProcessor.logMetricStart(BatchProcessorType.DEFAULT, gameId);
+      this.positionProcessor.pushData(BatchProcessorType.DEFAULT, gameId, updateData);
     } else if (isAlivePlayer === SurvivalStatus.DEAD) {
-      this.positionProcessorDead.pushData(gameId, updateData);
+      this.positionProcessor.logMetricStart(BatchProcessorType.ONLY_DEAD, gameId);
+      this.positionProcessor.pushData(BatchProcessorType.ONLY_DEAD, gameId, updateData);
     }
   }
 

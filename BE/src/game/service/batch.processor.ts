@@ -1,116 +1,148 @@
-/**
- * @fileoverview Functional batch processor factory
- */
+import { Injectable, Logger, OnApplicationShutdown, OnModuleDestroy, Scope } from '@nestjs/common';
 import { Namespace } from 'socket.io';
-import { Logger } from '@nestjs/common';
-import Redis from 'ioredis';
 import { REDIS_KEY } from '../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../common/constants/game';
+import Redis from 'ioredis';
+import { MetricService } from '../../metric/metric.service';
+import { InjectRedis } from '@nestjs-modules/ioredis';
 
 export enum BatchProcessorType {
-  'DEFAULT',
-  'ONLY_DEAD'
+  DEFAULT = 'DEFAULT',
+  ONLY_DEAD = 'ONLY_DEAD'
 }
 
-/**
- * Creates a batch processor instance
- */
-export function createBatchProcessor(
-  server: Namespace,
-  eventName: string,
-  type: BatchProcessorType,
-  redis: Redis
-) {
-  const logger = new Logger(`BatchProcessor:${eventName}`);
+@Injectable({ scope: Scope.TRANSIENT })
+export class BatchProcessor implements OnApplicationShutdown, OnModuleDestroy {
+  private logger: Logger;
+  private batchMap: Map<BatchProcessorType, Map<string, any[]>> = new Map();
+  private metricMap: Map<BatchProcessorType, Map<string, any[]>> = new Map();
+  private isProcessing = false;
+  private intervalId: NodeJS.Timeout;
 
-  const batchMap = new Map<string, any[]>();
-  let isProcessing = false;
+  private server: Namespace;
+  private eventName: string;
 
-  /**
-   * Pushes data to batch queue
-   */
-  const pushData = (gameId: string, data: any) => {
+  constructor(
+    private readonly metricService: MetricService,
+    @InjectRedis() private readonly redis: Redis
+  ) {}
+
+  initialize(server: Namespace, eventName: string) {
+    this.server = server;
+    this.eventName = eventName;
+    this.logger = new Logger(`BatchProcessor:${this.eventName}`);
+    for (const type of Object.values(BatchProcessorType)) {
+      this.batchMap.set(type, new Map());
+      this.metricMap.set(type, new Map());
+    }
+  }
+
+  pushData(type: BatchProcessorType, gameId: string, data: any): void {
+    const batchMap = this.batchMap.get(type);
     if (!batchMap.has(gameId)) {
       batchMap.set(gameId, []);
     }
     batchMap.get(gameId).push(data);
-  };
+  }
 
-  /**
-   * Processes and emits all batched data
-   */
-  const processBatch = async () => {
-    if (isProcessing) {
+  logMetricStart(type: BatchProcessorType, gameId: string): void {
+    const metricMap = this.metricMap.get(type);
+    if (!metricMap.has(gameId)) {
+      metricMap.set(gameId, []);
+    }
+    metricMap.get(gameId).push(process.hrtime());
+  }
+
+  private async processBatch(): Promise<void> {
+    if (this.isProcessing) {
       return;
     }
 
-    isProcessing = true;
+    this.isProcessing = true;
     try {
-      const processingTasks = Array.from(batchMap.entries()).map(async ([gameId, queue]) => {
-        if (queue.length > 0) {
-          const batch = queue.splice(0, queue.length);
+      for (const type of Object.values(BatchProcessorType)) {
+        const batchMap = this.batchMap.get(type);
+        const metricMap = this.metricMap.get(type);
+        const processingTasks = Array.from(batchMap.entries()).map(async ([gameId, queue]) => {
+          if (queue.length > 0) {
+            const batch = queue.splice(0, queue.length);
 
-          if (type === BatchProcessorType.DEFAULT) {
-            server.to(gameId).emit(eventName, batch);
-          } else if (type === BatchProcessorType.ONLY_DEAD) {
-            const players = await redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-            const pipeline = redis.pipeline();
-            players.forEach((id) => {
-              pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
-            });
-
-            type Result = [Error | null, [string, string] | null];
-            const results = await pipeline.exec();
-
-            (results as Result[])
-              .map(([err, data], index) => ({
-                id: players[index],
-                isAlive: err ? null : data?.[0],
-                socketId: err ? null : data?.[1]
-              }))
-              .filter((player) => player.isAlive === SurvivalStatus.DEAD)
-              .forEach((player) => {
-                const socket = server.sockets.get(player.socketId);
-                if (!socket) {
-                  return;
-                }
-                socket.emit(eventName, batch);
+            if (type === BatchProcessorType.DEFAULT) {
+              this.server.to(gameId).emit(this.eventName, batch);
+            } else if (type === BatchProcessorType.ONLY_DEAD) {
+              const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
+              const pipeline = this.redis.pipeline();
+              players.forEach((id) => {
+                pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
               });
+
+              type Result = [Error | null, [string, string] | null];
+              const results = await pipeline.exec();
+
+              (results as Result[])
+                .map(([err, data], index) => ({
+                  id: players[index],
+                  isAlive: err ? null : data?.[0],
+                  socketId: err ? null : data?.[1]
+                }))
+                .filter((player) => player.isAlive === SurvivalStatus.DEAD)
+                .forEach((player) => {
+                  const socket = this.server.sockets.get(player.socketId);
+                  if (!socket) {
+                    return;
+                  }
+                  socket.emit(this.eventName, batch);
+                });
+            }
+
+            this.logger.debug(`Processed ${batch.length} items for game ${gameId}`);
           }
+        });
 
-          logger.debug(`Processed ${batch.length} items for game ${gameId}`);
-        }
-      });
+        const checkMetrics = Array.from(metricMap.entries()).map(async ([gameId, queue]) => {
+          if (queue.length > 0) {
+            const batch = queue.splice(0, queue.length);
+            batch.forEach((startedAt) => {
+              const endedAt = process.hrtime(startedAt);
+              const delta = endedAt[0] * 1e9 + endedAt[1];
+              const executionTime = delta / 1e6;
+              this.metricService.recordResponse(this.eventName, 'success');
+              this.metricService.recordLatency(this.eventName, 'response', executionTime);
+            });
+            this.logger.debug(`Checked ${batch.length} Metrics for game ${gameId}`);
+          }
+        });
 
-      // 모든 작업이 완료될 때까지 대기
-      await Promise.all(processingTasks);
+        await Promise.all([...processingTasks, ...checkMetrics]);
+      }
     } catch (error) {
-      logger.error(`Error processing batch: ${error.message}`);
+      this.logger.error(`Error processing batch: ${error.message}`);
     } finally {
-      isProcessing = false;
+      this.isProcessing = false;
     }
-  };
+  }
 
-  /**
-   * Starts automatic batch processing
-   */
-  const startProcessing = (interval: number = 100) => {
-    setInterval(processBatch, interval);
-    logger.verbose(`Started batch processor for ${eventName} with ${interval}ms interval`);
-  };
+  startProcessing(interval: number = 100): void {
+    this.intervalId = setInterval(() => this.processBatch(), interval);
+    this.logger.verbose(
+      `Started batch processor for ${this.eventName} with ${interval}ms interval`
+    );
+  }
 
-  /**
-   * Clears all batched data
-   */
-  const clear = () => {
-    batchMap.clear();
-  };
+  onModuleDestroy(): void {
+    this.cleanUp();
+  }
 
-  // 외부에서 사용할 수 있는 public 메서드만 노출
-  return {
-    pushData,
-    processBatch,
-    startProcessing,
-    clear
-  };
+  onApplicationShutdown(): void {
+    this.cleanUp();
+  }
+
+  private cleanUp(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+    this.batchMap.clear();
+    this.metricMap.clear();
+    this.logger.verbose('Batch processor cleaned up');
+  }
 }

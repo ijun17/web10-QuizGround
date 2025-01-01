@@ -8,21 +8,18 @@ import SocketEvents from '../../common/constants/socket-events';
 import { Namespace } from 'socket.io';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 import { SurvivalStatus } from '../../common/constants/game';
-import { MetricService } from '../../metric/metric.service';
-import { BatchProcessorType, createBatchProcessor } from './batch.processor';
+import { BatchProcessor, BatchProcessorType } from './batch.processor';
 import { CHAT_BATCH_TIME } from '../../common/constants/batch-time';
 
 @TraceClass()
 @Injectable()
 export class GameChatService {
   private readonly logger = new Logger(GameChatService.name);
-  private chatProcessor: ReturnType<typeof createBatchProcessor>;
-  private chatProcessorDead: ReturnType<typeof createBatchProcessor>;
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
     private readonly gameValidator: GameValidator,
-    private metricService: MetricService
+    private chatProcessor: BatchProcessor
   ) {}
 
   async chatMessage(chatMessage: ChatMessageDto, clientId: string) {
@@ -53,28 +50,13 @@ export class GameChatService {
   }
 
   async subscribeChatEvent(server: Namespace) {
-    this.chatProcessor = createBatchProcessor(
-      server,
-      SocketEvents.CHAT_MESSAGE,
-      BatchProcessorType.DEFAULT,
-      this.redis
-    );
-    this.chatProcessor.startProcessing(CHAT_BATCH_TIME); // 채팅은 더 빠른 업데이트가 필요할 수 있어서 50ms
-
-    this.chatProcessorDead = createBatchProcessor(
-      server,
-      SocketEvents.CHAT_MESSAGE,
-      BatchProcessorType.ONLY_DEAD,
-      this.redis
-    );
-    this.chatProcessorDead.startProcessing(CHAT_BATCH_TIME);
+    this.chatProcessor.initialize(server, SocketEvents.CHAT_MESSAGE);
+    this.chatProcessor.startProcessing(CHAT_BATCH_TIME);
 
     const chatSubscriber = this.redis.duplicate();
     chatSubscriber.psubscribe('chat:*');
 
     chatSubscriber.on('pmessage', async (_pattern, channel, message) => {
-      const startedAt = process.hrtime();
-
       const gameId = channel.split(':')[1]; // ex. channel: chat:317172
       const chatMessage = JSON.parse(message);
 
@@ -83,17 +65,12 @@ export class GameChatService {
 
       // 생존한 사람이라면 전체 브로드캐스팅
       if (isAlivePlayer === SurvivalStatus.ALIVE) {
-        this.chatProcessor.pushData(gameId, chatMessage);
+        this.chatProcessor.logMetricStart(BatchProcessorType.DEFAULT, gameId);
+        this.chatProcessor.pushData(BatchProcessorType.DEFAULT, gameId, chatMessage);
       } else {
-        this.chatProcessorDead.pushData(gameId, chatMessage);
+        this.chatProcessor.logMetricStart(BatchProcessorType.ONLY_DEAD, gameId);
+        this.chatProcessor.pushData(BatchProcessorType.ONLY_DEAD, gameId, chatMessage);
       }
-
-      const endedAt = process.hrtime(startedAt);
-      const delta = endedAt[0] * 1e9 + endedAt[1];
-      const executionTime = delta / 1e6;
-
-      this.metricService.recordResponse('Chat', 'success');
-      this.metricService.recordLatency('Chat', 'response', executionTime);
     });
   }
 }
