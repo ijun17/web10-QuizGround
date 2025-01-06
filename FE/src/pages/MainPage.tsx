@@ -1,6 +1,6 @@
 // import { HeaderBar } from '@/components/HeaderBar';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, FC } from 'react';
+import { useState, useEffect } from 'react';
 import { socketService } from '@/api/socket';
 import Lottie from 'lottie-react';
 import mainCube from '../assets/lottie/mainLottie.json';
@@ -25,13 +25,12 @@ export const MainPage = () => {
   }, []);
 
   const handleQuizCreate = () => {
-    // dev Mode
-    navigate('/quiz/setup');
-    // if (isLoggedIn) navigate('/quiz/setup');
-    // else {
-    //   alert('로그인이 필요한 서비스 입니다.');
-    //   navigate('/login');
-    // }
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      navigate('/quiz/setup');
+    } else {
+      setIsOpenLoginModal(true);
+    }
   };
 
   const handleLogout = () => {
@@ -39,21 +38,21 @@ export const MainPage = () => {
     location.reload();
   };
 
-  type ActionButtonProps = {
-    label: string;
-    navigatePath: string;
-  };
+  // type ActionButtonProps = {
+  //   label: string;
+  //   navigatePath: string;
+  // };
 
-  const ActionButton: FC<ActionButtonProps> = ({ label, navigatePath }) => {
-    return (
-      <button
-        className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 transition-all duration-300"
-        onClick={() => navigate(navigatePath)}
-      >
-        {label}
-      </button>
-    );
-  };
+  // const ActionButton: FC<ActionButtonProps> = ({ label, navigatePath }) => {
+  //   return (
+  //     <button
+  //       className="text-white px-6 py-3 rounded-md bg-indigo-500 hover:bg-indigo-600 transition-all duration-300"
+  //       onClick={() => navigate(navigatePath)}
+  //     >
+  //       {label}
+  //     </button>
+  //   );
+  // };
   return (
     <div className="bg-gradient-to-r from-sky-200 to-indigo-400 min-h-screen pb-4">
       <div className="flex justify-between items-center max-w-screen-xl mx-auto p-4">
@@ -65,7 +64,7 @@ export const MainPage = () => {
               <button className="underline mr-4" onClick={handleLogout}>
                 로그아웃
               </button>
-              <ActionButton label="마이페이지" navigatePath="/mypage" />
+              {/* <ActionButton label="마이페이지" navigatePath="/mypage" /> */}
             </div>
           ) : (
             <button

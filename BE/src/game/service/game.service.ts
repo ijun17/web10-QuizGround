@@ -176,11 +176,4 @@ export class GameService {
 
     await this.gameRoomService.joinRoom(client, gameId, client.data.playerId);
   }
-
-  @Trace()
-  async longBusinessLogic() {
-    this.logger.verbose('longBusinessLogic start');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    this.logger.verbose('longBusinessLogic end');
-  }
 }
