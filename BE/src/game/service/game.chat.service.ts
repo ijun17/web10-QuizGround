@@ -8,6 +8,8 @@ import SocketEvents from '../../common/constants/socket-events';
 import { Namespace } from 'socket.io';
 import { TraceClass } from '../../common/interceptor/SocketEventLoggerInterceptor';
 import { SurvivalStatus } from '../../common/constants/game';
+import { BatchProcessor, BatchProcessorType } from './batch.processor';
+import { CHAT_BATCH_TIME } from '../../common/constants/batch-time';
 
 @TraceClass()
 @Injectable()
@@ -16,7 +18,8 @@ export class GameChatService {
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
-    private readonly gameValidator: GameValidator
+    private readonly gameValidator: GameValidator,
+    private chatProcessor: BatchProcessor
   ) {}
 
   async chatMessage(chatMessage: ChatMessageDto, clientId: string) {
@@ -47,6 +50,9 @@ export class GameChatService {
   }
 
   async subscribeChatEvent(server: Namespace) {
+    this.chatProcessor.initialize(server, SocketEvents.CHAT_MESSAGE);
+    this.chatProcessor.startProcessing(CHAT_BATCH_TIME);
+
     const chatSubscriber = this.redis.duplicate();
     chatSubscriber.psubscribe('chat:*');
 
@@ -59,27 +65,12 @@ export class GameChatService {
 
       // 생존한 사람이라면 전체 브로드캐스팅
       if (isAlivePlayer === SurvivalStatus.ALIVE) {
-        server.to(gameId).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
-        return;
+        this.chatProcessor.startMetric(BatchProcessorType.DEFAULT, gameId);
+        this.chatProcessor.pushData(BatchProcessorType.DEFAULT, gameId, chatMessage);
+      } else {
+        this.chatProcessor.startMetric(BatchProcessorType.ONLY_DEAD, gameId);
+        this.chatProcessor.pushData(BatchProcessorType.ONLY_DEAD, gameId, chatMessage);
       }
-
-      // 죽은 사람의 채팅은 죽은 사람끼리만 볼 수 있도록 처리
-      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-      await Promise.all(
-        players.map(async (playerId) => {
-          const socketId = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'socketId');
-          const socket = server.sockets.get(socketId);
-
-          if (!socket) {
-            return;
-          }
-
-          const isAlive = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
-          if (isAlive === SurvivalStatus.DEAD) {
-            socket.emit(SocketEvents.CHAT_MESSAGE, chatMessage);
-          }
-        })
-      );
     });
   }
 }

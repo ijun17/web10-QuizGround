@@ -6,14 +6,22 @@ import { Namespace } from 'socket.io';
 import SocketEvents from '../../../common/constants/socket-events';
 import { REDIS_KEY } from '../../../common/constants/redis-key.constant';
 import { SurvivalStatus } from '../../../common/constants/game';
+import { BatchProcessor, BatchProcessorType } from '../../service/batch.processor';
+import { POSITION_BATCH_TIME } from '../../../common/constants/batch-time';
 
 @Injectable()
 export class PlayerSubscriber extends RedisSubscriber {
-  constructor(@InjectRedis() redis: Redis) {
+  constructor(
+    @InjectRedis() redis: Redis,
+    private positionProcessor: BatchProcessor
+  ) {
     super(redis);
   }
 
   async subscribe(server: Namespace): Promise<void> {
+    this.positionProcessor.initialize(server, SocketEvents.UPDATE_POSITION);
+    this.positionProcessor.startProcessing(POSITION_BATCH_TIME);
+
     const subscriber = this.redis.duplicate();
     await subscriber.psubscribe('__keyspace@0__:Player:*');
 
@@ -22,8 +30,11 @@ export class PlayerSubscriber extends RedisSubscriber {
       if (!playerId || message !== 'hset') {
         return;
       }
-      const key = `Player:${playerId}`;
-      await this.handlePlayerChanges(key, playerId, server);
+
+      const playerKey = REDIS_KEY.PLAYER(playerId);
+      const changes = await this.redis.get(`${playerKey}:Changes`);
+
+      await this.handlePlayerChanges(changes, playerId, server);
     });
   }
 
@@ -32,10 +43,10 @@ export class PlayerSubscriber extends RedisSubscriber {
     return splitKey.length === 2 ? splitKey[1] : null;
   }
 
-  private async handlePlayerChanges(key: string, playerId: string, server: Namespace) {
-    const changes = await this.redis.get(`${key}:Changes`);
+  private async handlePlayerChanges(changes: string, playerId: string, server: Namespace) {
     const playerKey = REDIS_KEY.PLAYER(playerId);
     const playerData = await this.redis.hgetall(playerKey);
+    const result = { changes, playerData };
 
     switch (changes) {
       case 'Join':
@@ -43,7 +54,7 @@ export class PlayerSubscriber extends RedisSubscriber {
         break;
 
       case 'Position':
-        await this.handlePlayerPosition(playerId, playerData, server);
+        await this.handlePlayerPosition(playerId, playerData);
         break;
 
       case 'Disconnect':
@@ -58,6 +69,8 @@ export class PlayerSubscriber extends RedisSubscriber {
         await this.handlePlayerKicked(playerId, playerData, server);
         break;
     }
+
+    return result;
   }
 
   private async handlePlayerJoin(playerId: string, playerData: any, server: Namespace) {
@@ -78,7 +91,7 @@ export class PlayerSubscriber extends RedisSubscriber {
     this.logger.verbose(`Player joined: ${playerId} to game: ${playerData.gameId}`);
   }
 
-  private async handlePlayerPosition(playerId: string, playerData: any, server: Namespace) {
+  private async handlePlayerPosition(playerId: string, playerData: any) {
     const { gameId, positionX, positionY } = playerData;
     const playerPosition = [parseFloat(positionX), parseFloat(positionY)];
     const updateData = { playerId, playerPosition };
@@ -86,32 +99,11 @@ export class PlayerSubscriber extends RedisSubscriber {
     const isAlivePlayer = await this.redis.hget(REDIS_KEY.PLAYER(playerId), 'isAlive');
 
     if (isAlivePlayer === SurvivalStatus.ALIVE) {
-      server.to(gameId).emit(SocketEvents.UPDATE_POSITION, updateData);
+      this.positionProcessor.startMetric(BatchProcessorType.DEFAULT, gameId);
+      this.positionProcessor.pushData(BatchProcessorType.DEFAULT, gameId, updateData);
     } else if (isAlivePlayer === SurvivalStatus.DEAD) {
-      const players = await this.redis.smembers(REDIS_KEY.ROOM_PLAYERS(gameId));
-      const pipeline = this.redis.pipeline();
-
-      players.forEach((id) => {
-        pipeline.hmget(REDIS_KEY.PLAYER(id), 'isAlive', 'socketId');
-      });
-
-      type Result = [Error | null, [string, string] | null];
-      const results = await pipeline.exec();
-
-      (results as Result[])
-        .map(([err, data], index) => ({
-          id: players[index],
-          isAlive: err ? null : data?.[0],
-          socketId: err ? null : data?.[1]
-        }))
-        .filter((player) => player.isAlive === '0')
-        .forEach((player) => {
-          const socket = server.sockets.get(player.socketId);
-          if (!socket) {
-            return;
-          }
-          socket.emit(SocketEvents.UPDATE_POSITION, updateData);
-        });
+      this.positionProcessor.startMetric(BatchProcessorType.ONLY_DEAD, gameId);
+      this.positionProcessor.pushData(BatchProcessorType.ONLY_DEAD, gameId, updateData);
     }
   }
 
